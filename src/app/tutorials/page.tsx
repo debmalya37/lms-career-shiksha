@@ -6,22 +6,23 @@ const tutorials = [
 ];
 
 export default function TutorialsPage() {
-  return (
-    <div>
-      <h1>Tutorials</h1>
-      {tutorials.map((video) => (
-        <div key={video.id}>
-          <h3>{video.title}</h3>
-          <iframe
-          title='tutorials'
-            width="560"
-            height="315"
-            src={video.url}
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-        />
+    return (
+      <div className="container mx-auto py-8">
+        <h1 className="text-3xl font-bold text-gray-800 mb-6">Tutorials</h1>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {tutorials.map((video) => (
+            <div key={video.id} className="bg-white rounded-lg shadow-md p-4">
+              <h3 className="text-xl font-semibold mb-4">{video.title}</h3>
+              <iframe
+              title='tutorials'
+                className="w-full h-48"
+                src={video.url}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+            </div>
+          ))}
         </div>
-      ))}
-    </div>
-  );
-}
+      </div>
+    );
+  }
