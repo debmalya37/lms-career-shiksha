@@ -1,7 +1,7 @@
 import Link from 'next/link';
 
 interface SubjectOptionsProps {
-  subject: string | string[]; // Can handle both string or array (Next.js dynamic routing)
+  subject: string | string[] | undefined; // Can handle both string or array (Next.js dynamic routing)
 }
 
 export default function SubjectOptions({ subject }: SubjectOptionsProps) {
