@@ -1,17 +1,13 @@
-import mongoose, { Schema, Document } from 'mongoose';
+// /models/testSeriesModel.js
 
-export interface ITestSeries extends Document {
-  question: string;
-  correctAnswer: string;
-  options: string[];
-  subject: string;
-}
+import mongoose from 'mongoose';
 
-const TestSeriesSchema: Schema = new Schema({
-  question: { type: String, required: true },
-  correctAnswer: { type: String, required: true },
-  options: { type: [String], required: true },
-  subject: { type: String, required: true },
-});
+const TestSeriesSchema = new mongoose.Schema({
+  // question: { type: String, required: false }, // Make required: true if it's mandatory
+  // correctAnswer: { type: String, required: false }, // Make required: true if it's mandatory
+  // options: { type: [String], required: false }, // Array of options
+  subject: { type: String, required: true }, // Assuming subject is mandatory
+  googleFormLink: { type: String, required: false }, // Add this line
+}, { timestamps: true });
 
-export default mongoose.models.TestSeries || mongoose.model<ITestSeries>('TestSeries', TestSeriesSchema);
+export default mongoose.models.TestSeries || mongoose.model('TestSeries', TestSeriesSchema);

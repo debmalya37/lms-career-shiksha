@@ -1,11 +1,25 @@
-import React from 'react';
+"use client";
 
-const notes = [
-  { id: 1, title: 'Note 1', url: '/pdfs/note1.pdf' },
-  { id: 2, title: 'Note 2', url: '/pdfs/note2.pdf' },
-];
+import React, { useEffect, useState } from 'react';
 
 export default function NotesPage() {
+  const [notes, setNotes] = useState([]);
+
+  // Fetch the notes from the server
+  useEffect(() => {
+    async function fetchNotes() {
+      try {
+        const res = await fetch('/api/notes');
+        const data = await res.json();
+        setNotes(data);
+      } catch (error) {
+        console.error('Failed to fetch notes:', error);
+      }
+    }
+
+    fetchNotes();
+  }, []);
+
   return (
     <div className="container mx-auto py-8">
       <h1 className="text-3xl font-bold text-gray-800 mb-6">Notes</h1>
@@ -14,20 +28,31 @@ export default function NotesPage() {
           <thead>
             <tr className="bg-gray-200">
               <th className="px-4 py-2">Title</th>
+              <th className="px-4 py-2">Subject</th>
               <th className="px-4 py-2">Download</th>
             </tr>
           </thead>
           <tbody>
-            {notes.map((note) => (
-              <tr key={note.id} className="border-b">
-                <td className="px-4 py-2">{note.title}</td>
-                <td className="px-4 py-2">
-                  <a href={note.url} download className="text-blue-600 hover:underline">
-                    Download
-                  </a>
+            {notes.length > 0 ? (
+              notes.map((note:any) => (
+                <tr key={note._id} className="border-b">
+                  <td className="px-4 py-2">{note.title}</td>
+                  <td className="px-4 py-2">{note.subject}</td>
+                  <td className="px-4 py-2">
+                    <a href={note.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                      Download
+                    </a>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={3} className="px-4 py-2 text-center">
+                  No notes available.
                 </td>
               </tr>
-            ))}
+
+            )}
           </tbody>
         </table>
       </div>

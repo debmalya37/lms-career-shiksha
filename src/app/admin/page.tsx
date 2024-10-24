@@ -20,6 +20,31 @@ const AdminPanel = () => {
         <Link href="/admin/notes" className="bg-purple-600 text-white p-6 rounded-lg shadow-md text-center">
           <h2 className="text-xl font-semibold">Manage Notes</h2>
         </Link>
+
+        {/* eBook Section */}
+        <Link href="/admin/ebook" className="bg-orange-600 text-white p-6 rounded-lg shadow-md text-center">
+          <h2 className="text-xl font-semibold">Manage eBooks</h2>
+        </Link>
+
+        {/* Question Paper Section */}
+        <Link href="/admin/question-paper" className="bg-red-600 text-white p-6 rounded-lg shadow-md text-center">
+          <h2 className="text-xl font-semibold">Manage Question Papers</h2>
+        </Link>
+
+        {/* Query Section */}
+        <Link href="/admin/query" className="bg-indigo-600 text-white p-6 rounded-lg shadow-md text-center">
+          <h2 className="text-xl font-semibold">Manage Queries</h2>
+        </Link>
+
+        {/* Topics Section */}
+        <Link href="/admin/topics" className="bg-teal-600 text-white p-6 rounded-lg shadow-md text-center">
+          <h2 className="text-xl font-semibold">Manage Topics</h2>
+        </Link>
+
+        {/* Subjects Section */}
+        <Link href="/admin/subjects" className="bg-gray-600 text-white p-6 rounded-lg shadow-md text-center">
+          <h2 className="text-xl font-semibold">Manage Subjects</h2>
+        </Link>
       </div>
     </div>
   );
