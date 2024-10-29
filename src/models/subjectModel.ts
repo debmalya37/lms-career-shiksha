@@ -1,3 +1,4 @@
+// models/subjectModel.ts
 import mongoose, { Schema, Document } from 'mongoose';
 
 export interface ISubject extends Document {
@@ -5,11 +6,11 @@ export interface ISubject extends Document {
   createdAt: Date;
 }
 
-const SubjectSchema: Schema = new Schema({
+const subjectSchema: Schema = new Schema({
   name: { type: String, required: true },
   createdAt: { type: Date, default: Date.now },
 });
 
-const Subject = mongoose.models.Subject || mongoose.model<ISubject>('Subject', SubjectSchema);
+const Subject = mongoose.models.Subject || mongoose.model<ISubject>('Subject', subjectSchema);
 
 export default Subject;

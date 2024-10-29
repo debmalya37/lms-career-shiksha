@@ -5,6 +5,10 @@ const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
   sessionToken: { type: String, unique: true },
+  profile: { // Link to profile
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Profile',
+  },
 });
 
 export const User = mongoose.models.User || mongoose.model('User', userSchema);

@@ -1,33 +1,22 @@
 "use client";
-import { useState, useEffect } from 'react';
 import ProgressBar from './ProgressBar';
-
-interface LatestVideo {
-    title: string;
-    subject: string;
-    topic: string;
-    createdAt: string;
-  }
 
 interface NotificationPopupProps {
   close: () => void;
+  latestLiveClass: { title: string; url: string; createdAt: string } | null;
+  latestTutorial: { title: string; url: string; createdAt: string } | null;
+  latestCourse: { title: string; description: string; createdAt: string } | null;
 }
 
-const NotificationPopup = ({ close }: NotificationPopupProps) => {
-    const [latestVideo, setLatestVideo] = useState<LatestVideo | null>(null);
-  const [subscriptionDaysLeft, setSubscriptionDaysLeft] = useState(30); // Example placeholder
-  const [progress, setProgress] = useState(50); // Example progress value
-  const [examMarks, setExamMarks] = useState(80); // Example exam marks
-
-  useEffect(() => {
-    async function fetchLatestVideo() {
-      // Fetch the latest video data from API
-      const response = await fetch('/api/latest-video');
-      const data = await response.json();
-      setLatestVideo(data);
-    }
-    fetchLatestVideo();
-  }, []);
+const NotificationPopup = ({
+  close,
+  latestLiveClass,
+  latestTutorial,
+  latestCourse,
+}: NotificationPopupProps) => {
+  const subscriptionDaysLeft = 30;
+  const progress = 50;
+  const examMarks = 80;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
@@ -35,21 +24,38 @@ const NotificationPopup = ({ close }: NotificationPopupProps) => {
         <button onClick={close} className="absolute top-2 right-2 text-gray-600">✖</button>
         <h2 className="text-2xl font-bold text-center mb-4 text-blue-600">Notifications</h2>
         
-        {/* Latest Video */}
-        {latestVideo && (
+        {/* Latest Live Class */}
+        {latestLiveClass && (
           <div className="mb-4">
-            <h3 className="font-semibold text-lg text-green-700">Latest Video</h3>
-            <p>Title: {latestVideo.title}</p>
-            <p>Subject: {latestVideo.subject}</p>
-            <p>Topic: {latestVideo.topic}</p>
-            <p>Date: {new Date(latestVideo.createdAt).toLocaleDateString()}</p>
+            <h3 className="font-semibold text-lg text-green-700">Latest Live Class</h3>
+            <p className='text-gray-950'>Title: {latestLiveClass.title}</p>
+            <p className='text-gray-950'>Date: {new Date(latestLiveClass.createdAt).toLocaleDateString()}</p>
+          </div>
+        )}
+
+        {/* Latest Tutorial */}
+        {latestTutorial && (
+          <div className="mb-4">
+            <h3 className="font-semibold text-lg text-green-700">Latest Tutorial</h3>
+            <p className='text-gray-950'>Title: {latestTutorial.title}</p>
+            <p className='text-gray-950'>Date: {new Date(latestTutorial.createdAt).toLocaleDateString()}</p>
+          </div>
+        )}
+
+        {/* Latest Course */}
+        {latestCourse && (
+          <div className="mb-4">
+            <h3 className="font-semibold text-lg text-green-700">Latest Course</h3>
+            <p className='text-gray-950'>Title: {latestCourse.title}</p>
+            <p className='text-gray-950'>Description: {latestCourse.description}</p>
+            <p className='text-gray-950'>Date: {new Date(latestCourse.createdAt).toLocaleDateString()}</p>
           </div>
         )}
 
         {/* Subscription Days Left */}
         <div className="mb-4">
           <h3 className="font-semibold text-lg text-red-600">Subscription</h3>
-          <p className='text-black'>{subscriptionDaysLeft} days left</p>
+          <p className="text-black">{subscriptionDaysLeft} days left</p>
         </div>
 
         {/* Progress Tracker */}
@@ -61,7 +67,7 @@ const NotificationPopup = ({ close }: NotificationPopupProps) => {
         {/* Test Exam Marks */}
         <div>
           <h3 className="font-semibold text-lg text-blue-700">Test Exam Marks</h3>
-          <p className='text-black'>{examMarks} out of 100</p>
+          <p className="text-black">{examMarks} out of 100</p>
         </div>
       </div>
     </div>

@@ -7,7 +7,8 @@ interface SubjectOptionsProps {
 export default function SubjectOptions({ subject }: SubjectOptionsProps) {
   return (
     <div className="mt-8 p-4">
-      <div className="flex justify-center space-x-10 flex-wrap gap-3">
+      <div className="flex justify-center flex-wrap gap-3 mb-1">
+
         <Link href={`/${subject}/videos`}>
           <div className="bg-green-200 w-40 h-40 flex justify-center items-center rounded-lg hover:bg-green-300 cursor-pointer">
             <p className="text-lg font-bold">Video</p>

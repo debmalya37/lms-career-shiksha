@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import connectMongo from '@/lib/db';
 import Subject from '@/models/subjectModel';
 
-// GET method to fetch all subjects
 export async function GET() {
   try {
     await connectMongo();
@@ -15,23 +14,23 @@ export async function GET() {
 
 // POST method to add a new subject
 export async function POST(request: Request) {
-  const { name } = await request.json(); // Parse request body to get the subject name
+  const { name, course } = await request.json(); // Get subject name and course ID from request
 
-  if (!name) {
-    return NextResponse.json({ error: 'Subject name is required' }, { status: 400 });
+  if (!name || !course) {
+    return NextResponse.json({ error: 'Subject name and course are required' }, { status: 400 });
   }
 
   try {
     await connectMongo();
 
     // Check if subject already exists
-    const existingSubject = await Subject.findOne({ name });
+    const existingSubject = await Subject.findOne({ name, course });
     if (existingSubject) {
       return NextResponse.json({ error: 'Subject already exists' }, { status: 400 });
     }
 
     // Create and save new subject
-    const newSubject = new Subject({ name });
+    const newSubject = new Subject({ name, course }); // Include the course reference
     await newSubject.save();
 
     return NextResponse.json({ message: 'Subject added successfully!' });

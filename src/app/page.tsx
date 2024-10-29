@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { BellIcon, UserIcon } from '@heroicons/react/24/solid'; 
+import { BellIcon, UserIcon } from '@heroicons/react/24/solid';
 import Navbar from '@/components/Navbar';
 import LiveClasses from '@/components/LiveClasses';
 import Subjects from '@/components/Subjects';
@@ -12,22 +12,29 @@ import Link from 'next/link';
 export default function Home() {
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [latestLiveClass, setLatestLiveClass] = useState(null);
+  const [latestTutorial, setLatestTutorial] = useState(null);
+  const [latestCourse, setLatestCourse] = useState(null);
   const [subjects, setSubjects] = useState([]);
 
-  // Fetch latest live class and subjects
+  // Fetch latest live class, tutorial, course, and subjects
   useEffect(() => {
     async function fetchData() {
       try {
-        // Fetch the latest live class
-        const liveClassRes = await axios.get('/api/live-classes');
-        const liveClasses = liveClassRes.data;
-        if (liveClasses.length > 0) {
-          setLatestLiveClass(liveClasses[liveClasses.length - 1]); // Get the latest live class
-        }
-
         // Fetch subjects
         const subjectsRes = await axios.get('/api/subjects');
         setSubjects(subjectsRes.data);
+        // Fetch the latest live class
+        const liveClassRes = await axios.get('/api/latest-live');
+        if (liveClassRes.data) setLatestLiveClass(liveClassRes.data);
+
+        // Fetch the latest tutorial
+        const tutorialRes = await axios.get('/api/latestTutorial');
+        if (tutorialRes.data) setLatestTutorial(tutorialRes.data);
+
+        // Fetch the latest course
+        const courseRes = await axios.get('/api/latestCourse');
+        if (courseRes.data) setLatestCourse(courseRes.data);
+
       } catch (error) {
         console.error('Error fetching data:', error);
       }
@@ -36,6 +43,8 @@ export default function Home() {
   }, []);
 
   return (
+    <>
+    <main className='bg-yellow-100'>
     <div className="bg-yellow-100 min-h-screen relative">
       <div className="container mx-auto flex justify-between items-center">
         <input
@@ -58,7 +67,12 @@ export default function Home() {
       
       {/* Show Notification Popup if open */}
       {isNotificationOpen && (
-        <NotificationPopup close={() => setIsNotificationOpen(false)} />
+        <NotificationPopup
+          close={() => setIsNotificationOpen(false)}
+          latestLiveClass={latestLiveClass}
+          latestTutorial={latestTutorial}
+          latestCourse={latestCourse}
+        />
       )}
 
       {/* Main Content */}
@@ -68,5 +82,7 @@ export default function Home() {
       </div>
       <Footer />
     </div>
+    </main>
+    </>
   );
 }

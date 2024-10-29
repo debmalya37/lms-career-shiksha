@@ -1,99 +1,72 @@
-"use client";
-import { useEffect, useState } from 'react';
-import axios from 'axios';
+// app/courses/page.tsx
+import connectMongo from '@/lib/db';
+import Course from '@/models/courseModel';
+import Subject from '@/models/subjectModel';
+import Topic from '@/models/topicModel';
+import Link from 'next/link';
 
-const GlobalCoursesPage = () => {
-  const [courses, setCourses] = useState([]);
-  const [filteredCourses, setFilteredCourses] = useState([]);
-  const [subjects, setSubjects] = useState([]);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedSubject, setSelectedSubject] = useState('');
+export const dynamic = 'force-dynamic';
 
-  // Fetch all courses and subjects from the API
-  useEffect(() => {
-    const fetchCoursesAndSubjects = async () => {
-      try {
-        const courseRes = await axios.get('/api/course');
-        const subjectRes = await axios.get('/api/subjects');
-        setCourses(courseRes.data);
-        setFilteredCourses(courseRes.data); // Initialize filtered courses to all courses
-        setSubjects(subjectRes.data);
-      } catch (error) {
-        console.error('Error fetching courses and subjects:', error);
-      }
-    };
+// Fetch courses and related data without using populate
+async function fetchCoursesWithSubjectsAndTopics() {
+  await connectMongo();
 
-    fetchCoursesAndSubjects();
-  }, []);
+  // Fetch all courses without populating subject and topic fields
+  const courses = await Course.find({}).lean();
 
-  // Handle Search and Filtering
-  useEffect(() => {
-    const filtered = courses.filter((course: any) => {
-      const matchesSearch =
-        course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        course.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        course.subject.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        course.topic.name.toLowerCase().includes(searchQuery.toLowerCase());
+  // Collect unique subject and topic IDs from courses
+  const subjectIds = Array.from(new Set(courses.map((course: any) => course.subject.toString())));
+  const topicIds = Array.from(new Set(courses.map((course: any) => course.topic.toString())));
 
-      const matchesSubject = selectedSubject
-        ? course.subject._id === selectedSubject
-        : true;
+  // Fetch the relevant subjects and topics
+  const subjects = await Subject.find({ _id: { $in: subjectIds } }).select('name').lean();
+  const topics = await Topic.find({ _id: { $in: topicIds } }).select('name').lean();
 
-      return matchesSearch && matchesSubject;
-    });
+  // Create lookup objects for quick access to subject and topic names by ID
+  const subjectLookup = subjects.reduce((acc, subject) => {
+    acc[subject._id.toString()] = subject.name;
+    return acc;
+  }, {} as Record<string, string>);
 
-    setFilteredCourses(filtered);
-  }, [searchQuery, selectedSubject, courses]);
+  const topicLookup = topics.reduce((acc, topic) => {
+    acc[topic._id.toString()] = topic.name;
+    return acc;
+  }, {} as Record<string, string>);
+
+  // Map through courses and add subject and topic names from lookups
+  const coursesWithDetails = courses.map((course: any) => ({
+    ...course,
+    subjectName: subjectLookup[course.subject.toString()] || 'Unknown Subject',
+    topicName: topicLookup[course.topic.toString()] || 'Unknown Topic',
+  }));
+
+  return coursesWithDetails;
+}
+
+export default async function GlobalCoursesPage() {
+  const courses = await fetchCoursesWithSubjectsAndTopics();
 
   return (
     <div className="container mx-auto py-8">
       <h1 className="text-3xl font-bold text-white mb-6">All Courses</h1>
 
-      {/* Search Box */}
-      <div className="mb-4 text-black">
-        <input
-          type="text"
-          placeholder="Search courses by title, description, subject, or topic"
-          className="border p-2 w-full rounded-md"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-        />
-      </div>
-
-      {/* Subject Filter */}
-      <div className="mb-4">
-        <label className="block text-sm font-medium text-gray-700 mb-2">Filter by Subject</label>
-        <select
-          title="selectedSubject"
-          className="border p-2 w-full rounded-md"
-          value={selectedSubject}
-          onChange={(e) => setSelectedSubject(e.target.value)}
-        >
-          <option value="">All Subjects</option>
-          {subjects.map((subject: any) => (
-            <option key={subject._id} value={subject._id}>
-              {subject.name}
-            </option>
-          ))}
-        </select>
-      </div>
-
       {/* Courses Listing */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredCourses.length > 0 ? (
-          filteredCourses.map((course: any) => (
+        {courses.length > 0 ? (
+          courses.map((course: any) => (
             <div key={course._id} className="bg-white rounded-lg shadow-md p-4">
               <h3 className="text-xl font-semibold mb-2">{course.title}</h3>
-              <p className="text-gray-700 mb-4">{course.description}</p>
-              <iframe
-                title={course.title}
-                className="w-full h-48"
-                src={`https://www.youtube-nocookie.com/embed/Y6nYrYJQdps?si=UHMrfrmCDrlYR80F?modestbranding=1&rel=0&showinfo=0&controls=0`}
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              />
-              <p className="text-gray-500 mt-2">Subject: {course.subject.name}</p>
-              <p className="text-gray-500">Topic: {course.topic.name}</p>
+              <p className="text-gray-700 mb-2">{course.description}</p>
+              <p className="text-gray-500 mb-2">Created on: {new Date(course.createdAt).toLocaleDateString()}</p>
+              <p className="text-gray-500">Subject: {course.subjectName}</p>
+              <p className="text-gray-500">Topic: {course.topicName}</p>
+              
+              {/* View Button to redirect to the course-specific page */}
+              <Link href={`/courses/${course._id}`}>
+                <button className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600">
+                  View
+                </button>
+              </Link>
             </div>
           ))
         ) : (
@@ -102,6 +75,4 @@ const GlobalCoursesPage = () => {
       </div>
     </div>
   );
-};
-
-export default GlobalCoursesPage;
+}

@@ -1,14 +1,14 @@
 import { NextResponse } from 'next/server';
 import connectMongo from '@/lib/db';
 import Profile from '@/models/profileModel';
+import { User } from '@/models/user'; // Import User model
 
 export async function GET(request: Request) {
-  // Simulating user ID (fetch from request/session in a real application)
-  const userId = '12345';
+  const userId = '12345'; // Simulating user ID; fetch from request/session in a real application
 
   try {
     await connectMongo();
-
+    
     // Find profile by user ID
     const profile = await Profile.findOne({ userId });
 
@@ -33,6 +33,13 @@ export async function POST(request: Request) {
       { userId },
       { firstName, lastName, email, subject, aim },
       { new: true, upsert: true }
+    );
+
+    // Update User model to link profile
+    await User.findOneAndUpdate(
+      { _id: userId },
+      { profile: profile._id }, // Link profile to user
+      { new: true }
     );
 
     return NextResponse.json({ message: 'Profile saved successfully!', profile });

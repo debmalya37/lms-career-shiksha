@@ -1,3 +1,4 @@
+// models/topicModel.ts
 import mongoose, { Schema, Document } from 'mongoose';
 
 export interface ITopic extends Document {
@@ -6,12 +7,12 @@ export interface ITopic extends Document {
   createdAt: Date;
 }
 
-const TopicSchema: Schema = new Schema({
+const topicSchema: Schema = new Schema({
   name: { type: String, required: true },
   subject: { type: Schema.Types.ObjectId, ref: 'Subject', required: true }, // Reference to Subject
   createdAt: { type: Date, default: Date.now },
 });
 
-const Topic = mongoose.models.Topic || mongoose.model<ITopic>('Topic', TopicSchema);
+const Topic = mongoose.models.Topic || mongoose.model<ITopic>('Topic', topicSchema);
 
 export default Topic;
