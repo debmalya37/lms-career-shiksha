@@ -3,35 +3,20 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 
-// Define types for your data
-interface Course {
-  _id: string;
-  title: string;
-}
-
-interface Subject {
-  _id: string;
-  name: string;
-}
-
-interface Topic {
-  _id: string;
-  name: string;
-}
-
 const ManageTutorials = () => {
   const [title, setTitle] = useState('');
   const [url, setUrl] = useState('');
   const [description, setDescription] = useState('');
-  const [courses, setCourses] = useState<Course[]>([]);
+  const [courses, setCourses] = useState([]);
   const [selectedCourse, setSelectedCourse] = useState('');
-  const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [subjects, setSubjects] = useState([]);
   const [selectedSubject, setSelectedSubject] = useState('');
-  const [topics, setTopics] = useState<Topic[]>([]);
+  const [topics, setTopics] = useState([]);
   const [selectedTopic, setSelectedTopic] = useState('');
   const [newTopicName, setNewTopicName] = useState('');
   const [newSubjectName, setNewSubjectName] = useState('');
 
+  // Fetch courses
   useEffect(() => {
     const fetchCourses = async () => {
       try {
@@ -41,11 +26,8 @@ const ManageTutorials = () => {
         console.error('Error fetching courses:', error);
       }
     };
-
-    if (courses.length === 0) {
-      fetchCourses();
-    }
-  }, [courses]);
+    fetchCourses();
+  }, []);
 
   // Fetch subjects based on selected course
   useEffect(() => {
@@ -84,11 +66,9 @@ const ManageTutorials = () => {
         title,
         url,
         description,
-        course: selectedCourse,
         subject: selectedSubject,
         topic: selectedTopic,
       });
-      // Clear form
       setTitle('');
       setUrl('');
       setDescription('');
@@ -107,14 +87,13 @@ const ManageTutorials = () => {
       alert("Please enter a subject name and select a course.");
       return;
     }
-
     try {
       const response = await axios.post('/api/subjects', {
         name: newSubjectName,
-        course: selectedCourse, // Link the subject to the selected course
+        course: selectedCourse,
       });
       setSubjects((prevSubjects) => [...prevSubjects, response.data]);
-      setNewSubjectName(''); // Clear input
+      setNewSubjectName('');
       alert('New subject added successfully!');
     } catch (error) {
       console.error('Error adding subject:', error);
@@ -127,14 +106,13 @@ const ManageTutorials = () => {
       alert("Please enter a topic name and select a subject.");
       return;
     }
-
     try {
       const response = await axios.post('/api/topics', {
         name: newTopicName,
-        subjectId: selectedSubject, // Link the topic to the selected subject
+        subject: selectedSubject,
       });
       setTopics((prevTopics) => [...prevTopics, response.data]);
-      setNewTopicName(''); // Clear input
+      setNewTopicName('');
       alert('New topic added successfully!');
     } catch (error) {
       console.error('Error adding topic:', error);
@@ -195,7 +173,7 @@ const ManageTutorials = () => {
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">Subject</label>
           <select
-            title="selectSub"
+            title="selectSubject"
             value={selectedSubject}
             onChange={(e) => setSelectedSubject(e.target.value)}
             required
@@ -225,7 +203,7 @@ const ManageTutorials = () => {
         </button>
       </form>
 
-      {/* Form for adding a new subject */}
+      {/* Add New Subject Section */}
       <div className="mt-8">
         <h2 className="text-xl font-bold">Add New Subject</h2>
         <input
@@ -243,7 +221,7 @@ const ManageTutorials = () => {
         </button>
       </div>
 
-      {/* Form for adding a new topic */}
+      {/* Add New Topic Section */}
       <div className="mt-8">
         <h2 className="text-xl font-bold">Add New Topic</h2>
         <input

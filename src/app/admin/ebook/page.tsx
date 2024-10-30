@@ -1,24 +1,38 @@
 "use client";
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
 
 const ManageEBooks = () => {
   const [title, setTitle] = useState('');
   const [url, setUrl] = useState('');
-  const [subject, setSubject] = useState('');
+  const [subjects, setSubjects] = useState([]); // Stores fetched subjects
+  const [selectedSubject, setSelectedSubject] = useState(''); // Selected subject ID
 
-  const subjects = ['Math', 'Science', 'History']; // Replace with actual subjects from your DB
+  // Fetch subjects from the API
+  useEffect(() => {
+    const fetchSubjects = async () => {
+      try {
+        const response = await axios.get('/api/subjects');
+        setSubjects(response.data); // Populate subjects from response
+      } catch (error) {
+        console.error('Error fetching subjects:', error);
+      }
+    };
+    fetchSubjects();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const ebookData = { title, url, subject: selectedSubject }; // Payload with subject ID
+
     try {
-      await axios.post('/api/ebook', { title, url, subject });
+      await axios.post('/api/ebook', ebookData);
       setTitle('');
       setUrl('');
-      setSubject('');
+      setSelectedSubject('');
       alert('eBook added successfully!');
     } catch (error) {
-      console.error(error);
+      console.error('Error adding eBook:', error);
       alert('Error adding eBook.');
     }
   };
@@ -27,10 +41,11 @@ const ManageEBooks = () => {
     <div className="p-8 bg-white rounded-lg shadow-md max-w-xl mx-auto mt-8 text-black">
       <h1 className="text-2xl font-bold mb-4">Add eBook</h1>
       <form onSubmit={handleSubmit}>
+        {/* eBook Title */}
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">eBook Title</label>
           <input
-            title='title'
+          title='text'
             type="text"
             className="border p-2 w-full rounded-md"
             value={title}
@@ -39,31 +54,33 @@ const ManageEBooks = () => {
           />
         </div>
 
+        {/* Google Drive URL */}
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">Google Drive URL</label>
           <input
-            title='url'
             type="url"
             className="border p-2 w-full rounded-md"
             value={url}
             onChange={(e) => setUrl(e.target.value)}
             required
+            placeholder="Enter Google Drive Link"
           />
         </div>
 
+        {/* Subject Selection */}
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">Subject</label>
           <select
-            title='subject'
+          title='selectSub'
             className="border p-2 w-full rounded-md"
-            value={subject}
-            onChange={(e) => setSubject(e.target.value)}
+            value={selectedSubject}
+            onChange={(e) => setSelectedSubject(e.target.value)}
             required
           >
             <option value="">Select a subject</option>
-            {subjects.map((subj) => (
-              <option key={subj} value={subj}>
-                {subj}
+            {subjects.map((subject: any) => (
+              <option key={subject._id} value={subject._id}>
+                {subject.name}
               </option>
             ))}
           </select>

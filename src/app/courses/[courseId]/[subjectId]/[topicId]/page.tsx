@@ -15,17 +15,19 @@ export default async function TopicPage({ params }: { params: { courseId: string
   const tutorials = await fetchTutorialsForTopic(params.topicId);
 
   return (
-    <div className="container mx-auto py-8 text-black">
-      <h1 className="text-3xl font-bold mb-6 text-black">Tutorials in Topic</h1>
-      <ul className="list-disc pl-5">
+    <div className="container mx-auto py-8 min-h-screen bg-white text-black rounded-lg shadow-md">
+      <h1 className="text-3xl font-bold text-blue-700 mb-6">Tutorials in Topic</h1>
+      
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
         {tutorials.map((tutorial: any) => (
-          <li key={tutorial._id} className="mb-4">
+          <div key={tutorial._id} className="bg-white border border-gray-200 rounded-lg shadow-md p-4 hover:shadow-lg transition-shadow">
+            <h2 className="text-xl font-semibold text-black mb-2">{tutorial.title}</h2>
             <Link href={`/courses/${params.courseId}/${params.subjectId}/${params.topicId}/${tutorial._id}`}>
-              <span className="text-blue-500 hover:underline">{tutorial.title}</span>
+              <span className="text-blue-500 hover:underline">View Tutorial</span>
             </Link>
-          </li>
+          </div>
         ))}
-      </ul>
+      </div>
     </div>
   );
 }

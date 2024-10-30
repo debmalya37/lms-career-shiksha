@@ -1,19 +1,21 @@
+// models/notesmodel.ts
 import mongoose, { Schema, Document } from 'mongoose';
 
 export interface INote extends Document {
   title: string;
-  url: string; // The Google Drive URL
-  subject: string;
+  url: string;
+  subject: mongoose.Schema.Types.ObjectId; // Reference to Subject
+  topic: mongoose.Schema.Types.ObjectId; // Reference to Topic
   createdAt: Date;
 }
 
-const NoteSchema: Schema = new Schema({
+const NoteSchema = new Schema({
   title: { type: String, required: true },
-  url: { type: String, required: true }, // Store Google Drive URL
-  subject: { type: String, required: true }, // New field for subject
+  url: { type: String, required: true },
+  subject: { type: Schema.Types.ObjectId, ref: 'Subject', required: true }, // Reference to Subject
+  topic: { type: Schema.Types.ObjectId, ref: 'Topic', required: true }, // Reference to Topic
   createdAt: { type: Date, default: Date.now },
 });
 
 const Note = mongoose.models.Note || mongoose.model<INote>('Note', NoteSchema);
-
 export default Note;

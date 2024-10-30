@@ -1,16 +1,14 @@
+// api/tutorials/route.ts
 import { NextResponse } from 'next/server';
 import connectMongo from '@/lib/db';
 import Tutorial from '@/models/tutorialModel';
 
-// POST method for adding a tutorial video
 export async function POST(request: Request) {
-  const { title, url, description, course, subject, topic } = await request.json();
+  const { title, url, description, subject, topic } = await request.json();
 
   try {
     await connectMongo();
-
-    // Create and save new tutorial
-    const newTutorial = new Tutorial({ title, url, description, course, subject, topic });
+    const newTutorial = new Tutorial({ title, url, description, subject, topic });
     await newTutorial.save();
 
     return NextResponse.json({ message: 'Tutorial video added successfully!' });
@@ -20,21 +18,12 @@ export async function POST(request: Request) {
   }
 }
 
-// GET method for fetching tutorial videos with populated fields
 export async function GET() {
   try {
     await connectMongo();
-
     const tutorials = await Tutorial.find({})
-      .populate({
-        path: 'course',
-        populate: {
-          path: 'subject', // Populates the subjects under each course
-          populate: { path: 'topic' } // Populates the topics under each subject
-        }
-      })
-      .populate('subject')
-      .populate('topic');
+      .populate('subject', 'name') // Populate subject
+      .populate('topic', 'name'); // Populate topic
 
     return NextResponse.json(tutorials);
   } catch (error) {

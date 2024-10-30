@@ -1,32 +1,55 @@
-import { NextResponse } from 'next/server';
+// /api/test-series/route.ts
+import { NextRequest, NextResponse } from 'next/server';
 import connectMongo from '@/lib/db';
-import TestSeries from '@/models/testSeriesModel'; // Ensure you have this model
+import TestSeries from '@/models/testSeriesModel';
+import { User } from '@/models/user';
+import Profile from '@/models/profileModel';
 
-// POST method for adding a test series question
 export async function POST(request: Request) {
-  const { question, correctAnswer, options, subject } = await request.json();
+  const { title, googleFormLink, course, subject } = await request.json();
 
   try {
-    await connectMongo(); // Establish connection to the DB
-
-    const newTestSeries = new TestSeries({ question, correctAnswer, options, subject });
+    await connectMongo();
+    const newTestSeries = new TestSeries({ 
+      title, 
+      googleFormLink, 
+      course, 
+      subject 
+    });
     await newTestSeries.save();
 
-    return NextResponse.json({ message: 'Test series question added successfully!' });
+    return NextResponse.json({ message: 'Test series added successfully!' });
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to add test series question' }, { status: 500 });
+    console.error("POST /api/test-series Error:", error);
+    return NextResponse.json({ error: 'Failed to add test series' }, { status: 500 });
   }
 }
 
-// GET method for fetching test series questions
-export async function GET() {
-  try {
-    await connectMongo(); // Connect to the DB
+export async function GET(request: NextRequest) {
+  const sessionToken = request.cookies.get('sessionToken')?.value; // Get session token from cookies
 
-    const testSeries = await TestSeries.find({}); // Fetch all test series questions
-    console.log(testSeries);
-    return NextResponse.json(testSeries); // Send the fetched data back to the client
+  try {
+    await connectMongo();
+
+    // Find the user by session token
+    const user = await User.findOne({ sessionToken }).populate('course');
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    const profile = await Profile.findOne({ userId: user._id });
+    const userCourse = user.course; // Assuming this is a single course; adjust if it's an array
+
+    const query: any = {};
+    if (userCourse) query.course = userCourse; // Filter by user's course
+
+    const testSeries = await TestSeries.find(query)
+      .populate('course', 'title') // Populate course title
+      .populate('subject', 'name'); // Populate subject name
+
+    return NextResponse.json(testSeries);
   } catch (error) {
+    console.error("GET /api/test-series Error:", error);
     return NextResponse.json({ error: 'Failed to fetch test series' }, { status: 500 });
   }
 }

@@ -1,21 +1,23 @@
+// models/courseModel.ts
 import mongoose, { Schema, Document } from 'mongoose';
-import Topic from './topicModel';
+
+export interface ISubject extends Document {
+  name: string;
+}
+
 export interface ICourse extends Document {
   title: string;
   description: string;
-  url: string; // YouTube embedded link
-  subject: mongoose.Schema.Types.ObjectId; // Reference to Subject
+  subjects: mongoose.Schema.Types.ObjectId[]; // References to associated subjects
   createdAt: Date;
 }
 
-const courseSchema = new Schema({
+const CourseSchema = new Schema({
   title: { type: String, required: true },
   description: { type: String, required: true },
-  url: { type: String, required: true },
-  subject: { type: mongoose.Schema.Types.ObjectId, ref: 'Subject', required: true },
+  subjects: [{ type: Schema.Types.ObjectId, ref: 'Subject' }], // Array of subjects
   createdAt: { type: Date, default: Date.now },
 });
 
-const Course = mongoose.models.Course || mongoose.model<ICourse>('Course', courseSchema);
-
+const Course = mongoose.models.Course || mongoose.model<ICourse>('Course', CourseSchema);
 export default Course;
