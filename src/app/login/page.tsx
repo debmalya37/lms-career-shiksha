@@ -37,7 +37,7 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="container mx-auto p-8 bg-white rounded-lg shadow-md max-w-md mt-8">
+    <div className="container mx-auto p-8 bg-white rounded-lg shadow-md max-w-md mt-8 text-black">
       <h1 className="text-2xl font-bold text-blue-600 mb-4">Sign In</h1>
       {errorMessage && <p className="text-red-600">{errorMessage}</p>}
       <form onSubmit={handleSubmit}>
@@ -46,7 +46,7 @@ const LoginPage = () => {
           <input
             title='email'
             type="email"
-            className="border p-2 w-full rounded-md"
+            className="border p-2 w-full rounded-md text-black"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
@@ -57,7 +57,7 @@ const LoginPage = () => {
           <input
             title='password'
             type="password"
-            className="border p-2 w-full rounded-md"
+            className="border p-2 w-full rounded-md text-black"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required

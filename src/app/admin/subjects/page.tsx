@@ -14,7 +14,7 @@ const ManageSubjects = () => {
     // Fetch existing subjects to populate the dropdown
     async function fetchSubjects() {
       try {
-        const res = await axios.get('/api/subjects');
+        const res = await axios.get(`https://www.civilacademyapp.com/api/subjects`);
         setTopics(res.data);
       } catch (error) {
         console.error('Error fetching subjects:', error);
@@ -39,7 +39,7 @@ const ManageSubjects = () => {
   const handleSubjectSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await axios.post('/api/subjects', { name: subjectName, courses: selectedCourses });
+      await axios.post(`https://www.civilacademyapp.com/api/subjects`, { name: subjectName, courses: selectedCourses });
       setSubjectName('');
       setSelectedCourses([]);
       alert('Subject added successfully!');

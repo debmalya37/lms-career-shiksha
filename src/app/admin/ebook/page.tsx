@@ -12,7 +12,7 @@ const ManageEBooks = () => {
   useEffect(() => {
     const fetchSubjects = async () => {
       try {
-        const response = await axios.get('/api/subjects');
+        const response = await axios.get(`https://www.civilacademyapp.com/api/subjects`);
         setSubjects(response.data); // Populate subjects from response
       } catch (error) {
         console.error('Error fetching subjects:', error);
@@ -26,7 +26,7 @@ const ManageEBooks = () => {
     const ebookData = { title, url, subject: selectedSubject }; // Payload with subject ID
 
     try {
-      await axios.post('/api/ebook', ebookData);
+      await axios.post(`https://www.civilacademyapp.com/api/ebook`, ebookData);
       setTitle('');
       setUrl('');
       setSelectedSubject('');

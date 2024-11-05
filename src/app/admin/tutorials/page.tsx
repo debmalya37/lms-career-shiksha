@@ -3,15 +3,33 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 
+// Define the Course type
+interface Course {
+  _id: string;
+  title: string;
+}
+
+// Define the Subject type
+interface Subject {
+  _id: string;
+  name: string;
+}
+
+// Define the Topic type
+interface Topic {
+  _id: string;
+  name: string;
+}
+
 const ManageTutorials = () => {
   const [title, setTitle] = useState('');
   const [url, setUrl] = useState('');
   const [description, setDescription] = useState('');
-  const [courses, setCourses] = useState([]);
+  const [courses, setCourses] = useState<Course[]>([]); // Explicitly set type
   const [selectedCourse, setSelectedCourse] = useState('');
-  const [subjects, setSubjects] = useState([]);
+  const [subjects, setSubjects] = useState<Subject[]>([]); // Explicitly set type
   const [selectedSubject, setSelectedSubject] = useState('');
-  const [topics, setTopics] = useState([]);
+  const [topics, setTopics] = useState<Topic[]>([]); // Explicitly set type
   const [selectedTopic, setSelectedTopic] = useState('');
   const [newTopicName, setNewTopicName] = useState('');
   const [newSubjectName, setNewSubjectName] = useState('');
@@ -34,7 +52,7 @@ const ManageTutorials = () => {
     if (selectedCourse) {
       const fetchSubjects = async () => {
         try {
-          const response = await axios.get(`/api/subjects?course=${selectedCourse}`);
+          const response = await axios.get(`https://www.civilacademyapp.com/api/subjects?course=${selectedCourse}`);
           setSubjects(response.data);
         } catch (error) {
           console.error('Error fetching subjects:', error);
@@ -88,7 +106,7 @@ const ManageTutorials = () => {
       return;
     }
     try {
-      const response = await axios.post('/api/subjects', {
+      const response = await axios.post(`https://www.civilacademyapp.com/api/subjects`, {
         name: newSubjectName,
         course: selectedCourse,
       });

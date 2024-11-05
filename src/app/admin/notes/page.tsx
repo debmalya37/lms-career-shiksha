@@ -14,7 +14,7 @@ const ManageNotes = () => {
   useEffect(() => {
     const fetchSubjects = async () => {
       try {
-        const response = await axios.get('/api/subjects');
+        const response = await axios.get(`https://www.civilacademyapp.com/api/subjects`);
         setSubjects(response.data);
       } catch (error) {
         console.error('Error fetching subjects:', error);
@@ -28,7 +28,7 @@ const ManageNotes = () => {
     if (selectedSubject) {
       const fetchTopics = async () => {
         try {
-          const response = await axios.get(`/api/topics?subject=${selectedSubject}`);
+          const response = await axios.get(`https://www.civilacademyapp.com/api/topics?subject=${selectedSubject}`);
           setTopics(response.data);
         } catch (error) {
           console.error('Error fetching topics:', error);

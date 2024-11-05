@@ -1,16 +1,17 @@
 // app/course/[courseId]/[subjectId]/[topicId]/[tutorialId]/page.tsx
 import connectMongo from '@/lib/db';
-import Tutorial, { ITutorial } from '@/models/tutorialModel'; // Make sure to import ITutorial
+import Tutorial, { ITutorial } from '@/models/tutorialModel'; // Ensure ITutorial is imported
 
 export const dynamic = 'force-dynamic';
 
-async function fetchTutorialDetails(tutorialId: string): Promise<ITutorial | null> { // Return type defined
+// Function to fetch tutorial details by ID
+async function fetchTutorialDetails(tutorialId: string): Promise<ITutorial | null> {
   await connectMongo();
   const tutorial = await Tutorial.findById(tutorialId)
     .select('title description url')
     .lean<ITutorial | null>(); // Specify the expected type
 
-  return tutorial || null; // Ensure null is returned when not found
+  return tutorial || null; // Return null if tutorial is not found
 }
 
 export default async function TutorialPage({ params }: { params: { tutorialId: string } }) {

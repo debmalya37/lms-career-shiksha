@@ -3,9 +3,21 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 
+// Define the Topic type
+interface Topic {
+  _id: string; // Assuming the topic has an ID
+  name: string;
+}
+
+// Define the Subject type
+interface Subject {
+  _id: string; // Assuming the subject has an ID
+  name: string;
+}
+
 const ManageTopics = () => {
-  const [subjects, setSubjects] = useState([]);
-  const [topics, setTopics] = useState([]);
+  const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [topics, setTopics] = useState<Topic[]>([]);
   const [selectedSubject, setSelectedSubject] = useState('');
   const [topicName, setTopicName] = useState('');
 
@@ -13,7 +25,7 @@ const ManageTopics = () => {
   useEffect(() => {
     const fetchSubjects = async () => {
       try {
-        const res = await axios.get('/api/subjects');
+        const res = await axios.get(`https://www.civilacademyapp.com/api/subjects`);
         setSubjects(res.data);
       } catch (error) {
         console.error('Error fetching subjects:', error);
@@ -27,7 +39,7 @@ const ManageTopics = () => {
     const fetchTopics = async () => {
       if (selectedSubject) {
         try {
-          const res = await axios.get(`/api/topics?subject=${selectedSubject}`);
+          const res = await axios.get(`https://www.civilacademyapp.com/api/topics?subject=${selectedSubject}`);
           setTopics(res.data);
         } catch (error) {
           console.error('Error fetching topics:', error);
@@ -42,10 +54,12 @@ const ManageTopics = () => {
     e.preventDefault();
 
     try {
-      await axios.post('/api/topics', { name: topicName, subject: selectedSubject });
+      const newTopicData = { name: topicName, subject: selectedSubject };
+      const response = await axios.post('/api/topics', newTopicData);
+      const newTopic = response.data; // Assuming the response contains the new topic with an _id
       setTopicName(''); // Clear the input
       alert('Topic added successfully!');
-      setTopics(prevTopics => [...prevTopics, { name: topicName }]); // Update UI with new topic
+      setTopics(prevTopics => [...prevTopics, newTopic]); // Update UI with new topic
     } catch (error) {
       console.error('Error adding topic:', error);
       alert('Failed to add topic.');
@@ -67,7 +81,7 @@ const ManageTopics = () => {
           required
         >
           <option value="">Choose a subject</option>
-          {subjects.map((subject: any) => (
+          {subjects.map((subject) => (
             <option key={subject._id} value={subject._id}>
               {subject.name}
             </option>
@@ -78,9 +92,9 @@ const ManageTopics = () => {
       {/* Topic List */}
       {selectedSubject && topics.length > 0 && (
         <div className="mb-8">
-          <h2 className="text-lg font-semibold mb-2">Topics under {subjects.find((s: any) => s._id === selectedSubject)?.name}</h2>
+          <h2 className="text-lg font-semibold mb-2">Topics under {subjects.find((s) => s._id === selectedSubject)?.name}</h2>
           <ul className="list-disc pl-5">
-            {topics.map((topic: any) => (
+            {topics.map((topic) => (
               <li key={topic._id}>{topic.name}</li>
             ))}
           </ul>

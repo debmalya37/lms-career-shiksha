@@ -5,6 +5,7 @@ import Link from 'next/link';
 
 export const dynamic = 'force-dynamic';
 
+// Function to fetch tutorials for a given topic
 async function fetchTutorialsForTopic(topicId: string) {
   await connectMongo();
   const tutorials = await Tutorial.find({ topic: topicId }).select('title').lean();
@@ -30,4 +31,36 @@ export default async function TopicPage({ params }: { params: { courseId: string
       </div>
     </div>
   );
+}
+
+// Function for fetching topics by courseId and subjectId
+async function fetchTopics(courseId: string, subjectId: string) {
+  await connectMongo();
+  const topics = await Tutorial.find({ course: courseId, subject: subjectId }).distinct('topic').lean();
+  return topics;
+}
+
+// Static params generation function
+export async function generateStaticParams() {
+  await connectMongo(); // Ensure connection to MongoDB
+
+  const courses = await Tutorial.find({}).distinct('course').lean(); // Adjust fetching courses as necessary
+  const params: { courseId: any; subjectId: any; topicId: any; }[] = [];
+
+  for (const course of courses) {
+    const subjects = await Tutorial.find({ course }).distinct('subject').lean(); // Fetch distinct subjects for each course
+
+    for (const subject of subjects) {
+      const topics = await fetchTopics(course, subject); // Pass both courseId and subjectId
+
+      topics.forEach(topic => {
+        params.push({
+          courseId: course,
+          subjectId: subject,
+          topicId: topic, // Assuming topic is an object with an _id property, otherwise adjust accordingly
+        });
+      });
+    }
+  }
+  return params;
 }
