@@ -19,7 +19,9 @@ export default function Contact() {
       <div className="container mx-auto max-w-md">
         <h1 className="text-3xl font-bold text-center text-blue-600 mb-6">Contact Us</h1>
         <p className="text-gray-700 text-center mb-4">If you have any questions, feel free to reach out!</p>
-        <p className="text-center text-gray-600 mb-4">Phone: <span className="text-blue-600">+919258568451</span></p>
+        {/* <p className="text-center text-gray-600 mb-4">Phone: <span className="text-blue-600">+919258568451</span></p> */}
+<div className="text-grey-500 m-3 bg-blue-400 p-6" >Meerut Centre -  Civil Academy IAS/PCS 2nd Flr&#44;Star Plaza&#44;Bachcha Park&#44;Meerut    Mob- 9927827825</div>
+<div className="text-grey-500 m-3 bg-blue-400 p-6" >Dehradun Centre - Civil Academy IAS/PCS   GMS  road&#44;above Kotak Mahindra Bank&#44;near Ballupur&#44;Dehradun  Mob - 6398761583</div>
 
         <form onSubmit={handleSubmit} className="bg-green-100 p-6 rounded-lg shadow-md">
           <div className="mb-4">
@@ -75,6 +77,8 @@ export default function Contact() {
         </form>
 
         <p className="text-center text-gray-500 mt-4">We look forward to hearing from you!</p>
+
+
       </div>
     </main>
   );
