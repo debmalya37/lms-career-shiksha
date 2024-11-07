@@ -49,7 +49,7 @@ export default function LiveClassesPage() {
   }, []); // Empty dependency array to run once on mount
 
   return (
-    <div className="container mx-auto py-8">
+    <div className="container mx-auto py-8 bg-yellow-100 pr-5 pl-5 h-[100vh]">
       <h1 className="text-3xl font-bold text-gray-800 mb-6">Live Classes</h1>
       {loading && <p>Loading live classes...</p>}
       {error && <p className="text-red-500">{error}</p>}

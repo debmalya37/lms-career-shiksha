@@ -35,7 +35,7 @@ export default function TestPage() {
   if (error) return <p className="text-red-500">{error}</p>;
 
   return (
-    <div className="container mx-auto py-8">
+    <div className="container mx-auto py-8 bg-yellow-100 pr-5 pl-5 h-[100vh]">
       <h1 className="text-3xl font-bold text-gray-800 mb-6">Test Series</h1>
       {testSeries.map((test, index) => (
         <div key={index} className="mb-6">

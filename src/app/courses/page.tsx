@@ -37,13 +37,13 @@ export default async function GlobalCoursesPage() {
   const courses = userCourseId ? await fetchCoursesWithSubjectsAndTopics(userCourseId) : [];
 
   return (
-    <div className="container mx-auto py-8">
-      <h1 className="text-3xl font-bold text-white mb-6">My Course</h1>
+    <div className="container mx-auto py-8 h-[100vh] pr-5 pl-5 bg-yellow-100 text-black">
+      <h1 className="text-3xl font-bold text-black mb-6">My Course</h1>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {courses.length > 0 ? (
           courses.map((course: any) => (
-            <div key={course._id} className="bg-white rounded-lg shadow-md p-4">
+            <div key={course._id} className="bg-green-200 rounded-lg shadow-md p-4">
               <h3 className="text-xl font-semibold mb-2 text-black">{course.title}</h3>
               <p className="text-gray-700 mb-2">{course.description}</p>
               <p className="text-gray-500 mb-2">Created on: {new Date(course.createdAt).toLocaleDateString()}</p>

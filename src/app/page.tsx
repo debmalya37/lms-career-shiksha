@@ -76,12 +76,12 @@ export default function Home() {
     <main className='bg-yellow-100'>
   <div className="bg-yellow-100 min-h-screen relative">
     <div className="container mx-auto flex justify-between items-center">
-      <input
+      {/* <input
         type="text"
         placeholder="Search"
         className="block w-full max-w-lg mt-6 mx-auto bg-green-100 p-2 rounded-md"
-      />
-      <div className="flex items-center space-x-4 mt-6">
+      /> */}
+      <div className="flex items-center space-x-4 mt-6 relative left-[93%]">
         <BellIcon
           className="h-8 w-8 text-blue-600 cursor-pointer"
           onClick={() => setIsNotificationOpen(!isNotificationOpen)}
@@ -106,7 +106,7 @@ export default function Home() {
     <div className="container mx-auto mt-6">
       <div className="mt-6">
         {userCourse ? (
-          <h2 className="text-2xl font-bold text-black">
+          <h2 className="text-2xl font-bold text-green-800 ml-5">
             Your Subscribed Course: 
             <Link href={`/courses/${userCourse._id}`}>
               <span className="text-blue-600 underline ml-2">{userCourse.title}</span>
@@ -118,10 +118,10 @@ export default function Home() {
       </div>
 
       <div className="mt-10">
-      <h2 className="text-2xl font-bold text-black">Courses You Haven&apos;t Subscribed To:</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-4">
+      <h2 className="text-2xl font-bold text-green-800 ml-5">Courses You Haven&apos;t Subscribed To:</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-4 ml-4 mr-3">
           {unsubscribedCourses.map((course: Course) => (
-            <div key={course._id} className="border p-4 rounded-lg bg-white shadow-md">
+            <div key={course._id} className="border p-4 rounded-lg bg-green-200 shadow-md">
               <h3 className="text-lg font-semibold">{course.title}</h3>
               <p className="text-gray-600">{course.description}</p>
               <p className="mt-2 text-sm text-gray-500">Subject: {course.subjects.map(subject => subject.name).join(', ')}</p>

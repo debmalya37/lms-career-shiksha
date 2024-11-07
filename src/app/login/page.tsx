@@ -25,7 +25,7 @@ const LoginPage = () => {
         const data = await response.json();
         // Store session token in localStorage or cookies
         localStorage.setItem('sessionToken', data.sessionToken);
-        router.push('/profile'); // Redirect to profile page
+        router.push('/'); // Redirect to profile page
       } else {
         const errorData = await response.json();
         setErrorMessage(errorData.error || 'Failed to log in');
@@ -37,7 +37,7 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="container mx-auto p-8 bg-white rounded-lg shadow-md max-w-md mt-8 text-black">
+    <div className="container mx-auto p-8 bg-yellow-100 rounded-lg shadow-md max-w-md mt-8 text-black">
       <h1 className="text-2xl font-bold text-blue-600 mb-4">Sign In</h1>
       {errorMessage && <p className="text-red-600">{errorMessage}</p>}
       <form onSubmit={handleSubmit}>

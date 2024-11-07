@@ -1,12 +1,52 @@
+"use client";
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import axios from 'axios';
+import { useRouter } from 'next/navigation';
 
 const AdminPanel = () => {
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
+
+  useEffect(() => {
+    const checkAdminStatus = async () => {
+      try {
+        // Fetch profile data from the API
+        const profileRes = await axios.get(`${process.env.NEXT_PUBLIC_BASE_URL}/api/profile`);
+        const profileData = profileRes.data;
+
+        console.log("Profile Data:", profileData); // Log the profile response
+
+        // Define allowed emails
+        const allowedEmails = ['debmalyasen37@gmail.com', 'civilacademy.in@gmail.com'];
+
+        // Check if the profile email is in the allowed list
+        if (profileData?.email && allowedEmails.includes(profileData.email)) {
+          setIsAdmin(true);
+        }
+      } catch (error) {
+        console.error('Error fetching profile data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkAdminStatus();
+  }, []);
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  if (!isAdmin) {
+    return <div className="text-center text-red-600 mt-10">You are not an admin</div>;
+  }
+
   return (
     <div className="min-h-screen bg-gray-200 p-8">
       <h1 className="text-3xl font-bold text-center mb-8 text-gray-800">Admin Panel</h1>
-
       <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-        {/* Existing Sections */}
         <Link href="/admin/live-classes" className="bg-blue-600 text-white p-6 rounded-lg shadow-md text-center">
           <h2 className="text-xl font-semibold">Manage Live Classes</h2>
         </Link>
