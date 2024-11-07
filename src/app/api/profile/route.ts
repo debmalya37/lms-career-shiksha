@@ -1,8 +1,8 @@
-// api/profile
 import { NextResponse, NextRequest } from 'next/server';
 import connectMongo from '@/lib/db';
 import { User } from '@/models/user';
 import Profile from '@/models/profileModel';
+import Course from '@/models/courseModel'; // Ensure this model is imported
 
 export async function GET(request: NextRequest) {
   const sessionToken = request.cookies.get('sessionToken')?.value;
@@ -12,19 +12,27 @@ export async function GET(request: NextRequest) {
     await connectMongo();
     
     // Find the user by session token
-    const user = await User.findOne({ sessionToken }).populate('course');
+    const user = await User.findOne({ sessionToken });
     console.log('User fetched:', user); // Debugging
 
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
+    // Fetch course details separately
+    let courseDetails = null;
+    if (user.course) {
+      courseDetails = await Course.findById(user.course).lean(); // .lean() for better performance
+      console.log('Course details fetched:', courseDetails); // Debugging
+    }
+
     const profile = await Profile.findOne({ userId: user._id });
-    console.log("Fetching profile data: ", profile); // Debugging
+    console.log('Fetching profile data:', profile); // Debugging
+
     return NextResponse.json({
       email: user.email,
       name: user.name,
-      course: user.course,
+      course: courseDetails, // Include course data
       subscription: user.subscription,
       profile,
     });
@@ -33,6 +41,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Failed to fetch profile' }, { status: 500 });
   }
 }
+
 
 
 export async function POST(request: NextRequest) {

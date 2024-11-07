@@ -1,21 +1,17 @@
 // models/courseModel.ts
 import mongoose, { Schema, Document } from 'mongoose';
 
-export interface ISubject extends Document {
-  name: string;
-}
-
 export interface ICourse extends Document {
   title: string;
   description: string;
-  subjects: mongoose.Schema.Types.ObjectId[]; // References to associated subjects
+  subjects: mongoose.Schema.Types.ObjectId[]; // Array of ObjectIds referencing Subject documents
   createdAt: Date;
 }
 
 const CourseSchema = new Schema({
   title: { type: String, required: true },
   description: { type: String, required: true },
-  subjects: [{ type: Schema.Types.ObjectId, ref: 'Subject' }], // Array of subjects
+  subjects: [{ type: Schema.Types.ObjectId, ref: 'Subject' }], // Reference Subject IDs here
   createdAt: { type: Date, default: Date.now },
 });
 

@@ -31,7 +31,7 @@ export default function Home() {
     async function fetchData() {
       try {
         // Fetch user profile
-        const profileRes = await axios.get(`https://www.civilacademyapp.com/api/profile`);
+        const profileRes = await axios.get(`${process.env.NEXT_PUBLIC_BASE_URL}/api/profile`);
         console.log("Profile Data:", profileRes.data); // Log the profile response
 
         if (profileRes.data && profileRes.data.course) {
@@ -40,21 +40,21 @@ export default function Home() {
         }
 
         // Fetch all courses
-        const allCoursesRes = await axios.get(`https://www.civilacademyapp.com/api/course`);
+        const allCoursesRes = await axios.get(`${process.env.NEXT_PUBLIC_BASE_URL}/api/course`);
         if (allCoursesRes.data) {
           setAllCourses(allCoursesRes.data);
         }
 
         // Fetch the latest tutorial
-        const tutorialRes = await axios.get(`https://www.civilacademyapp.com/api/latestTutorial`);
+        const tutorialRes = await axios.get(`${process.env.NEXT_PUBLIC_BASE_URL}/api/latestTutorial`);
         if (tutorialRes.data) setLatestTutorial(tutorialRes.data);
         
         // Fetch the latest live class
-        const liveClassRes = await axios.get(`https://www.civilacademyapp.com/api/latest-live`);
+        const liveClassRes = await axios.get(`${process.env.NEXT_PUBLIC_BASE_URL}/api/latest-live`);
         if (liveClassRes.data) setLatestLiveClass(liveClassRes.data);
 
         // Fetch the latest course
-        const courseRes = await axios.get(`https://www.civilacademyapp.com/api/latestCourse`);
+        const courseRes = await axios.get(`${process.env.NEXT_PUBLIC_BASE_URL}/api/latestCourse`);
         if (courseRes.data) setLatestCourse(courseRes.data);
 
       } catch (error) {
@@ -126,7 +126,7 @@ export default function Home() {
               <p className="text-gray-600">{course.description}</p>
               <p className="mt-2 text-sm text-gray-500">Subject: {course.subjects.map(subject => subject.name).join(', ')}</p>
               <p className="text-sm text-gray-500">Created At: {new Date(course.createdAt).toLocaleDateString()}</p>
-              <Link href={`/courses/${course._id}`}>
+              <Link href={`/contact`}>
                 <button className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-500">
                   Contact Us
                 </button>
