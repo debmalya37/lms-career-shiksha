@@ -38,7 +38,7 @@ export async function GET() {
         email: user.email,
         password: user.password, // Avoid sending the password in production
         subscription: user.subscription, // Ensure this is a number
-        course: user.course ? user.course.title : null, // Get the course name
+        course: user.course, // Get the course name
       }));
   
       return NextResponse.json(transformedUsers);
