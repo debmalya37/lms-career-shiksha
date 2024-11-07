@@ -31,7 +31,7 @@ export default function Home() {
     async function fetchData() {
       try {
         // Fetch user profile
-        const profileRes = await axios.get(`${process.env.NEXT_PUBLIC_BASE_URL}/api/profile`);
+        const profileRes = await axios.get(`https://www.civilacademyapp.com/api/profile`);
         console.log("Profile Data:", profileRes.data); // Log the profile response
 
         if (profileRes.data && profileRes.data.course) {
@@ -40,21 +40,21 @@ export default function Home() {
         }
 
         // Fetch all courses
-        const allCoursesRes = await axios.get(`${process.env.NEXT_PUBLIC_BASE_URL}/api/course`);
+        const allCoursesRes = await axios.get(`https://www.civilacademyapp.com/api/course`);
         if (allCoursesRes.data) {
           setAllCourses(allCoursesRes.data);
         }
 
         // Fetch the latest tutorial
-        const tutorialRes = await axios.get(`${process.env.NEXT_PUBLIC_BASE_URL}/api/latestTutorial`);
+        const tutorialRes = await axios.get(`https://www.civilacademyapp.com/api/latestTutorial`);
         if (tutorialRes.data) setLatestTutorial(tutorialRes.data);
         
         // Fetch the latest live class
-        const liveClassRes = await axios.get(`${process.env.NEXT_PUBLIC_BASE_URL}/api/latest-live`);
+        const liveClassRes = await axios.get(`https://www.civilacademyapp.com/api/latest-live`);
         if (liveClassRes.data) setLatestLiveClass(liveClassRes.data);
 
         // Fetch the latest course
-        const courseRes = await axios.get(`${process.env.NEXT_PUBLIC_BASE_URL}/api/latestCourse`);
+        const courseRes = await axios.get(`https://www.civilacademyapp.com/api/latestCourse`);
         if (courseRes.data) setLatestCourse(courseRes.data);
 
       } catch (error) {
