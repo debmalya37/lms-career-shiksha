@@ -9,7 +9,7 @@ const Navbar: React.FC = () => {
   return (
     <header className="bg-blue-600 text-white shadow-md">
       <nav className="container mx-auto flex justify-between items-center p-4">
-        <h1 className="text-2xl font-semibold">Civil Academy Learning Portal</h1>
+        <h1 className="text-xl font-semibold">Civil Academy Learning Portal</h1>
         <div className="hidden md:flex space-x-4">
           <Link href="/" className="hover:underline">Home</Link>
           <Link href="/tutorials" className="hover:underline">Tutorials</Link>

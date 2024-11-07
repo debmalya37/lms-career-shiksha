@@ -74,18 +74,18 @@ export default function Home() {
 
   return (
     <main className="bg-yellow-100 min-h-screen">
-  <div className="container mx-auto relative p-4 sm:p-8">
-    <div className="flex justify-between items-center">
-      <div className="flex items-center space-x-4 mt-6 sm:relative sm:left-auto left-full transform -translate-x-full sm:translate-x-0 relative justify-center">
-        <BellIcon
-          className="h-8 w-8 text-blue-600 cursor-pointer"
-          onClick={() => setIsNotificationOpen(!isNotificationOpen)}
-        />
-        <Link href="/profile">
-          <UserIcon className="h-8 w-8 text-blue-600 cursor-pointer" />
-        </Link>
-      </div>
-    </div>
+  <div className="container relative p-2 sm:p-4 ml-0 mr-0 pl-0 pr-0">
+  <div className="relative w-full flex justify-end mt-6">
+  <div className="flex items-center space-x-4 absolute right-0">
+    <BellIcon
+      className="h-8 w-8 text-blue-600 cursor-pointer"
+      onClick={() => setIsNotificationOpen(!isNotificationOpen)}
+    />
+    <Link href="/profile">
+      <UserIcon className="h-8 w-8 text-blue-600 cursor-pointer" />
+    </Link>
+  </div>
+</div>
 
     {isNotificationOpen && (
       <NotificationPopup
@@ -108,7 +108,7 @@ export default function Home() {
             </Link>
           </h2>
         ) : (
-          <p className="text-gray-600 text-sm sm:text-base">You have no active subscriptions.</p>
+          <p className="text-gray-600 text-sm sm:text-base ml-2">You have no active subscriptions.</p>
         )}
       </div>
 

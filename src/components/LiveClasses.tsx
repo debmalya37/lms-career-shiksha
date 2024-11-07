@@ -7,7 +7,7 @@ interface LiveClassesProps {
 
 export default function LiveClasses({ liveClass }: LiveClassesProps) {
   return (
-    <div className="mt-8 p-4">
+    <div className="mt-8 p-4 ml-0">
       <h2 className="text-green-700 text-2xl font-bold mb-4 pl-5 pr-5">Live Classes</h2>
       <div className="bg-green-200 w-full h-64 flex justify-center items-center rounded-lg text-black">
         {liveClass ? (
