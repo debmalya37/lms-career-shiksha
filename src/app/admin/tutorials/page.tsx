@@ -52,7 +52,7 @@ const ManageTutorials = () => {
     if (selectedCourse) {
       const fetchSubjects = async () => {
         try {
-          const response = await axios.get(`https://www.civilacademyapp.com/api/subjects?course=${selectedCourse}`);
+          const response = await axios.get(`https://civilacademyapp.com/api/subjects?course=${selectedCourse}`);
           setSubjects(response.data);
         } catch (error) {
           console.error('Error fetching subjects:', error);
@@ -106,7 +106,7 @@ const ManageTutorials = () => {
       return;
     }
     try {
-      const response = await axios.post(`https://www.civilacademyapp.com/api/subjects`, {
+      const response = await axios.post(`https://civilacademyapp.com/api/subjects`, {
         name: newSubjectName,
         course: selectedCourse,
       });

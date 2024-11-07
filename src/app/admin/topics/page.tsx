@@ -25,7 +25,7 @@ const ManageTopics = () => {
   useEffect(() => {
     const fetchSubjects = async () => {
       try {
-        const res = await axios.get(`https://www.civilacademyapp.com/api/subjects`);
+        const res = await axios.get(`https://civilacademyapp.com/api/subjects`);
         setSubjects(res.data);
       } catch (error) {
         console.error('Error fetching subjects:', error);
@@ -39,7 +39,7 @@ const ManageTopics = () => {
     const fetchTopics = async () => {
       if (selectedSubject) {
         try {
-          const res = await axios.get(`https://www.civilacademyapp.com/api/topics?subject=${selectedSubject}`);
+          const res = await axios.get(`https://civilacademyapp.com/api/topics?subject=${selectedSubject}`);
           setTopics(res.data);
         } catch (error) {
           console.error('Error fetching topics:', error);

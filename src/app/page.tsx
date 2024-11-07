@@ -31,7 +31,7 @@ export default function Home() {
     async function fetchData() {
       try {
         // Fetch user profile
-        const profileRes = await axios.get(`https://www.civilacademyapp.com/api/profile`);
+        const profileRes = await axios.get(`https://civilacademyapp.com/api/profile`);
         console.log("Profile Data:", profileRes.data); // Log the profile response
 
         if (profileRes.data && profileRes.data.course) {
@@ -40,21 +40,21 @@ export default function Home() {
         }
 
         // Fetch all courses
-        const allCoursesRes = await axios.get(`https://www.civilacademyapp.com/api/course`);
+        const allCoursesRes = await axios.get(`https://civilacademyapp.com/api/course`);
         if (allCoursesRes.data) {
           setAllCourses(allCoursesRes.data);
         }
 
         // Fetch the latest tutorial
-        const tutorialRes = await axios.get(`https://www.civilacademyapp.com/api/latestTutorial`);
+        const tutorialRes = await axios.get(`https://civilacademyapp.com/api/latestTutorial`);
         if (tutorialRes.data) setLatestTutorial(tutorialRes.data);
         
         // Fetch the latest live class
-        const liveClassRes = await axios.get(`https://www.civilacademyapp.com/api/latest-live`);
+        const liveClassRes = await axios.get(`https://civilacademyapp.com/api/latest-live`);
         if (liveClassRes.data) setLatestLiveClass(liveClassRes.data);
 
         // Fetch the latest course
-        const courseRes = await axios.get(`https://www.civilacademyapp.com/api/latestCourse`);
+        const courseRes = await axios.get(`https://civilacademyapp.com/api/latestCourse`);
         if (courseRes.data) setLatestCourse(courseRes.data);
 
       } catch (error) {
@@ -73,15 +73,10 @@ export default function Home() {
   }, [allCourses, userCourse]);
 
   return (
-    <main className='bg-yellow-100'>
-  <div className="bg-yellow-100 min-h-screen relative">
-    <div className="container mx-auto flex justify-between items-center">
-      {/* <input
-        type="text"
-        placeholder="Search"
-        className="block w-full max-w-lg mt-6 mx-auto bg-green-100 p-2 rounded-md"
-      /> */}
-      <div className="flex items-center space-x-4 mt-6 relative left-[93%]">
+    <main className="bg-yellow-100 min-h-screen">
+  <div className="container mx-auto relative p-4 sm:p-8">
+    <div className="flex justify-between items-center">
+      <div className="flex items-center space-x-4 mt-6 sm:relative sm:left-auto left-full transform -translate-x-full sm:translate-x-0 relative justify-center">
         <BellIcon
           className="h-8 w-8 text-blue-600 cursor-pointer"
           onClick={() => setIsNotificationOpen(!isNotificationOpen)}
@@ -91,7 +86,7 @@ export default function Home() {
         </Link>
       </div>
     </div>
-    
+
     {isNotificationOpen && (
       <NotificationPopup
         close={() => setIsNotificationOpen(false)}
@@ -102,32 +97,32 @@ export default function Home() {
     )}
 
     <LiveClasses liveClass={latestLiveClass} />
-    
+
     <div className="container mx-auto mt-6">
       <div className="mt-6">
         {userCourse ? (
-          <h2 className="text-2xl font-bold text-green-800 ml-5">
+          <h2 className="text-lg sm:text-2xl font-bold text-green-800 ml-2 sm:ml-5">
             Your Subscribed Course: 
             <Link href={`/courses/${userCourse._id}`}>
-              <span className="text-blue-600 underline ml-2">{userCourse.title}</span>
+              <span className="text-blue-600 underline ml-1 sm:ml-2">{userCourse.title}</span>
             </Link>
           </h2>
         ) : (
-          <p className="text-gray-600">You have no active subscriptions.</p>
+          <p className="text-gray-600 text-sm sm:text-base">You have no active subscriptions.</p>
         )}
       </div>
 
-      <div className="mt-10">
-      <h2 className="text-2xl font-bold text-green-800 ml-5">Courses You Haven&apos;t Subscribed To:</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-4 ml-4 mr-3">
+      <div className="mt-6">
+        <h2 className="text-lg sm:text-2xl font-bold text-green-800 ml-2 sm:ml-5">Courses You Haven't Subscribed To:</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4 mx-2 sm:mx-0">
           {unsubscribedCourses.map((course: Course) => (
             <div key={course._id} className="border p-4 rounded-lg bg-green-200 shadow-md">
-              <h3 className="text-lg font-semibold">{course.title}</h3>
-              <p className="text-gray-600">{course.description}</p>
-              <p className="mt-2 text-sm text-gray-500">Subject: {course.subjects.map(subject => subject.name).join(', ')}</p>
-              <p className="text-sm text-gray-500">Created At: {new Date(course.createdAt).toLocaleDateString()}</p>
+              <h3 className="text-base sm:text-lg font-semibold">{course.title}</h3>
+              <p className="text-gray-600 text-sm">{course.description}</p>
+              <p className="mt-2 text-xs sm:text-sm text-gray-500">Subject: {course.subjects.map(subject => subject.name).join(', ')}</p>
+              <p className="text-xs sm:text-sm text-gray-500">Created At: {new Date(course.createdAt).toLocaleDateString()}</p>
               <Link href={`/contact`}>
-                <button className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-500">
+                <button className="mt-4 w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-500">
                   Contact Us
                 </button>
               </Link>

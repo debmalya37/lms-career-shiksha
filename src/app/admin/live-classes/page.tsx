@@ -9,7 +9,7 @@ const ManageLiveClasses = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await axios.post(`https://www.civilacademyapp.com/api/live-classes`, { title, url });
+      await axios.post(`https://civilacademyapp.com/api/live-classes`, { title, url });
       setTitle('');
       setUrl('');
       alert('Live stream added successfully!');

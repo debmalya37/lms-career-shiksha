@@ -5,7 +5,7 @@ import { cookies } from 'next/headers';
 
 async function fetchUserCourse() {
   // Fetch the user's profile to get the assigned course
-  const res = await fetch(`https://www.civilacademyapp.com/api/profile`, {
+  const res = await fetch(`https://civilacademyapp.com/api/profile`, {
     credentials: 'include',
     headers: {
       cookie: `sessionToken=${cookies().get('sessionToken')?.value || ''}`,

@@ -13,7 +13,7 @@ const AdminPanel = () => {
     const checkAdminStatus = async () => {
       try {
         // Fetch profile data from the API
-        const profileRes = await axios.get(`https://www.civilacademyapp.com/api/profile`);
+        const profileRes = await axios.get(`https://civilacademyapp.com/api/profile`);
         const profileData = profileRes.data;
 
         console.log("Profile Data:", profileData); // Log the profile response

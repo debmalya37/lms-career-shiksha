@@ -7,9 +7,9 @@ import axios from 'axios';
 async function fetchData(courseId: string, subjectId: string) {
   try {
     const [topicsResponse, ebooksResponse, testSeriesResponse] = await Promise.all([
-      axios.get(`https://www.civilacademyapp.com/api/topics?subject=${subjectId}`).catch(() => ({ data: [] })),
-      axios.get(`https://www.civilacademyapp.com/api/ebook?subject=${subjectId}`).catch(() => ({ data: [] })),
-      axios.get(`https://www.civilacademyapp.com/api/test-series?course=${courseId}&subject=${subjectId}`).catch(() => ({ data: [] }))
+      axios.get(`https://civilacademyapp.com/api/topics?subject=${subjectId}`).catch(() => ({ data: [] })),
+      axios.get(`https://civilacademyapp.com/api/ebook?subject=${subjectId}`).catch(() => ({ data: [] })),
+      axios.get(`https://civilacademyapp.com/api/test-series?course=${courseId}&subject=${subjectId}`).catch(() => ({ data: [] }))
     ]);
 
     return {
@@ -94,7 +94,7 @@ export default async function SubjectPage({ params }: { params: { courseId: stri
 
 async function fetchCourses() {
   try {
-    const response = await axios.get('https://www.civilacademyapp.com/api/course', {
+    const response = await axios.get('https://civilacademyapp.com/api/course', {
       validateStatus: function (status) {
         // Accept all status codes and handle them manually
         return status >= 200 && status < 300; 
@@ -121,7 +121,7 @@ async function fetchCourses() {
 
 async function fetchSubjects(courseId: string) {
   try {
-    const response = await axios.get(`https://www.civilacademyapp.com/api/subjects?course=${courseId}`);
+    const response = await axios.get(`https://civilacademyapp.com/api/subjects?course=${courseId}`);
     return response.data;
   } catch (error) {
     console.error(`Error fetching subjects for course ${courseId}:`, error);

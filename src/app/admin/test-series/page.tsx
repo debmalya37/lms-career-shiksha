@@ -29,7 +29,7 @@ export default function AdminTestSeriesPage() {
     const fetchSubjects = async () => {
       if (course) {
         try {
-          const response = await axios.get(`https://www.civilacademyapp.com/api/subjects?course=${course}`);
+          const response = await axios.get(`https://civilacademyapp.com/api/subjects?course=${course}`);
           setSubjects(response.data);
         } catch (error) {
           console.error('Failed to fetch subjects:', error);

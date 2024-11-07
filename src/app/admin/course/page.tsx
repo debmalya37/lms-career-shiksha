@@ -26,7 +26,7 @@ const ManageCourses = () => {
   useEffect(() => {
     const fetchSubjects = async () => {
       try {
-        const res = await axios.get(`https://www.civilacademyapp.com/api/subjects`);
+        const res = await axios.get(`https://civilacademyapp.com/api/subjects`);
         setSubjects(res.data);
       } catch (error) {
         console.error('Error fetching subjects:', error);
@@ -40,7 +40,7 @@ const ManageCourses = () => {
     if (subject) {
       const fetchTopics = async () => {
         try {
-          const res = await axios.get(`https://www.civilacademyapp.com/api/topics?subject=${subject}`);
+          const res = await axios.get(`https://civilacademyapp.com/api/topics?subject=${subject}`);
           setTopics(res.data);
         } catch (error) {
           console.error('Error fetching topics:', error);
@@ -56,7 +56,7 @@ const ManageCourses = () => {
     const courseData = { title, description, subjects: [subject] };
 
     try {
-      await axios.post(`https://www.civilacademyapp.com/api/course`, courseData);
+      await axios.post(`https://civilacademyapp.com/api/course`, courseData);
       setTitle('');
       setDescription('');
       setSubject('');
@@ -76,7 +76,7 @@ const ManageCourses = () => {
     }
 
     try {
-      const response = await axios.post(`https://www.civilacademyapp.com/api/newSubject`, { name: newSubjectName });
+      const response = await axios.post(`https://civilacademyapp.com/api/newSubject`, { name: newSubjectName });
       setSubjects((prevSubjects) => [...prevSubjects, response.data.data]);
       setNewSubjectName('');
       alert('New subject added successfully!');
@@ -94,7 +94,7 @@ const ManageCourses = () => {
     }
 
     try {
-      const response = await axios.post(`https://www.civilacademyapp.com/api/topics`, { name: newTopicName, subject });
+      const response = await axios.post(`https://civilacademyapp.com/api/topics`, { name: newTopicName, subject });
       setTopics((prevTopics) => [...prevTopics, response.data]);
       setNewTopicName('');
       alert('New topic added successfully!');
