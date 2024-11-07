@@ -14,7 +14,7 @@ import AuthProvider from "@/context/AuthProvider";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Career Shiksha LMS Platform",
+  title: "Civil Academy Learning Portal",
   description: "Learning Management System",
 };
 
