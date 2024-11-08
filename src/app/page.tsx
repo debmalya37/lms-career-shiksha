@@ -7,6 +7,7 @@ import LiveClasses from '@/components/LiveClasses';
 import Footer from '@/components/Footer';
 import NotificationPopup from '@/components/NotificationPopup';
 import Link from 'next/link';
+import LiveClass from '@/models/liveClassesModel';
 
 // Define the structure of a course
 interface Course {
@@ -30,6 +31,11 @@ export default function Home() {
   useEffect(() => {
     async function fetchData() {
       try {
+        // Fetch the latest live class
+        const liveClassRes = await axios.get(`https://civilacademyapp.com/api/latest-live`);
+        console.log(liveClassRes);
+        if (liveClassRes.data) setLatestLiveClass(liveClassRes.data);
+        
         // Fetch user profile
         const profileRes = await axios.get(`https://civilacademyapp.com/api/profile`);
         console.log("Profile Data:", profileRes.data); // Log the profile response
@@ -38,6 +44,7 @@ export default function Home() {
           console.log("User's Course Title:", profileRes.data.course.title); // Log the course title
           setUserCourse(profileRes.data.course); // Store the entire course object
         }
+        
 
         // Fetch all courses
         const allCoursesRes = await axios.get(`https://civilacademyapp.com/api/course`);
@@ -49,9 +56,6 @@ export default function Home() {
         const tutorialRes = await axios.get(`https://civilacademyapp.com/api/latestTutorial`);
         if (tutorialRes.data) setLatestTutorial(tutorialRes.data);
         
-        // Fetch the latest live class
-        const liveClassRes = await axios.get(`https://civilacademyapp.com/api/latest-live`);
-        if (liveClassRes.data) setLatestLiveClass(liveClassRes.data);
 
         // Fetch the latest course
         const courseRes = await axios.get(`https://civilacademyapp.com/api/latestCourse`);

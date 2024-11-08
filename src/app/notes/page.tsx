@@ -1,5 +1,6 @@
 "use client";
 
+import Link from 'next/link';
 import React, { useEffect, useState } from 'react';
 
 export default function NotesPage() {
@@ -32,16 +33,17 @@ export default function NotesPage() {
               <th className="px-4 py-2">Download</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody>a
             {notes.length > 0 ? (
               notes.map((note:any) => (
                 <tr key={note._id} className="border-b">
                   <td className="px-4 py-2">{note.title}</td>
-                  <td className="px-4 py-2">{note.subject}</td>
+                  {/* Access the subject name instead of the whole subject object */}
+                  <td className="px-4 py-2">{note.subject?.name || 'Unknown Subject'}</td>
                   <td className="px-4 py-2">
-                    <a href={note.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                    <Link href={note.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
                       Download
-                    </a>
+                    </Link>
                   </td>
                 </tr>
               ))
@@ -51,7 +53,6 @@ export default function NotesPage() {
                   No notes available.
                 </td>
               </tr>
-
             )}
           </tbody>
         </table>

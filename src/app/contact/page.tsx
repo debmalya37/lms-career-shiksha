@@ -10,7 +10,7 @@ export default function Contact() {
 
   const handleSubmit = (e:any) => {
     e.preventDefault();
-    const mailtoLink = `mailto:Careersikshadev@gmail.com?subject=Contact Us&body=Name: ${fullName}%0D%0APhone: ${phoneNumber}%0D%0AInterest Course: ${interestCourse}%0D%0AMessage: ${message}`;
+    const mailtoLink = `mailto:civilacademy.in@gmail.com?subject=Contact Us&body=Name: ${fullName}%0D%0APhone: ${phoneNumber}%0D%0AInterest Course: ${interestCourse}%0D%0AMessage: ${message}`;
     window.location.href = mailtoLink; // Redirect to mailto link
   };
 
