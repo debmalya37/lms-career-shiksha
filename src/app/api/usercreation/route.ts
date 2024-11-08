@@ -48,3 +48,20 @@ export async function GET() {
     }
   }
   
+
+// Update the PATCH handler to accept `id` from the URL
+export async function PATCH(request: Request, { params }: { params: { id: string } }) {
+  await dbConnect();
+  const updatedData = await request.json();
+
+  try {
+    const updatedUser = await User.findByIdAndUpdate(params.id, updatedData, { new: true });
+    if (!updatedUser) {
+      return NextResponse.json({ message: 'User not found' }, { status: 404 });
+    }
+    return NextResponse.json(updatedUser, { status: 200 });
+  } catch (error) {
+    console.error('Error updating user:', error);
+    return NextResponse.json({ message: 'Error updating user' }, { status: 500 });
+  }
+}
