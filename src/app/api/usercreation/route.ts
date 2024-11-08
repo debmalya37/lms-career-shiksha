@@ -5,14 +5,14 @@ import { User } from '@/models/user'; // Import your user model
 export async function POST(request: Request) {
   await dbConnect(); // Ensure you are connected to the database
 
-  const { name, email, password, subscriptionDays, course } = await request.json();
+  const { name, email, password, subscription, course } = await request.json();
 
   try {
     const newUser = new User({
       name,
       email,
       password, // Make sure to hash the password before saving it
-      subscription: subscriptionDays,
+      subscription: subscription,
       course, // course should be an ObjectId
     });
 

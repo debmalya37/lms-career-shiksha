@@ -5,7 +5,7 @@ interface User {
   name: string;
   email: string;
   password: string; // Hash this in production
-  subscriptionDays: number;
+  subscription: number;
   course?: {
     title: string;
   }[];
@@ -20,7 +20,7 @@ const UserCreationPage = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [subscriptionDays, setSubscriptionDays] = useState('');
+  const [subscription, setSubscription] = useState('');
   const [selectedCourse, setSelectedCourse] = useState('');
   const [users, setUsers] = useState<User[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
@@ -54,7 +54,7 @@ const UserCreationPage = () => {
 
   const handleSubmit = async (e: any) => {
     e.preventDefault();
-    const userData = { name, email, password, subscriptionDays, course: selectedCourse };
+    const userData = { name, email, password, subscription, course: selectedCourse };
 
     try {
       const response = await fetch('/api/usercreation', {
@@ -70,7 +70,7 @@ const UserCreationPage = () => {
         setName('');
         setEmail('');
         setPassword('');
-        setSubscriptionDays('');
+        setSubscription('');
         setSelectedCourse('');
       } else {
         console.error('Failed to add user');
@@ -124,8 +124,8 @@ const UserCreationPage = () => {
             title="subscription"
             type="number"
             className="border p-2 w-full rounded-md"
-            value={subscriptionDays}
-            onChange={(e) => setSubscriptionDays(e.target.value)}
+            value={subscription}
+            onChange={(e) => setSubscription(e.target.value)}
             required
           />
         </div>
@@ -168,7 +168,7 @@ const UserCreationPage = () => {
               <td className="border px-4 py-2">{user.name}</td>
               <td className="border px-4 py-2">{user.email}</td>
               <td className="border px-4 py-2">{user.password}</td>
-              <td className="border px-4 py-2">{user.subscriptionDays}</td>
+              <td className="border px-4 py-2 text-center">{user.subscription}</td>
               <td className="border px-4 py-2">
                 {user.course?.map((course, idx) => (
                   <div key={idx}>{course.title}</div>
