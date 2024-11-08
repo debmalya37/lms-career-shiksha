@@ -32,7 +32,7 @@ export default function Home() {
     async function fetchData() {
       try {
         // Fetch the latest live class
-        const liveClassRes = await axios.get(`https://civilacademyapp.com/api/latest-live`);
+        const liveClassRes = await axios.get(`http://civilacademyapp.com/api/latest-live`);
         console.log(liveClassRes);
         if (liveClassRes.data) setLatestLiveClass(liveClassRes.data);
         

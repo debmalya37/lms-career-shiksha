@@ -32,7 +32,7 @@ export default async function TutorialPage({ params }: { params: { tutorialId: s
               title={tutorial.title}
               src={tutorial.url}
               className="w-full h-full"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              sandbox="allow-forms allow-scripts allow-pointer-lock allow-same-origin allow-top-navigation"
               allowFullScreen
             />
           </div>

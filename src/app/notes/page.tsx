@@ -33,7 +33,7 @@ export default function NotesPage() {
               <th className="px-4 py-2">Download</th>
             </tr>
           </thead>
-          <tbody>a
+          <tbody>
             {notes.length > 0 ? (
               notes.map((note:any) => (
                 <tr key={note._id} className="border-b">

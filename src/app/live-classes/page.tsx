@@ -62,7 +62,7 @@ export default function LiveClassesPage() {
               title={liveClass.title}
               className="w-full h-64"
               src={liveClass.url}
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              sandbox="allow-forms allow-scripts allow-pointer-lock allow-same-origin allow-top-navigation"
               allowFullScreen
             />
           </div>

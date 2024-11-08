@@ -15,7 +15,8 @@ export default function LiveClasses({ liveClass }: LiveClassesProps) {
             src={liveClass.url}
             title={liveClass.title}
             className="w-full h-full rounded-lg"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            // allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            sandbox="allow-forms allow-scripts allow-pointer-lock allow-same-origin allow-top-navigation"
             allowFullScreen
           />
         ) : (

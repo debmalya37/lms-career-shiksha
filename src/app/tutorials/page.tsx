@@ -24,7 +24,7 @@ export default async function TutorialsPage() {
               title={video.title}
               className="w-full h-48"
               src={video.url}
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              sandbox="allow-forms allow-scripts allow-pointer-lock allow-same-origin allow-top-navigation"
               allowFullScreen
             />
             <p className="text-gray-600">{video.description}</p>
