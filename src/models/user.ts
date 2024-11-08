@@ -6,8 +6,8 @@ export interface User extends Document {
   password: string;
   sessionToken: string;
   course: Types.ObjectId[];
-  profile: Types.ObjectId[];
   subscription: number;
+  profile: Types.ObjectId[];
 }
 
 const userSchema = new Schema<User>({
@@ -16,8 +16,8 @@ const userSchema = new Schema<User>({
   password: { type: String, required: true },
   sessionToken: { type: String, unique: true },
   course: [{ type: Schema.Types.ObjectId, ref: "Course" }], // Correct type for an array of references
-  profile: [{ type: Schema.Types.ObjectId, ref: 'Profile' }], // Correct type for an array of references
   subscription: { type: Number, required: true },
+  profile: [{ type: Schema.Types.ObjectId, ref: 'Profile' }], // Correct type for an array of references
 });
 
 export const User: Model<User> = mongoose.models.User || mongoose.model<User>('User', userSchema);

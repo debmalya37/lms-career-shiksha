@@ -6,7 +6,9 @@ interface User {
   email: string;
   password: string; // Hash this in production
   subscriptionDays: number;
-  course: string;
+  course?: {
+    title: string;
+  }[];
 }
 
 interface Course {
@@ -86,7 +88,7 @@ const UserCreationPage = () => {
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">Name</label>
           <input
-          title="text"
+            title="name"
             type="text"
             className="border p-2 w-full rounded-md"
             value={name}
@@ -97,7 +99,7 @@ const UserCreationPage = () => {
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
           <input
-          title="text"
+            title="email"
             type="email"
             className="border p-2 w-full rounded-md"
             value={email}
@@ -108,7 +110,7 @@ const UserCreationPage = () => {
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
           <input
-          title="text"
+            title="password"
             type="password"
             className="border p-2 w-full rounded-md"
             value={password}
@@ -119,7 +121,7 @@ const UserCreationPage = () => {
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">Subscription (Days)</label>
           <input
-          title="text"
+            title="subscription"
             type="number"
             className="border p-2 w-full rounded-md"
             value={subscriptionDays}
@@ -130,14 +132,14 @@ const UserCreationPage = () => {
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">Select Course</label>
           <select
-          title="text"
+            title="selectedCourse"
             className="border p-2 w-full rounded-md text-black"
             value={selectedCourse}
             onChange={(e) => setSelectedCourse(e.target.value)}
             required
           >
             <option value="">--Select a Course--</option>
-            {courses.map((course: any) => (
+            {courses.map((course: Course) => (
               <option key={course._id} value={course._id}>
                 {course.title}
               </option>
@@ -167,7 +169,11 @@ const UserCreationPage = () => {
               <td className="border px-4 py-2">{user.email}</td>
               <td className="border px-4 py-2">{user.password}</td>
               <td className="border px-4 py-2">{user.subscriptionDays}</td>
-              <td className="border px-4 py-2">{user.course}</td>
+              <td className="border px-4 py-2">
+                {user.course?.map((course, idx) => (
+                  <div key={idx}>{course.title}</div>
+                )) || "No course"}
+              </td> {/* Render course title(s) */}
             </tr>
           ))}
         </tbody>
