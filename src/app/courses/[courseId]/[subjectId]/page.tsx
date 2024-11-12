@@ -7,7 +7,7 @@ import axios from 'axios';
 async function fetchData(courseId: string, subjectId: string) {
   try {
     const [topicsResponse, ebooksResponse, testSeriesResponse] = await Promise.all([
-      axios.get(`https://civilacademyapp.com/api/topics?subject=${subjectId}`).catch(() => ({ data: [] })),
+      axios.get(`/api/topics?subject=${subjectId}`).catch(() => ({ data: [] })),
       axios.get(`https://civilacademyapp.com/api/ebook?subject=${subjectId}`).catch(() => ({ data: [] })),
       axios.get(`https://civilacademyapp.com/api/test-series?course=${courseId}&subject=${subjectId}`).catch(() => ({ data: [] }))
     ]);

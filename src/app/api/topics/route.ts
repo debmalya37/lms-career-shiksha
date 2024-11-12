@@ -9,7 +9,7 @@ export async function GET(request: Request) {
 
   try {
     await connectMongo();
-    const topics = await Topic.find({ subject: subjectId }).select('name');
+    const topics = await Topic.find({ subject: subjectId }).select('name').lean();
     return NextResponse.json(topics);
   } catch (error) {
     return NextResponse.json({ error: 'Failed to fetch topics' }, { status: 500 });
