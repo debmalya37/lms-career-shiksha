@@ -31,21 +31,16 @@ export default function Home() {
   useEffect(() => {
     async function fetchData() {
       try {
-        // Fetch the latest live class
-        const liveClassRes = await axios.get(`https://civilacademyapp.com/api/latest-live`);
-        console.log(liveClassRes);
-        if (liveClassRes.data) setLatestLiveClass(liveClassRes.data);
-        
         // Fetch user profile
         const profileRes = await axios.get(`https://civilacademyapp.com/api/profile`);
         console.log("Profile Data:", profileRes.data); // Log the profile response
-
+        
         if (profileRes.data && profileRes.data.course) {
           console.log("User's Course Title:", profileRes.data.course.title); // Log the course title
           setUserCourse(profileRes.data.course); // Store the entire course object
         }
         
-
+        
         // Fetch all courses
         const allCoursesRes = await axios.get(`https://civilacademyapp.com/api/course`);
         if (allCoursesRes.data) {
@@ -56,11 +51,16 @@ export default function Home() {
         const tutorialRes = await axios.get(`https://civilacademyapp.com/api/latestTutorial`);
         if (tutorialRes.data) setLatestTutorial(tutorialRes.data);
         
-
+        
         // Fetch the latest course
         const courseRes = await axios.get(`https://civilacademyapp.com/api/latestCourse`);
         if (courseRes.data) setLatestCourse(courseRes.data);
-
+        
+        // Fetch the latest live class
+        const liveClassRes = await axios.get(`https://civilacademyapp.com/api/latest-live`);
+        console.log(liveClassRes);
+        if (liveClassRes.data) setLatestLiveClass(liveClassRes.data);
+        
       } catch (error) {
         console.error('Error fetching data:', error);
       }
