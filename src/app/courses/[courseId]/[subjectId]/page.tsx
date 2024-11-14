@@ -2,7 +2,6 @@
 import Link from 'next/link';
 import React from 'react';
 import axios from 'axios';
-import Image from 'next/image';
 
 // Fetch data function for topics, ebooks, and test series
 async function fetchData(courseId: string, subjectId: string) {
@@ -60,9 +59,9 @@ export default async function SubjectPage({ params }: { params: { courseId: stri
           {ebooks.length > 0 ? (
             ebooks.map((ebook: any) => (
               <div key={ebook._id} className="bg-white border rounded-lg shadow-lg overflow-hidden">
-                {ebook.ebookImage && (
-                  <Image
-                    src={ebook.ebookImage}
+                {ebook.ebookImg && (
+                  <img
+                    src={ebook.ebookImg}
                     alt={ebook.title}
                     className="w-full h-48 object-cover object-center"
                   />
@@ -217,4 +216,3 @@ export async function generateStaticParams() {
 //     return [{ courseId: "default-course", subjectId: "default-subject" }]; // Return placeholder on error
 //   }
 // }
-
