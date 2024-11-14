@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import ClipLoader from "react-spinners/ClipLoader";
@@ -44,7 +44,7 @@ type QuizState = {
   incorrectQuestions: { question: string; correctAnswer: string; userAnswer: string }[];
 };
 
-export default function QuizApp() {
+function QuizAppContent() {
   const searchParams = useSearchParams();
   const quizId = searchParams.get('quizId') || "";
   const initialCourseId = searchParams.get('courseId') || "";
@@ -66,7 +66,6 @@ export default function QuizApp() {
   const [selectedCourse, setSelectedCourse] = useState(initialCourseId);
   const [selectedSubject, setSelectedSubject] = useState(initialSubjectId);
 
-  // Fetch all courses on component mount
   useEffect(() => {
     const fetchCourses = async () => {
       try {
@@ -80,7 +79,6 @@ export default function QuizApp() {
     fetchCourses();
   }, []);
 
-  // Fetch subjects based on the selected course
   useEffect(() => {
     if (selectedCourse) {
       const fetchSubjects = async () => {
@@ -96,7 +94,6 @@ export default function QuizApp() {
     }
   }, [selectedCourse]);
 
-  // Fetch quiz data when `quizId`, `courseId`, and `subjectId` are available
   useEffect(() => {
     if (quizId && selectedCourse && selectedSubject) {
       const fetchQuizData = async () => {
@@ -120,7 +117,6 @@ export default function QuizApp() {
     }
   }, [quizId, selectedCourse, selectedSubject]);
 
-  // Timer countdown
   useEffect(() => {
     if (state.timeLeft > 0 && !state.showResults && !state.isLoading) {
       const timer = setInterval(() => {
@@ -142,7 +138,6 @@ export default function QuizApp() {
     const currentQuestion = state.quizData.questions[state.currentQuestion];
     const correctAnswer = currentQuestion.answers.find((ans) => ans.isCorrect)?.text || "N/A";
 
-    // Track incorrect answers
     const updatedIncorrectQuestions = !isCorrect
       ? [...state.incorrectQuestions, { question: currentQuestion.question, correctAnswer, userAnswer }]
       : state.incorrectQuestions;
@@ -253,37 +248,33 @@ export default function QuizApp() {
         </div>
       ) : state.quizData && state.quizData.questions.length > 0 ? (
         <div className="bg-card p-8 rounded-lg shadow-md w-full max-w-md">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-2xl font-bold">
-              Question {state.currentQuestion + 1}/{state.quizData.questions.length}
-            </h2>
-            <span className="text-gray-500">
-              {Math.floor(state.timeLeft / 60)}:{state.timeLeft % 60 < 10 ? `0${state.timeLeft % 60}` : state.timeLeft % 60}
-            </span>
-          </div>
-          {state.quizData.questions[state.currentQuestion] ? (
-            <>
-              <p className="text-lg mb-4" dangerouslySetInnerHTML={{ __html: state.quizData.questions[state.currentQuestion].question }} />
-              <div className="grid gap-4">
-                {state.quizData.questions[state.currentQuestion].answers.map((answer, index) => (
-                  <Button
-                    key={index}
-                    onClick={() => handleAnswerClick(answer.isCorrect, answer.text)}
-                    className="w-full"
-                  >
-                    {answer.text}
-                  </Button>
-                ))}
-              </div>
-            </>
-          ) : null}
-          <div className="mt-4 text-right">
-            <span className="text-muted-foreground">Score: {state.score}</span>
+          <h2 className="text-2xl font-bold mb-4">
+            Question {state.currentQuestion + 1}/{state.quizData.questions.length}
+          </h2>
+          <p className="text-lg mb-6">{state.quizData.questions[state.currentQuestion].question}</p>
+          <div className="grid grid-cols-2 gap-4">
+            {state.quizData.questions[state.currentQuestion].answers.map((answer, index) => (
+              <Button
+                key={index}
+                onClick={() => handleAnswerClick(answer.isCorrect, answer.text)}
+                className="w-full"
+              >
+                {answer.text}
+              </Button>
+            ))}
           </div>
         </div>
       ) : (
-        selectedCourse && selectedSubject && <div>No quiz available for this course and subject.</div>
+        <p>No quiz data available. Please try again later.</p>
       )}
     </div>
+  );
+}
+
+export default function QuizApp() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <QuizAppContent />
+    </Suspense>
   );
 }
