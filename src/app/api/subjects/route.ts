@@ -5,7 +5,7 @@ import Subject from '@/models/subjectModel';
 export async function GET() {
   try {
     await connectMongo();
-    const subjects = await Subject.find({});
+    const subjects = await Subject.find({}).lean();
     return NextResponse.json(subjects);
   } catch (error) {
     return NextResponse.json({ error: 'Failed to fetch subjects' }, { status: 500 });

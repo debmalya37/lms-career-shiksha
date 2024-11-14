@@ -31,6 +31,8 @@ export default function Home() {
   useEffect(() => {
     async function fetchData() {
       try {
+        
+
         // Fetch user profile
         const profileRes = await axios.get(`https://civilacademyapp.com/api/profile`);
         console.log("Profile Data:", profileRes.data); // Log the profile response
@@ -51,16 +53,17 @@ export default function Home() {
         const tutorialRes = await axios.get(`https://civilacademyapp.com/api/latestTutorial`);
         if (tutorialRes.data) setLatestTutorial(tutorialRes.data);
         
+        // Fetch the latest live class
+        const liveClassRes = await axios.get(`https://localhost:3000/api/latest-live`);
+        console.log(liveClassRes);
+        if (liveClassRes.data) setLatestLiveClass(liveClassRes.data);
+        
         
         // Fetch the latest course
         const courseRes = await axios.get(`https://civilacademyapp.com/api/latestCourse`);
         if (courseRes.data) setLatestCourse(courseRes.data);
         
-        // Fetch the latest live class
-        const liveClassRes = await axios.get(`https://civilacademyapp.com/api/latest-live`);
-        console.log(liveClassRes);
-        if (liveClassRes.data) setLatestLiveClass(liveClassRes.data);
-        
+
       } catch (error) {
         console.error('Error fetching data:', error);
       }

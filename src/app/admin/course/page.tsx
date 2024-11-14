@@ -21,12 +21,13 @@ const ManageCourses = () => {
   const [topics, setTopics] = useState<Topic[]>([]);
   const [newSubjectName, setNewSubjectName] = useState('');
   const [newTopicName, setNewTopicName] = useState('');
+  const [courseImg, setCourseImg] = useState<File | null>(null);
 
   // Fetch subjects from the existing subjects API
   useEffect(() => {
     const fetchSubjects = async () => {
       try {
-        const res = await axios.get(`https://civilacademyapp.com/api/subjects`);
+        const res = await axios.get(`http://localhost:3000/api/subjects`);
         setSubjects(res.data);
       } catch (error) {
         console.error('Error fetching subjects:', error);
@@ -40,7 +41,7 @@ const ManageCourses = () => {
     if (subject) {
       const fetchTopics = async () => {
         try {
-          const res = await axios.get(`https://civilacademyapp.com/api/topics?subject=${subject}`);
+          const res = await axios.get(`http://localhost:3000/api/topics?subject=${subject}`);
           setTopics(res.data);
         } catch (error) {
           console.error('Error fetching topics:', error);
@@ -52,15 +53,25 @@ const ManageCourses = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    const courseData = { title, description, subjects: [subject] };
+    const formData = new FormData();
+    formData.append('title', title);
+    formData.append('description', description);
+    formData.append('subjects', subject);
+    if (courseImg) {
+      formData.append('courseImg', courseImg); // Append image file to FormData
+    }
 
     try {
-      await axios.post(`https://civilacademyapp.com/api/course`, courseData);
+      await axios.post(`http://localhost:3000/api/course`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
       setTitle('');
       setDescription('');
       setSubject('');
       setTopic('');
+      setCourseImg(null);
       alert('Course added successfully!');
     } catch (error) {
       console.error('Error adding course:', error);
@@ -127,6 +138,18 @@ const ManageCourses = () => {
             className="border p-2 w-full rounded-md"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
+            required
+          />
+        </div>
+
+        {/* Image Upload */}
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">Course Thumbnail</label>
+          <input
+          title='img'
+            type="file"
+            accept="image/*"
+            onChange={(e) => setCourseImg(e.target.files?.[0] || null)}
             required
           />
         </div>

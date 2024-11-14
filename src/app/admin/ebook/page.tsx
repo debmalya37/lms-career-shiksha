@@ -5,15 +5,15 @@ import axios from 'axios';
 const ManageEBooks = () => {
   const [title, setTitle] = useState('');
   const [url, setUrl] = useState('');
-  const [subjects, setSubjects] = useState([]); // Stores fetched subjects
-  const [selectedSubject, setSelectedSubject] = useState(''); // Selected subject ID
+  const [ebookImg, setEbookImg] = useState<File | null>(null); // New state for the image file
+  const [subjects, setSubjects] = useState([]); 
+  const [selectedSubject, setSelectedSubject] = useState(''); 
 
-  // Fetch subjects from the API
   useEffect(() => {
     const fetchSubjects = async () => {
       try {
-        const response = await axios.get(`https://civilacademyapp.com/api/subjects`);
-        setSubjects(response.data); // Populate subjects from response
+        const response = await axios.get(`http://localhost:3000/api/subjects`);
+        setSubjects(response.data);
       } catch (error) {
         console.error('Error fetching subjects:', error);
       }
@@ -23,13 +23,24 @@ const ManageEBooks = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const ebookData = { title, url, subject: selectedSubject }; // Payload with subject ID
+    const formData = new FormData();
+    formData.append('title', title);
+    formData.append('url', url);
+    formData.append('subject', selectedSubject);
+    if (ebookImg) {
+      formData.append('ebookImg', ebookImg); // Append the image file
+    }
 
     try {
-      await axios.post(`https://civilacademyapp.com/api/ebook`, ebookData);
+      await axios.post(`http://localhost:3000/api/ebook`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
       setTitle('');
       setUrl('');
       setSelectedSubject('');
+      setEbookImg(null);
       alert('eBook added successfully!');
     } catch (error) {
       console.error('Error adding eBook:', error);
@@ -40,12 +51,12 @@ const ManageEBooks = () => {
   return (
     <div className="p-8 bg-white rounded-lg shadow-md max-w-xl mx-auto mt-8 text-black">
       <h1 className="text-2xl font-bold mb-4">Add eBook</h1>
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} encType="multipart/form-data">
         {/* eBook Title */}
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">eBook Title</label>
           <input
-          title='text'
+          title='title'
             type="text"
             className="border p-2 w-full rounded-md"
             value={title}
@@ -67,11 +78,23 @@ const ManageEBooks = () => {
           />
         </div>
 
+        {/* eBook Thumbnail */}
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">eBook Thumbnail</label>
+          <input
+          title='img'
+            type="file"
+            accept="image/*"
+            onChange={(e) => setEbookImg(e.target.files?.[0] || null)}
+            required
+          />
+        </div>
+
         {/* Subject Selection */}
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">Subject</label>
           <select
-          title='selectSub'
+          title='selectedSub'
             className="border p-2 w-full rounded-md"
             value={selectedSubject}
             onChange={(e) => setSelectedSubject(e.target.value)}
