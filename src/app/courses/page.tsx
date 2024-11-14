@@ -2,6 +2,7 @@ import connectMongo from '@/lib/db';
 import Course from '@/models/courseModel';
 import Link from 'next/link';
 import { cookies } from 'next/headers';
+import Image from 'next/image';
 
 async function fetchUserCourse() {
   // Fetch the user's profile to get the assigned course
@@ -47,7 +48,7 @@ export default async function GlobalCoursesPage() {
               {/* Course Image */}
               {course.courseImg && (
                 <div className="h-48 w-full overflow-hidden">
-                  <img
+                  <Image
                     src={course.courseImg}
                     alt={`${course.title} Thumbnail`}
                     className="w-full h-full object-cover object-center"
