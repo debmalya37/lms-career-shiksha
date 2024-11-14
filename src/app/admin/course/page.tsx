@@ -27,7 +27,7 @@ const ManageCourses = () => {
   useEffect(() => {
     const fetchSubjects = async () => {
       try {
-        const res = await axios.get(`http://localhost:3000/api/subjects`);
+        const res = await axios.get(`https://civilacademyapp.com/api/subjects`);
         setSubjects(res.data);
       } catch (error) {
         console.error('Error fetching subjects:', error);
@@ -41,7 +41,7 @@ const ManageCourses = () => {
     if (subject) {
       const fetchTopics = async () => {
         try {
-          const res = await axios.get(`http://localhost:3000/api/topics?subject=${subject}`);
+          const res = await axios.get(`https://civilacademyapp.com/api/topics?subject=${subject}`);
           setTopics(res.data);
         } catch (error) {
           console.error('Error fetching topics:', error);
@@ -62,7 +62,7 @@ const ManageCourses = () => {
     }
 
     try {
-      await axios.post(`http://localhost:3000/api/course`, formData, {
+      await axios.post(`https://civilacademyapp.com/api/course`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
