@@ -34,7 +34,7 @@ export default function Home() {
         
 
         // Fetch user profile
-        const profileRes = await axios.get(`http://civilacademyapp.com/api/profile`);
+        const profileRes = await axios.get(`https://civilacademyapp.com/api/profile`);
         console.log("Profile Data:", profileRes.data); // Log the profile response
         
         if (profileRes.data && profileRes.data.course) {
