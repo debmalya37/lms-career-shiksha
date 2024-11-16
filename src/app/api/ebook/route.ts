@@ -6,13 +6,13 @@ import streamifier from 'streamifier';
 
 
 // Increase the size limit to handle larger file uploads
-export const config = {
-  api: {
-    bodyParser: {
-      sizeLimit: '50mb', // Set to a suitable size limit for your files
-    },
-  },
-};
+// export const config = {
+//   api: {
+//     bodyParser: {
+//       sizeLimit: '50mb', // Set to a suitable size limit for your files
+//     },
+//   },
+// };
 
 // Configure Cloudinary
 cloudinary.config({
