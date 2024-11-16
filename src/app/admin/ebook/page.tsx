@@ -12,7 +12,7 @@ const ManageEBooks = () => {
   useEffect(() => {
     const fetchSubjects = async () => {
       try {
-        const response = await axios.get(`https://civilacademyapp.com/api/subjects`);
+        const response = await axios.get(`http://localhost:3000/api/subjects`);
         setSubjects(response.data);
       } catch (error) {
         console.error('Error fetching subjects:', error);
@@ -32,7 +32,7 @@ const ManageEBooks = () => {
     }
 
     try {
-      await axios.post(`https://civilacademyapp.com/api/ebook`, formData, {
+      await axios.post(`http://localhost:3000/api/ebook`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },

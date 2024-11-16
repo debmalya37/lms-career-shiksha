@@ -48,7 +48,7 @@ export default async function GlobalCoursesPage() {
               {/* Course Image */}
               {course.courseImg && (
                 <div className="h-48 w-full overflow-hidden">
-                  <Image
+                  <img
                     src={course.courseImg}
                     alt={`${course.title} Thumbnail`}
                     className="w-full h-full object-cover object-center"

@@ -3,7 +3,7 @@ import connectMongo from '@/lib/db';
 import { User } from '@/models/user';
 import Profile from '@/models/profileModel';
 import Course from '@/models/courseModel'; // Ensure this model is imported
-
+// import '@/lib/subscriptionCron';
 export async function GET(request: NextRequest) {
   const sessionToken = request.cookies.get('sessionToken')?.value;
   console.log('Received session token:', sessionToken); // Debugging

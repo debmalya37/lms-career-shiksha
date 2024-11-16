@@ -34,7 +34,7 @@ export default function Home() {
         
 
         // Fetch user profile
-        const profileRes = await axios.get(`https://civilacademyapp.com/api/profile`);
+        const profileRes = await axios.get(`http://civilacademyapp.com/api/profile`);
         console.log("Profile Data:", profileRes.data); // Log the profile response
         
         if (profileRes.data && profileRes.data.course) {
@@ -44,23 +44,23 @@ export default function Home() {
         
         
         // Fetch all courses
-        const allCoursesRes = await axios.get(`https://civilacademyapp.com/api/course`);
+        const allCoursesRes = await axios.get(`http://localhost:3000/api/course`);
         if (allCoursesRes.data) {
           setAllCourses(allCoursesRes.data);
         }
 
         // Fetch the latest tutorial
-        const tutorialRes = await axios.get(`https://civilacademyapp.com/api/latestTutorial`);
+        const tutorialRes = await axios.get(`http://localhost:3000/api/latestTutorial`);
         if (tutorialRes.data) setLatestTutorial(tutorialRes.data);
         
         // Fetch the latest live class
-        const liveClassRes = await axios.get(`http://civilacademyapp.com:3000/api/latest-live`);
+        const liveClassRes = await axios.get(`http://localhost:3000/api/latest-live`);
         console.log(liveClassRes);
         if (liveClassRes.data) setLatestLiveClass(liveClassRes.data);
         
         
         // Fetch the latest course
-        const courseRes = await axios.get(`https://civilacademyapp.com/api/latestCourse`);
+        const courseRes = await axios.get(`http://localhost:3000/api/latestCourse`);
         if (courseRes.data) setLatestCourse(courseRes.data);
         
 

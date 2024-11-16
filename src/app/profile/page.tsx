@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from 'react';
+import ClipLoader from 'react-spinners/ClipLoader';
 
 interface ProfileData {
   email: string;
@@ -39,7 +40,7 @@ export default function ProfilePage() {
     fetchProfile();
   }, []);
 
-  if (!profileData) return <p>Loading...</p>;
+  if (!profileData) return <p><ClipLoader /></p>;
 
   return (
     <div className="container mx-auto p-8 bg-white rounded-lg shadow-md max-w-xl mt-8">

@@ -16,7 +16,7 @@ const Navbar: React.FC = () => {
           <Link href="/live-classes" className="hover:underline">Live Classes</Link>
           <Link href="/courses" className="hover:underline">Courses</Link>
           <Link href="/notes" className="hover:underline">Notes</Link>
-          <Link href="/test-series" className="hover:underline">Test Series</Link>
+          {/* <Link href="/test-series" className="hover:underline">Test Series</Link> */}
           <Link href="/contact" className="hover:underline">Contact</Link>
         </div>
         {/* Hamburger Menu */}

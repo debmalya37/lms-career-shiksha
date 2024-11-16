@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
+import ClipLoader from 'react-spinners/ClipLoader';
 
 const AdminPanel = () => {
   const [isAdmin, setIsAdmin] = useState(false);
@@ -36,7 +37,7 @@ const AdminPanel = () => {
   }, []);
 
   if (loading) {
-    return <div>Loading...</div>;
+    return <div><ClipLoader /></div>;
   }
 
   if (!isAdmin) {
@@ -62,12 +63,12 @@ const AdminPanel = () => {
         <Link href="/admin/ebook" className="bg-orange-600 text-white p-6 rounded-lg shadow-md text-center">
           <h2 className="text-xl font-semibold">Manage eBooks</h2>
         </Link>
-        <Link href="/admin/question-paper" className="bg-red-600 text-white p-6 rounded-lg shadow-md text-center">
-          <h2 className="text-xl font-semibold">Manage Question Papers</h2>
+        <Link href="/admin/quiz" className="bg-red-600 text-white p-6 rounded-lg shadow-md text-center">
+          <h2 className="text-xl font-semibold">Manage quiz/test-series</h2>
         </Link>
-        <Link href="/admin/query" className="bg-indigo-600 text-white p-6 rounded-lg shadow-md text-center">
+        {/* <Link href="/admin/query" className="bg-indigo-600 text-white p-6 rounded-lg shadow-md text-center">
           <h2 className="text-xl font-semibold">Manage Queries</h2>
-        </Link>
+        </Link> */}
         <Link href="/admin/topics" className="bg-teal-600 text-white p-6 rounded-lg shadow-md text-center">
           <h2 className="text-xl font-semibold">Manage Topics</h2>
         </Link>

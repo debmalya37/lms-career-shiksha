@@ -1,4 +1,4 @@
-// models/notesmodel.ts
+// models/notemodel.ts
 import mongoose, { Schema, Document } from 'mongoose';
 
 export interface INote extends Document {

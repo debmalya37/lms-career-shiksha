@@ -27,7 +27,7 @@ const ManageCourses = () => {
   useEffect(() => {
     const fetchSubjects = async () => {
       try {
-        const res = await axios.get(`https://civilacademyapp.com/api/subjects`);
+        const res = await axios.get(`http://localhost:3000/api/subjects`);
         setSubjects(res.data);
       } catch (error) {
         console.error('Error fetching subjects:', error);
