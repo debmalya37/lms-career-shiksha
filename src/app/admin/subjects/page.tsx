@@ -36,18 +36,22 @@ const ManageSubjects = () => {
   }, []);
 
   // Submit new subject with selected courses
-  const handleSubjectSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      await axios.post(`https://civilacademyapp.com/api/subjects`, { name: subjectName, courses: selectedCourses });
-      setSubjectName('');
-      setSelectedCourses([]);
-      alert('Subject added successfully!');
-    } catch (error) {
-      console.error(error);
-      alert('Error adding subject.');
-    }
-  };
+ // For handling the submission of a new subject
+const handleSubjectSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  try {
+    // Use a single selected course if you're adding it as a single value
+    const courseToSend = selectedCourses.length === 1 ? selectedCourses[0] : selectedCourses;
+    await axios.post(`https://civilacademyapp.com/api/subjects`, { name: subjectName, course: courseToSend });
+    setSubjectName('');
+    setSelectedCourses([]);
+    alert('Subject added successfully!');
+  } catch (error) {
+    console.error(error);
+    alert('Error adding subject.');
+  }
+};
+
 
   // Submit new topic under the selected subject
   const handleTopicSubmit = async (e: React.FormEvent) => {
@@ -122,7 +126,7 @@ const ManageSubjects = () => {
       </form>
 
       {/* Form for Adding a New Topic to a Selected Subject */}
-      <form onSubmit={handleTopicSubmit}>
+      {/* <form onSubmit={handleTopicSubmit}>
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">Select Subject</label>
           <select
@@ -154,7 +158,7 @@ const ManageSubjects = () => {
         <button type="submit" className="bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700">
           Add Topic
         </button>
-      </form>
+      </form> */}
     </div>
   );
 };
