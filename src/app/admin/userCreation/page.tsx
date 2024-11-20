@@ -66,7 +66,7 @@ const UserCreationPage = () => {
     };
 
     checkAdminStatus();
-  }, [router]);
+  }, [router,isAdmin]);
 
 
   useEffect(() => {

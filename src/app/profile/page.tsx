@@ -30,7 +30,7 @@ export default function ProfilePage() {
         if (!profile.error) {
           setProfileData(profile);
           const totalMarks = 100; // Replace with actual total marks
-          const obtainedMarks = 70; // Replace with actual obtained marks
+          const obtainedMarks = 20; // Replace with actual obtained marks
           setProgress((obtainedMarks / totalMarks) * 100);
         }
       } catch (error) {

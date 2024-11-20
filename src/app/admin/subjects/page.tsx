@@ -5,13 +5,18 @@ import axios from "axios";
 interface Subject {
   _id: string;
   name: string;
-  course: string;
+  course: string | string[]; // Course can be a single string or an array
+}
+
+interface Course {
+  _id: string;
+  title: string;
 }
 
 const ManageSubjects = () => {
   const [subjectName, setSubjectName] = useState("");
   const [selectedCourses, setSelectedCourses] = useState<string[]>([]);
-  const [courses, setCourses] = useState([]); // State to store available courses
+  const [courses, setCourses] = useState<Course[]>([]); // Define course type
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [editingSubject, setEditingSubject] = useState<Subject | null>(null);
 
@@ -35,18 +40,19 @@ const ManageSubjects = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const payload = {
+    // Create the payload object
+    const basePayload = {
       name: subjectName,
       course: selectedCourses.length === 1 ? selectedCourses[0] : selectedCourses,
     };
 
     try {
       if (editingSubject) {
-        payload["id"] = editingSubject._id; // Include the ID for editing
-        await axios.post(`/api/subjects/edit`, payload);
+        const editPayload = { ...basePayload, id: editingSubject._id }; // Include the ID for editing
+        await axios.post(`/api/subjects/edit`, editPayload);
         alert("Subject updated successfully!");
       } else {
-        await axios.post(`/api/subjects`, payload);
+        await axios.post(`/api/subjects`, basePayload);
         alert("Subject added successfully!");
       }
 
@@ -71,7 +77,9 @@ const ManageSubjects = () => {
   const handleEdit = (subject: Subject) => {
     setEditingSubject(subject);
     setSubjectName(subject.name);
-    setSelectedCourses([subject.course]);
+    setSelectedCourses(
+      Array.isArray(subject.course) ? subject.course : [subject.course]
+    );
   };
 
   return (
@@ -82,6 +90,7 @@ const ManageSubjects = () => {
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">Subject Name</label>
           <input
+          title="sub"
             type="text"
             className="border p-2 w-full rounded-md"
             value={subjectName}
@@ -93,6 +102,7 @@ const ManageSubjects = () => {
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">Select Courses</label>
           <select
+          title="couse"
             multiple
             className="border p-2 w-full rounded-md"
             value={selectedCourses}
@@ -101,7 +111,7 @@ const ManageSubjects = () => {
               setSelectedCourses(selectedOptions);
             }}
           >
-            {courses.map((course: any) => (
+            {courses.map((course) => (
               <option key={course._id} value={course._id}>
                 {course.title}
               </option>
@@ -147,6 +157,7 @@ const ManageSubjects = () => {
 };
 
 export default ManageSubjects;
+
 
 
       {/* Form for Adding a New Topic to a Selected Subject */}

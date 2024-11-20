@@ -53,22 +53,22 @@ const NotificationPopup = ({
         )}
 
         {/* Subscription Days Left */}
-        <div className="mb-4">
+        {/* <div className="mb-4">
           <h3 className="font-semibold text-lg text-red-600">Subscription</h3>
           <p className="text-black">{subscriptionDaysLeft} days left</p>
-        </div>
+        </div> */}
 
         {/* Progress Tracker */}
-        <div className="mb-4">
+        {/* <div className="mb-4">
           <h3 className="font-semibold text-lg text-green-700">Progress Tracker</h3>
           <ProgressBar progress={progress} />
-        </div>
+        </div> */}
 
         {/* Test Exam Marks */}
-        <div>
+        {/* <div>
           <h3 className="font-semibold text-lg text-blue-700">Test Exam Marks</h3>
           <p className="text-black">{examMarks} out of 100</p>
-        </div>
+        </div> */}
       </div>
     </div>
   );
