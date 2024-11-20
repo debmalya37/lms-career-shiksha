@@ -8,6 +8,9 @@ export interface User extends Document {
   course: Types.ObjectId[];
   subscription: number;
   profile: Types.ObjectId[];
+  phoneNo: string;
+  address: string;
+  deviceIdentifier?: string | null 
 }
 
 const userSchema = new Schema<User>({
@@ -18,6 +21,9 @@ const userSchema = new Schema<User>({
   course: [{ type: Schema.Types.ObjectId, ref: "Course" }], // Correct type for an array of references
   subscription: { type: Number, required: true },
   profile: [{ type: Schema.Types.ObjectId, ref: 'Profile' }], // Correct type for an array of references
+  phoneNo: { type: String, required: true }, // New field
+  address: { type: String, required: true },
+  deviceIdentifier: { type: String, default: null },
 });
 
 export const User: Model<User> = mongoose.models.User || mongoose.model<User>('User', userSchema);

@@ -38,7 +38,7 @@ const ManageTutorials = () => {
   useEffect(() => {
     const fetchCourses = async () => {
       try {
-        const response = await axios.get('/api/course');
+        const response = await axios.get('/api/course/admin');
         setCourses(response.data);
       } catch (error) {
         console.error('Error fetching courses:', error);

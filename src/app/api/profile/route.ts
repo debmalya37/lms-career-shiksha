@@ -34,6 +34,8 @@ export async function GET(request: NextRequest) {
       name: user.name,
       course: courseDetails, // Include course data
       subscription: user.subscription,
+      phoneNo: user.phoneNo,
+      address:user.address,
       profile,
     });
   } catch (error) {

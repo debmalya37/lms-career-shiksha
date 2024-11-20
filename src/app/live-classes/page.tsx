@@ -11,12 +11,17 @@ const liveClassSchema = z.object({
   url: z.string().regex(/^https:\/\/www\.youtube\.com\/embed\//, {
     message: "URL must be a valid YouTube embed link",
   }),
+  course: z.object({
+    _id: z.string(),
+    title: z.string(),
+  }),
 });
 
 interface LiveClass {
   _id: string; // MongoDB document ID
   title: string;
   url: string;
+  course: { _id: string; title: string }; // Include course details
 }
 
 export default function LiveClassesPage() {
@@ -63,6 +68,7 @@ export default function LiveClassesPage() {
           return (
             <div key={liveClass._id} className="bg-white rounded-lg shadow-md p-4">
               <h3 className="text-xl font-semibold mb-4">{liveClass.title}</h3>
+              <p className="text-gray-600 mb-4">Course: {liveClass.course.title}</p> {/* Display course title */}
               {/* Flexbox layout for stream and chat */}
               <div className="flex flex-col lg:flex-row gap-4">
                 {/* Video Section */}
@@ -82,7 +88,6 @@ export default function LiveClassesPage() {
                     className="w-full h-full"
                     src={chatUrl}
                     sandbox="allow-forms allow-scripts allow-pointer-lock allow-same-origin allow-top-navigation allow-popups allow-modals"
-                
                   />
                 </div>
               </div>

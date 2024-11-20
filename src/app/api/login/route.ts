@@ -3,33 +3,37 @@ import connectMongo from '@/lib/db';
 import { User } from '@/models/user';
 
 export async function POST(request: Request) {
-  const { email, password } = await request.json();
+  const { email, password, deviceIdentifier } = await request.json(); // Receive device identifier
 
   try {
     await connectMongo();
 
-    // Find the user by email
     const user = await User.findOne({ email });
     if (!user) {
       return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 });
     }
 
-    // Compare the password directly without hashing
     if (user.password !== password) {
       return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 });
     }
 
-    // Generate a session token (replace with secure token generation for production)
+    if (user.deviceIdentifier && user.deviceIdentifier !== deviceIdentifier) {
+      return NextResponse.json({ error: 'This account is already logged in on another device' }, { status: 403 });
+    }
+
+    // If no deviceIdentifier is set, set it for the first time
+    if (!user.deviceIdentifier) {
+      user.deviceIdentifier = deviceIdentifier;
+    }
+
     const sessionToken = generateSessionToken();
     user.sessionToken = sessionToken;
 
-    // Set session expiration based on subscription duration
     const expirationDate = new Date();
     expirationDate.setDate(expirationDate.getDate() + user.subscription);
 
     await user.save();
 
-    // Set cookie with expiration date
     const response = NextResponse.json({
       message: 'Login successful',
       sessionToken,
@@ -51,7 +55,6 @@ export async function POST(request: Request) {
   }
 }
 
-// Simple session token generation
 function generateSessionToken() {
   return Math.random().toString(36).substr(2);
 }

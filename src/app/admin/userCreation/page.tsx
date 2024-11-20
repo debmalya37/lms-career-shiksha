@@ -1,4 +1,5 @@
 "use client";
+import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 interface User {
@@ -7,9 +8,13 @@ interface User {
   email: string;
   password: string;
   subscription: number;
-  course?: { 
-    _id:string,
-    title: string }[];
+  phoneNo: string;
+  address: string;
+  course?: {
+    _id: string;
+    title: string;
+  }[];
+  deviceIdentifier?: string | null; // Added deviceIdentifier field
 }
 
 interface Course {
@@ -25,13 +30,50 @@ const UserCreationPage = () => {
   const [selectedCourse, setSelectedCourse] = useState('');
   const [users, setUsers] = useState<User[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
+  const [phoneNo, setPhoneNo] = useState('');
+  const [address, setAddress] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const router = useRouter();
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [loading, setLoading] = useState(true); // Loading state to handle redirection
 
   useEffect(() => {
+    const checkAdminStatus = async () => {
+      try {
+        // Fetch profile data from the API
+        const profileRes = await fetch(`https://civilacademyapp.com/api/profile`);
+        const profileData = await profileRes.json();
+
+        console.log('Profile Data:', profileData); // Log the profile response
+
+        // Define allowed emails
+        const allowedEmails = ['civilacademy.in@gmail.com'];
+
+        // Check if the profile email is in the allowed list
+        if (profileData?.email && allowedEmails.includes(profileData.email)) {
+          console.log("admin access allowed")
+          setIsAdmin(true);
+        } else {
+          router.push('/'); // Redirect to home if not authorized
+        }
+      } catch (error) {
+        console.error('Error fetching profile data:', error);
+        router.push('/'); // Redirect to home on error
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkAdminStatus();
+  }, [router]);
+
+
+  useEffect(() => {
+    if (!isAdmin) return;
     const fetchCourses = async () => {
       try {
-        const response = await fetch('/api/course');
+        const response = await fetch('/api/course/admin');
         const data = await response.json();
         if (Array.isArray(data)) {
           setCourses(data);
@@ -60,6 +102,8 @@ const UserCreationPage = () => {
     setEmail(user.email);
     setPassword(user.password);
     setSubscription(String(user.subscription));
+    setPhoneNo(user.phoneNo);
+    setAddress(user.address);
     setSelectedCourse(user.course && user.course[0]?._id || '');
     setIsEditing(true);
     setCurrentUserId(user._id);
@@ -72,7 +116,33 @@ const UserCreationPage = () => {
     setEmail('');
     setPassword('');
     setSubscription('');
+    setPhoneNo('');
+    setAddress('');
     setSelectedCourse('');
+  };
+
+  const handleDeleteDeviceIdentifier = async (userId: string) => {
+    try {
+      const response = await fetch('/api/usercreation/deleteDeviceIdentifier', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId }),
+      });
+
+      if (response.ok) {
+        setUsers((prevUsers) =>
+          prevUsers.map((user) =>
+            user._id === userId ? { ...user, deviceIdentifier: null } : user
+          )
+        );
+        alert('Device Identifier deleted successfully.');
+      } else {
+        console.error('Failed to delete device identifier.');
+        alert('Failed to delete device identifier.');
+      }
+    } catch (error) {
+      console.error('Error deleting device identifier:', error);
+    }
   };
 
   const handleSubmit = async (e: any) => {
@@ -83,11 +153,13 @@ const UserCreationPage = () => {
       email,
       password,
       subscription: Number(subscription),
+      phoneNo,
+      address,
       course: selectedCourse,
     };
-  
+
     if (isEditing && currentUserId) {
-      // Use the new update API for existing users
+      // Use the update API for existing users
       try {
         const response = await fetch('/api/updateUser', {
           method: 'POST',
@@ -182,6 +254,28 @@ const UserCreationPage = () => {
           />
         </div>
         <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">Phone No</label>
+          <input
+            title="phone"
+            type="number"
+            className="border p-2 w-full rounded-md"
+            value={phoneNo}
+            onChange={(e) => setPhoneNo(e.target.value)}
+            required
+          />
+        </div>
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">Address</label>
+          <input
+            title="address"
+            type="text"
+            className="border p-2 w-full rounded-md"
+            value={address}
+            onChange={(e) => setAddress(e.target.value)}
+            required
+          />
+        </div>
+        <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">Select Course</label>
           <select
             title="selectedCourse"
@@ -225,7 +319,10 @@ const UserCreationPage = () => {
             <th className="border px-4 py-2">Email</th>
             <th className="border px-4 py-2">Password</th>
             <th className="border px-4 py-2">Subscription (Days)</th>
+            <th className="border px-4 py-2">Phone No</th>
+            <th className="border px-4 py-2">Address</th>
             <th className="border px-4 py-2">Course</th>
+            <th className="border px-4 py-2">Device Identifier</th>
             <th className="border px-4 py-2">Actions</th>
           </tr>
         </thead>
@@ -236,10 +333,15 @@ const UserCreationPage = () => {
               <td className="border px-4 py-2">{user.email}</td>
               <td className="border px-4 py-2">{user.password}</td>
               <td className="border px-4 py-2 text-center">{user.subscription}</td>
+              <td className="border px-4 py-2 text-center">{user.phoneNo}</td>
+              <td className="border px-4 py-2 text-center">{user.address}</td>
               <td className="border px-4 py-2">
                 {user.course?.map((course, idx) => (
                   <div key={idx}>{course.title}</div>
-                )) || "No course"}
+                )) || 'No course'}
+              </td>
+              <td className="border px-4 py-2 text-center">
+                {user.deviceIdentifier || 'N/A'}
               </td>
               <td className="border px-4 py-2">
                 <button
@@ -248,6 +350,14 @@ const UserCreationPage = () => {
                 >
                   Edit
                 </button>
+                {user.deviceIdentifier && (
+                  <button
+                    onClick={() => handleDeleteDeviceIdentifier(user._id)}
+                    className="bg-red-500 text-white py-1 px-3 ml-2 rounded-md hover:bg-red-600"
+                  >
+                    Delete Device
+                  </button>
+                )}
               </td>
             </tr>
           ))}

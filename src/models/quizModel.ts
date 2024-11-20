@@ -9,6 +9,8 @@ interface Answer {
 interface Question {
   question: string;
   answers: Answer[];
+  marks: number; // New field for marks
+  image?: string; // Optional image field
 }
 
 interface QuizDocument extends Document {
@@ -28,6 +30,8 @@ const AnswerSchema = new Schema({
 const QuestionSchema = new Schema({
   question: { type: String, required: true },
   answers: [AnswerSchema],
+  marks: { type: Number, required: true }, // Required marks field
+  image: { type: String }, // Optional image field
 });
 
 const QuizSchema = new Schema({

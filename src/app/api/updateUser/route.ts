@@ -5,13 +5,13 @@ import { User } from '@/models/user'; // User model
 export async function POST(request: Request) {
   await dbConnect(); // Connect to the database
 
-  const { id, name, email, password, subscription, course } = await request.json();
+  const { id, name, email, password, subscription, phoneNo, address, course } = await request.json();
 
   try {
     // Find user by ID and update with new data
     const updatedUser = await User.findByIdAndUpdate(
       id,
-      { name, email, password, subscription, course },
+      { name, email, password, subscription, phoneNo, address, course },
       { new: true }
     );
 

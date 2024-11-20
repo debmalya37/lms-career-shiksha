@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import connectMongo from '@/lib/db';
 import Quiz from '@/models/quizModel';
 import { v2 as cloudinary } from 'cloudinary';
@@ -33,6 +33,7 @@ export async function POST(request: Request) {
     await connectMongo();
 
     const formData = await request.formData();
+    const quizId = formData.get('quizId') as string;
     const title = formData.get('title') as string;
     const course = formData.get('course') as string;
     const subject = formData.get('subject') as string;
@@ -41,10 +42,10 @@ export async function POST(request: Request) {
     const questionsData = formData.getAll('questions') as string[]; // Parse JSON strings
     const questionImages = formData.getAll('questionImages') as File[]; // Get files
 
-    const questions = JSON.parse(questionsData[0]); // Assuming one JSON array string in the formData
+    const questions = JSON.parse(questionsData[0]);
 
     // Upload images and attach URLs to the questions
-    const questionsWithImages = await Promise.all(
+    const updatedQuestions = await Promise.all(
       questions.map(async (question: any, index: number) => {
         if (questionImages[index]) {
           const buffer = await questionImages[index].arrayBuffer();
@@ -55,48 +56,18 @@ export async function POST(request: Request) {
       })
     );
 
-    const newQuiz = new Quiz({
+    await Quiz.findByIdAndUpdate(quizId, {
       title,
       course,
       subject,
-      questions: questionsWithImages,
+      questions: updatedQuestions,
       negativeMarking,
       totalTime,
     });
 
-    await newQuiz.save();
-
-    return NextResponse.json({ message: 'Quiz added successfully!' });
+    return NextResponse.json({ message: 'Quiz updated successfully!' });
   } catch (error) {
-    console.error('Error adding quiz:', error);
-    return NextResponse.json({ error: 'Failed to add quiz' }, { status: 500 });
+    console.error('Error updating quiz:', error);
+    return NextResponse.json({ error: 'Failed to update quiz' }, { status: 500 });
   }
 }
-
-
-
-export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
-  const courseId = searchParams.get('courseId');
-  const subjectId = searchParams.get('subjectId');
-  const quizId = searchParams.get('quizId'); // Get quizId from searchParams
-
-  try {
-    await connectMongo();
-
-    let quizzes;
-    if (quizId) {
-      // If quizId is provided, fetch only that specific quiz
-      quizzes = await Quiz.findOne({ _id: quizId, course: courseId, subject: subjectId }).lean();
-    } else {
-      // If no quizId, fetch all quizzes for the given course and subject
-      quizzes = await Quiz.find({ course: courseId, subject: subjectId }).lean();
-    }
-
-    return NextResponse.json(quizzes);
-  } catch (error) {
-    console.error('Error fetching quiz data:', error);
-    return NextResponse.json({ error: 'Failed to fetch quiz data' }, { status: 500 });
-  }
-}
-

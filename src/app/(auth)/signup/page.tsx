@@ -6,6 +6,8 @@ export default function Signup() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [phoneNo, setPhoneNo] = useState(''); // New state for phoneNo
+  const [address, setAddress] = useState(''); // New state for address
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<boolean>(false);
   const router = useRouter();
@@ -24,7 +26,7 @@ export default function Signup() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, phoneNo, address }), // Include phoneNo and address
       });
 
       if (response.ok) {
@@ -67,12 +69,31 @@ export default function Signup() {
             required
           />
         </div>
-        <div className="mb-6">
+        <div className="mb-4">
           <input
             type="password"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             placeholder="Confirm Password"
+            className="border p-2 rounded w-full"
+            required
+          />
+        </div>
+        <div className="mb-4">
+          <input
+            type="text"
+            value={phoneNo}
+            onChange={(e) => setPhoneNo(e.target.value)}
+            placeholder="Phone Number"
+            className="border p-2 rounded w-full"
+            required
+          />
+        </div>
+        <div className="mb-6">
+          <textarea
+            value={address}
+            onChange={(e) => setAddress(e.target.value)}
+            placeholder="Address"
             className="border p-2 rounded w-full"
             required
           />

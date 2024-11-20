@@ -5,7 +5,7 @@ import { User } from '@/models/user'; // Import your user model
 export async function POST(request: Request) {
   await dbConnect(); // Ensure you are connected to the database
 
-  const { name, email, password, subscription, course } = await request.json();
+  const { name, email, password, subscription, phoneNo, address, course } = await request.json();
 
   try {
     const newUser = new User({
@@ -13,6 +13,8 @@ export async function POST(request: Request) {
       email,
       password, // Make sure to hash the password before saving it
       subscription: subscription,
+      phoneNo,
+      address,
       course, // course should be an ObjectId
     });
 
@@ -39,6 +41,9 @@ export async function GET() {
         password: user.password, // Avoid sending the password in production
         subscription: user.subscription, // Ensure this is a number
         course: user.course, // Get the course name
+        address: user.address,
+        phoneNo: user.phoneNo,
+        deviceIdentifier: user.deviceIdentifier
       }));
   
       return NextResponse.json(transformedUsers);

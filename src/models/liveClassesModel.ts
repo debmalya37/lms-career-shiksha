@@ -1,18 +1,20 @@
+// models/liveClassesModel.ts
 import mongoose, { Schema, Document } from 'mongoose';
 
-export interface ILiveClass extends Document {
+interface LiveClassDocument extends Document {
   title: string;
   url: string;
+  course: mongoose.Types.ObjectId; // Reference to the Course model
   createdAt: Date;
 }
 
-const LiveClassSchema: Schema = new Schema({
-  title: { type: String, required: true },
-  url: { type: String, required: true },
-  createdAt: { type: Date, default: Date.now },
-});
+const LiveClassSchema = new Schema<LiveClassDocument>(
+  {
+    title: { type: String, required: true },
+    url: { type: String, required: true },
+    course: { type: Schema.Types.ObjectId, ref: 'Course', required: true }, // Reference to the course
+  },
+  { timestamps: true }
+);
 
-// Export the model and schema
-const LiveClass = mongoose.models.LiveClass || mongoose.model<ILiveClass>('LiveClass', LiveClassSchema);
-
-export default LiveClass;
+export default mongoose.models.LiveClass || mongoose.model<LiveClassDocument>('LiveClass', LiveClassSchema);

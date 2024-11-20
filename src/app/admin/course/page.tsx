@@ -1,6 +1,6 @@
 "use client";
-import { useEffect, useState } from 'react';
-import axios from 'axios';
+import { useEffect, useState } from "react";
+import axios from "axios";
 
 interface Subject {
   _id: string;
@@ -12,25 +12,37 @@ interface Topic {
   name: string;
 }
 
-const ManageCourses = () => {
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [subject, setSubject] = useState('');
-  const [topic, setTopic] = useState('');
-  const [subjects, setSubjects] = useState<Subject[]>([]);
-  const [topics, setTopics] = useState<Topic[]>([]);
-  const [newSubjectName, setNewSubjectName] = useState('');
-  const [newTopicName, setNewTopicName] = useState('');
-  const [courseImg, setCourseImg] = useState<File | null>(null);
+interface Course {
+  _id: string;
+  title: string;
+  description: string;
+  courseImg: string;
+  subjects: Subject[];
+  isHidden: boolean; // New field
+}
 
-  // Fetch subjects from the existing subjects API
+const ManageCourses = () => {
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [subject, setSubject] = useState("");
+  const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [topic, setTopic] = useState("");
+  const [topics, setTopics] = useState<Topic[]>([]);
+  const [newSubjectName, setNewSubjectName] = useState("");
+  const [newTopicName, setNewTopicName] = useState("");
+  const [courseImg, setCourseImg] = useState<File | null>(null);
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [editingCourse, setEditingCourse] = useState<Course | null>(null);
+  const [isHidden, setIsHidden] = useState(false); // State for isHidden
+
+  // Fetch subjects from the API
   useEffect(() => {
     const fetchSubjects = async () => {
       try {
-        const res = await axios.get(`https://civilacademyapp.com/api/subjects`);
+        const res = await axios.get("/api/subjects");
         setSubjects(res.data);
       } catch (error) {
-        console.error('Error fetching subjects:', error);
+        console.error("Error fetching subjects:", error);
       }
     };
     fetchSubjects();
@@ -41,45 +53,74 @@ const ManageCourses = () => {
     if (subject) {
       const fetchTopics = async () => {
         try {
-          const res = await axios.get(`https://civilacademyapp.com/api/topics?subject=${subject}`);
+          const res = await axios.get(`/api/topics?subject=${subject}`);
           setTopics(res.data);
         } catch (error) {
-          console.error('Error fetching topics:', error);
+          console.error("Error fetching topics:", error);
         }
       };
       fetchTopics();
     }
   }, [subject]);
 
+  // Fetch all courses
+  
+useEffect(() => {
+  const fetchCourses = async () => {
+    try {
+      const isAdmin = window.location.pathname.includes("/admin");
+      const endpoint = isAdmin ? "/api/course/admin" : "/api/course";
+
+      const res = await axios.get(endpoint);
+      setCourses(res.data);
+    } catch (error) {
+      console.error("Error fetching courses:", error);
+    }
+  };
+  fetchCourses();
+}, []);
+
+
+  // Handle form submission for adding or editing a course
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
     const formData = new FormData();
-    formData.append('title', title);
-    formData.append('description', description);
-    formData.append('subjects', subject);
+    formData.append("title", title);
+    formData.append("description", description);
+    formData.append("subjects", subject);
+    formData.append("isHidden", String(isHidden)); // Add isHidden field
     if (courseImg) {
-      formData.append('courseImg', courseImg); // Append image file to FormData
+      formData.append("courseImg", courseImg);
     }
 
     try {
-      await axios.post(`https://civilacademyapp.com/api/course`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-      setTitle('');
-      setDescription('');
-      setSubject('');
-      setTopic('');
-      setCourseImg(null);
-      alert('Course added successfully!');
+      if (editingCourse) {
+        // Edit existing course
+        formData.append("id", editingCourse._id);
+        await axios.post("/api/course/edit", formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+        alert("Course updated successfully!");
+      } else {
+        // Add a new course
+        await axios.post("/api/course", formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+        alert("Course added successfully!");
+      }
+
+      // Refresh the course list and reset the form
+      const res = await axios.get("/api/course/admin");
+      setCourses(res.data);
+      resetForm();
     } catch (error) {
-      console.error('Error adding course:', error);
-      alert('Error adding course.');
+      console.error(error);
+      alert("Error adding/updating course.");
     }
   };
 
-  // Handle adding a new subject with `api/newSubject`
+  // Handle adding a new subject
   const handleAddSubject = async () => {
     if (!newSubjectName) {
       alert("Please enter a subject name.");
@@ -87,13 +128,13 @@ const ManageCourses = () => {
     }
 
     try {
-      const response = await axios.post(`https://civilacademyapp.com/api/newSubject`, { name: newSubjectName });
-      setSubjects((prevSubjects) => [...prevSubjects, response.data.data]);
-      setNewSubjectName('');
-      alert('New subject added successfully!');
+      const response = await axios.post("/api/newSubject", { name: newSubjectName });
+      setSubjects((prevSubjects) => [...prevSubjects, response.data]);
+      setNewSubjectName("");
+      alert("New subject added successfully!");
     } catch (error) {
-      console.error('Error adding subject:', error);
-      alert('Failed to add subject.');
+      console.error("Error adding subject:", error);
+      alert("Failed to add subject.");
     }
   };
 
@@ -105,24 +146,46 @@ const ManageCourses = () => {
     }
 
     try {
-      const response = await axios.post(`https://civilacademyapp.com/api/topics`, { name: newTopicName, subject });
+      const response = await axios.post("/api/topics", { name: newTopicName, subject });
       setTopics((prevTopics) => [...prevTopics, response.data]);
-      setNewTopicName('');
-      alert('New topic added successfully!');
+      setNewTopicName("");
+      alert("New topic added successfully!");
     } catch (error) {
-      console.error('Error adding topic:', error);
-      alert('Failed to add topic.');
+      console.error("Error adding topic:", error);
+      alert("Failed to add topic.");
     }
   };
 
+  // Open the edit form with pre-filled values
+  const handleEditClick = (course: Course) => {
+    setEditingCourse(course);
+    setTitle(course.title);
+    setDescription(course.description);
+    setSubject(course.subjects?.[0]?._id || "");
+    setIsHidden(course.isHidden); // Set the isHidden value
+    setCourseImg(null); // Reset file input
+  };
+
+  // Reset the form to initial state
+  const resetForm = () => {
+    setTitle("");
+    setDescription("");
+    setSubject("");
+    setTopic("");
+    setIsHidden(false); // Reset isHidden
+    setCourseImg(null);
+    setEditingCourse(null);
+  };
+
   return (
-    <div className="p-8 bg-white rounded-lg shadow-md max-w-xl mx-auto mt-8 text-black">
-      <h1 className="text-2xl font-bold mb-4">Add Course</h1>
+    <div className="p-8 bg-white rounded-lg shadow-md max-w-4xl mx-auto mt-8 text-black">
+      <h1 className="text-2xl font-bold mb-4">{editingCourse ? "Edit Course" : "Add Course"}</h1>
+
       <form onSubmit={handleSubmit}>
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">Course Title</label>
           <input
-          title='text'
+          title="title"
             type="text"
             className="border p-2 w-full rounded-md"
             value={title}
@@ -134,7 +197,7 @@ const ManageCourses = () => {
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
           <textarea
-          title='desc'
+          title="desc"
             className="border p-2 w-full rounded-md"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
@@ -142,23 +205,23 @@ const ManageCourses = () => {
           />
         </div>
 
-        {/* Image Upload */}
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">Course Thumbnail</label>
           <input
-          title='img'
+          title="file"
             type="file"
             accept="image/*"
             onChange={(e) => setCourseImg(e.target.files?.[0] || null)}
-            required
           />
+          {editingCourse && editingCourse.courseImg && (
+            <p className="text-sm text-gray-600 mt-2">Current Image: {editingCourse.courseImg}</p>
+          )}
         </div>
 
-        {/* Subject Selection */}
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">Subject</label>
           <select
-          title='subject'
+          title="subject"
             className="border p-2 w-full rounded-md"
             value={subject}
             onChange={(e) => setSubject(e.target.value)}
@@ -166,86 +229,111 @@ const ManageCourses = () => {
           >
             <option value="">Select a subject</option>
             {subjects.map((subj) => (
-              <option key={subj._id} value={subj._id}>{subj.name}</option>
+              <option key={subj._id} value={subj._id}>
+                {subj.name}
+              </option>
             ))}
           </select>
+          <input
+            type="text"
+            className="border p-2 w-full rounded-md mt-2"
+            placeholder="Enter new subject name"
+            value={newSubjectName}
+            onChange={(e) => setNewSubjectName(e.target.value)}
+          />
           <button
             type="button"
             onClick={handleAddSubject}
-            className="mt-2 text-blue-600 underline text-sm"
+            className="mt-2 bg-green-500 text-white py-2 px-4 rounded-md hover:bg-green-600"
           >
             Add New Subject
           </button>
         </div>
 
-        {/* Topic Selection */}
         {subject && (
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-2">Topic</label>
             <select
-            title='topic'
+            title="topic"
               className="border p-2 w-full rounded-md"
               value={topic}
               onChange={(e) => setTopic(e.target.value)}
-              required
             >
               <option value="">Select a topic</option>
               {topics.map((top) => (
-                <option key={top._id} value={top._id}>{top.name}</option>
+                <option key={top._id} value={top._id}>
+                  {top.name}
+                </option>
               ))}
             </select>
+            <input
+              type="text"
+              className="border p-2 w-full rounded-md mt-2"
+              placeholder="Enter new topic name"
+              value={newTopicName}
+              onChange={(e) => setNewTopicName(e.target.value)}
+            />
             <button
               type="button"
               onClick={handleAddTopic}
-              className="mt-2 text-blue-600 underline text-sm"
+              className="mt-2 bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600"
             >
               Add New Topic
             </button>
           </div>
         )}
 
+        {/* Checkbox for isHidden */}
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">Hide this Course</label>
+          <input
+          title="isHidden"
+            type="checkbox"
+            checked={isHidden}
+            onChange={(e) => setIsHidden(e.target.checked)}
+          />
+        </div>
+
         <button type="submit" className="bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700">
-          Add Course
+          {editingCourse ? "Update Course" : "Add Course"}
         </button>
+        {editingCourse && (
+          <button
+            type="button"
+            onClick={resetForm}
+            className="bg-gray-600 text-white py-2 px-4 rounded-md hover:bg-gray-700 ml-4"
+          >
+            Cancel Edit
+          </button>
+        )}
       </form>
 
-      {/* Add New Subject Modal */}
-      <div className="mt-6">
-        <h2 className="text-xl font-semibold">Add New Subject</h2>
-        <input
-          type="text"
-          className="border p-2 w-full rounded-md"
-          placeholder="Enter new subject name"
-          value={newSubjectName}
-          onChange={(e) => setNewSubjectName(e.target.value)}
-        />
-        <button
-          onClick={handleAddSubject}
-          className="mt-2 bg-green-500 text-white py-2 px-4 rounded-md hover:bg-green-600"
-        >
-          Add Subject
-        </button>
+      {/* List of Courses */}
+      <div className="mt-8">
+        <h2 className="text-xl font-semibold mb-4">Existing Courses</h2>
+        <ul className="space-y-4">
+          {courses.map((course) => (
+            <li key={course._id} className="p-4 bg-gray-100 rounded-md shadow flex justify-between items-center">
+              <div>
+                <h3 className="font-bold">{course.title}</h3>
+                <p className="text-sm text-gray-600">{course.description}</p>
+                {course.courseImg && (
+                  <img src={course.courseImg} alt="Course Thumbnail" className="w-20 h-20 mt-2 rounded-md" />
+                )}
+                <p className="text-sm text-gray-600">
+                  Hidden: {course.isHidden ? "Yes" : "No"}
+                </p>
+              </div>
+              <button
+                onClick={() => handleEditClick(course)}
+                className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600"
+              >
+                Edit
+              </button>
+            </li>
+          ))}
+        </ul>
       </div>
-
-      {/* Add New Topic Modal */}
-      {subject && (
-        <div className="mt-6">
-          <h2 className="text-xl font-semibold">Add New Topic</h2>
-          <input
-            type="text"
-            className="border p-2 w-full rounded-md"
-            placeholder="Enter new topic name"
-            value={newTopicName}
-            onChange={(e) => setNewTopicName(e.target.value)}
-          />
-          <button
-            onClick={handleAddTopic}
-            className="mt-2 bg-green-500 text-white py-2 px-4 rounded-md hover:bg-green-600"
-          >
-            Add Topic
-          </button>
-        </div>
-      )}
     </div>
   );
 };
