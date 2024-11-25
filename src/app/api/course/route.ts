@@ -37,7 +37,7 @@ export async function POST(request: Request) {
     const title = formData.get('title') as string;
     const description = formData.get('description') as string;
     const subjects = formData.getAll('subjects') as string[];
-    const isHidden = formData.get('isHidden') === 'true'; // Extract isHidden value
+    const isHidden = formData.get('isHidden') === 'true';
     const courseImgFile = formData.get('courseImg') as File | null;
 
     if (!title || !description || subjects.length === 0) {
@@ -55,8 +55,8 @@ export async function POST(request: Request) {
       title,
       description,
       subjects,
-      isHidden, // Save the isHidden value
-      courseImg: courseImgUrl,
+      isHidden,
+      courseImg: courseImgUrl, // Save the Cloudinary image URL
     });
 
     await newCourse.save();
@@ -72,34 +72,35 @@ export async function POST(request: Request) {
 
 
 
-
-  export async function GET(request: Request) {
-  try {
-    await connectMongo();
-
-    const showHidden = request.url.includes('admin'); // Check if the request is from the admin
-    const query = showHidden ? {} : { isHidden: false }; // Include hidden courses for admin, exclude otherwise
-
-    const courses = await Course.find(query).lean();
-
-    const subjectIds: Types.ObjectId[] = courses.flatMap(course => course.subjects as Types.ObjectId[]);
-    const subjects = await Subject.find({ _id: { $in: subjectIds } }).lean<ISubject[]>();
-
-    const subjectMap: Record<string, ISubject> = subjects.reduce((acc, subject) => {
-      acc[(subject._id as Types.ObjectId).toString()] = subject; // Convert _id to string to avoid type issues
-      return acc;
-    }, {} as Record<string, ISubject>);
-
-    const enrichedCourses = courses.map(course => ({
-      ...course,
-      subjects: (course.subjects as Types.ObjectId[]).map(subjectId => subjectMap[subjectId.toString()] || null).filter(Boolean),
-    }));
-
-    return NextResponse.json(enrichedCourses);
-  } catch (error) {
-    console.error("GET /api/course Error:", error);
-    return NextResponse.json({ error: 'Failed to fetch courses' }, { status: 500 });
+  export async function GET() {
+    try {
+      await connectMongo();
+  
+      // Step 1: Fetch courses without populating subjects
+      const courses = await Course.find({ isHidden: false }).lean();
+      
+      // Step 2: Extract unique subject IDs from courses
+      const subjectIds: Types.ObjectId[] = courses.flatMap(course => course.subjects as Types.ObjectId[]);
+  
+      // Step 3: Fetch all subjects by IDs
+      const subjects = await Subject.find({ _id: { $in: subjectIds } }).lean<ISubject[]>(); // Cast as ISubject[]
+  
+      // Step 4: Map subjects by their ID for quick lookup
+      const subjectMap: Record<string, ISubject> = subjects.reduce((acc, subject) => {
+        acc[(subject._id as Types.ObjectId).toString()] = subject; // Convert _id to string to avoid type issues
+        return acc;
+      }, {} as Record<string, ISubject>);
+  
+      // Step 5: Merge subjects with each course
+      const enrichedCourses = courses.map(course => ({
+        ...course,
+        subjects: (course.subjects as Types.ObjectId[]).map(subjectId => subjectMap[subjectId.toString()] || null).filter(Boolean),
+      }));
+  
+      return NextResponse.json(enrichedCourses);
+    } catch (error) {
+      console.error("GET /api/course Error:", error);
+      return NextResponse.json({ error: 'Failed to fetch courses' }, { status: 500 });
+    }
   }
-}
-
   

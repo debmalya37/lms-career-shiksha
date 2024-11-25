@@ -38,7 +38,7 @@ const ManageCourses = () => {
   // Function to fetch all courses
   const fetchCourses = async () => {
     try {
-      const res = await axios.get(`https://civilacademyapp.com/api/course/admin`);
+      const res = await axios.get(`https://civilacademyapp.com/api/course`);
       setCourses(res.data);
     } catch (error) {
       console.error("Error fetching courses:", error);
