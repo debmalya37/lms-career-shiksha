@@ -1,62 +1,110 @@
 "use client";
-import { useState, useEffect } from 'react';
-import axios from 'axios';
+import { useState, useEffect } from "react";
+import axios from "axios";
+
+interface EBook {
+  _id: string;
+  title: string;
+  url: string;
+  ebookImg: string;
+  subject: { _id: string; name: string };
+}
+
+interface Subject {
+  _id: string;
+  name: string;
+}
 
 const ManageEBooks = () => {
-  const [title, setTitle] = useState('');
-  const [url, setUrl] = useState('');
-  const [ebookImg, setEbookImg] = useState<File | null>(null); // New state for the image file
-  const [subjects, setSubjects] = useState([]); 
-  const [selectedSubject, setSelectedSubject] = useState(''); 
+  const [title, setTitle] = useState("");
+  const [url, setUrl] = useState("");
+  const [ebookImg, setEbookImg] = useState<File | null>(null);
+  const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [selectedSubject, setSelectedSubject] = useState("");
+  const [ebooks, setEBooks] = useState<EBook[]>([]);
+  const [isEditing, setIsEditing] = useState(false);
+  const [currentEBookId, setCurrentEBookId] = useState<string | null>(null);
 
+  // Fetch subjects and eBooks on load
   useEffect(() => {
-    const fetchSubjects = async () => {
+    const fetchData = async () => {
       try {
-        const response = await axios.get(`https://civilacademyapp.com/api/subjects`);
-        setSubjects(response.data);
+        const [subjectResponse, ebookResponse] = await Promise.all([
+          axios.get(`https://civilacademyapp.com/api/subjects`),
+          axios.get(`https://civilacademyapp.com/api/ebook`),
+        ]);
+        setSubjects(subjectResponse.data);
+        setEBooks(ebookResponse.data);
       } catch (error) {
-        console.error('Error fetching subjects:', error);
+        console.error("Error fetching data:", error);
       }
     };
-    fetchSubjects();
+    fetchData();
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
     const formData = new FormData();
-    formData.append('title', title);
-    formData.append('url', url);
-    formData.append('subject', selectedSubject);
+    formData.append("title", title);
+    formData.append("url", url);
+    formData.append("subject", selectedSubject);
     if (ebookImg) {
-      formData.append('ebookImg', ebookImg); // Append the image file
+      formData.append("ebookImg", ebookImg);
     }
 
     try {
-      await axios.post(`https://civilacademyapp.com/api/ebook`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
+      const endpoint = isEditing ? `https://civilacademyapp.com/api/ebook/edit` : `https://civilacademyapp.com/api/ebook`;
+      const method = isEditing ? "POST" : "POST";
+
+      if (isEditing && currentEBookId) {
+        formData.append("_id", currentEBookId);
+      }
+
+      await axios({
+        url: endpoint,
+        method,
+        data: formData,
+        headers: { "Content-Type": "multipart/form-data" },
       });
-      setTitle('');
-      setUrl('');
-      setSelectedSubject('');
+
+      const updatedEBooks = await axios.get(`https://civilacademyapp.com/api/ebook`);
+      setEBooks(updatedEBooks.data);
+
+      // Reset form
+      setTitle("");
+      setUrl("");
+      setSelectedSubject("");
       setEbookImg(null);
-      alert('eBook added successfully!');
+      setIsEditing(false);
+      setCurrentEBookId(null);
+
+      alert(isEditing ? "eBook updated successfully!" : "eBook added successfully!");
     } catch (error) {
-      console.error('Error adding eBook:', error);
-      alert('Error adding eBook.');
+      console.error("Error saving eBook:", error);
+      alert("Failed to save eBook.");
     }
+  };
+
+  const handleEdit = (ebook: EBook) => {
+    setTitle(ebook.title);
+    setUrl(ebook.url);
+    setSelectedSubject(ebook.subject?._id || "");
+    setEbookImg(null); // Images aren't pre-filled; upload new one if required
+    setIsEditing(true);
+    setCurrentEBookId(ebook._id);
   };
 
   return (
     <div className="p-8 bg-white rounded-lg shadow-md max-w-xl mx-auto mt-8 text-black">
-      <h1 className="text-2xl font-bold mb-4">Add eBook</h1>
+      <h1 className="text-2xl font-bold mb-4">
+        {isEditing ? "Edit eBook" : "Add eBook"}
+      </h1>
       <form onSubmit={handleSubmit} encType="multipart/form-data">
-        {/* eBook Title */}
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">eBook Title</label>
           <input
-          title='title'
+          title="title"
             type="text"
             className="border p-2 w-full rounded-md"
             value={title}
@@ -64,55 +112,65 @@ const ManageEBooks = () => {
             required
           />
         </div>
-
-        {/* Google Drive URL */}
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">Google Drive URL</label>
           <input
+          title="url"
             type="url"
             className="border p-2 w-full rounded-md"
             value={url}
             onChange={(e) => setUrl(e.target.value)}
             required
-            placeholder="Enter Google Drive Link"
           />
         </div>
-
-        {/* eBook Thumbnail */}
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">eBook Thumbnail</label>
           <input
-          title='img'
+          title="file"
             type="file"
             accept="image/*"
             onChange={(e) => setEbookImg(e.target.files?.[0] || null)}
-            required
           />
         </div>
-
-        {/* Subject Selection */}
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">Subject</label>
           <select
-          title='selectedSub'
+          title="selectedSub"
             className="border p-2 w-full rounded-md"
             value={selectedSubject}
             onChange={(e) => setSelectedSubject(e.target.value)}
             required
           >
             <option value="">Select a subject</option>
-            {subjects.map((subject: any) => (
+            {subjects.map((subject) => (
               <option key={subject._id} value={subject._id}>
                 {subject.name}
               </option>
             ))}
           </select>
         </div>
-
         <button type="submit" className="bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700">
-          Add eBook
+          {isEditing ? "Update eBook" : "Add eBook"}
         </button>
       </form>
+
+      <h2 className="text-xl font-bold mt-8">Existing eBooks</h2>
+      <ul className="mt-4 space-y-4">
+        {ebooks.map((ebook) => (
+          <li key={ebook._id} className="flex justify-between items-center border-b pb-4">
+            <div>
+              <p className="text-lg font-semibold">{ebook.title}</p>
+              <p className="text-sm text-gray-500">{ebook.subject.name}</p>
+            </div>
+            <button
+              onClick={() => handleEdit(ebook)}
+              className="bg-blue-500 text-white py-1 px-3 rounded-md hover:bg-blue-600"
+            >
+              Edit
+            </button>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 };

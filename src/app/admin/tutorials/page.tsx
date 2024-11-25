@@ -1,47 +1,57 @@
 "use client";
 
-import { useState, useEffect } from 'react';
-import axios from 'axios';
+import { useState, useEffect } from "react";
+import axios from "axios";
 
-// Define the Course type
+// Define the Course, Subject, Topic, and Tutorial types
 interface Course {
   _id: string;
   title: string;
 }
 
-// Define the Subject type
 interface Subject {
   _id: string;
   name: string;
 }
 
-// Define the Topic type
 interface Topic {
   _id: string;
   name: string;
 }
 
+interface Tutorial {
+  _id: string;
+  title: string;
+  url: string;
+  description: string;
+  subject: Subject;
+  topic: Topic;
+}
+
 const ManageTutorials = () => {
-  const [title, setTitle] = useState('');
-  const [url, setUrl] = useState('');
-  const [description, setDescription] = useState('');
-  const [courses, setCourses] = useState<Course[]>([]); // Explicitly set type
-  const [selectedCourse, setSelectedCourse] = useState('');
-  const [subjects, setSubjects] = useState<Subject[]>([]); // Explicitly set type
-  const [selectedSubject, setSelectedSubject] = useState('');
-  const [topics, setTopics] = useState<Topic[]>([]); // Explicitly set type
-  const [selectedTopic, setSelectedTopic] = useState('');
-  const [newTopicName, setNewTopicName] = useState('');
-  const [newSubjectName, setNewSubjectName] = useState('');
+  const [title, setTitle] = useState("");
+  const [url, setUrl] = useState("");
+  const [description, setDescription] = useState("");
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [selectedCourse, setSelectedCourse] = useState("");
+  const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [selectedSubject, setSelectedSubject] = useState("");
+  const [topics, setTopics] = useState<Topic[]>([]);
+  const [selectedTopic, setSelectedTopic] = useState("");
+  const [newTopicName, setNewTopicName] = useState("");
+  const [newSubjectName, setNewSubjectName] = useState("");
+  const [tutorials, setTutorials] = useState<Tutorial[]>([]);
+  const [isEditing, setIsEditing] = useState(false);
+  const [currentTutorialId, setCurrentTutorialId] = useState<string | null>(null);
 
   // Fetch courses
   useEffect(() => {
     const fetchCourses = async () => {
       try {
-        const response = await axios.get('/api/course/admin');
+        const response = await axios.get(`https://civilacademyapp.com/api/course/admin`);
         setCourses(response.data);
       } catch (error) {
-        console.error('Error fetching courses:', error);
+        console.error("Error fetching courses:", error);
       }
     };
     fetchCourses();
@@ -55,7 +65,7 @@ const ManageTutorials = () => {
           const response = await axios.get(`https://civilacademyapp.com/api/subjects?course=${selectedCourse}`);
           setSubjects(response.data);
         } catch (error) {
-          console.error('Error fetching subjects:', error);
+          console.error("Error fetching subjects:", error);
         }
       };
       fetchSubjects();
@@ -67,37 +77,77 @@ const ManageTutorials = () => {
     if (selectedSubject) {
       const fetchTopics = async () => {
         try {
-          const response = await axios.get(`/api/topics?subject=${selectedSubject}`);
+          const response = await axios.get(`https://civilacademyapp.com/api/topics?subject=${selectedSubject}`);
           setTopics(response.data);
         } catch (error) {
-          console.error('Error fetching topics:', error);
+          console.error("Error fetching topics:", error);
         }
       };
       fetchTopics();
     }
   }, [selectedSubject]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // Fetch all tutorials
+  useEffect(() => {
+    const fetchTutorials = async () => {
+      try {
+        const response = await axios.get(`https://civilacademyapp.com/api/tutorials`);
+        setTutorials(response.data);
+      } catch (error) {
+        console.error("Error fetching tutorials:", error);
+      }
+    };
+    fetchTutorials();
+  }, []);
+
+  const handleAddTutorial = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await axios.post('/api/tutorials', {
+      const apiEndpoint = isEditing
+        ? `https://civilacademyapp.com/api/tutorial/edit`
+        : `https://civilacademyapp.com/api/tutorials`;
+
+      const payload = {
         title,
         url,
         description,
         subject: selectedSubject,
         topic: selectedTopic,
-      });
-      setTitle('');
-      setUrl('');
-      setDescription('');
-      setSelectedCourse('');
-      setSelectedSubject('');
-      setSelectedTopic('');
-      alert('Tutorial video added successfully!');
+        ...(isEditing && { _id: currentTutorialId }),
+      };
+
+      await axios.post(apiEndpoint, payload);
+
+      // Refresh tutorials list
+      const response = await axios.get(`https://civilacademyapp.com/api/tutorials`);
+      setTutorials(response.data);
+
+      // Reset form and state
+      setTitle("");
+      setUrl("");
+      setDescription("");
+      setSelectedCourse("");
+      setSelectedSubject("");
+      setSelectedTopic("");
+      setIsEditing(false);
+      setCurrentTutorialId(null);
+
+      alert(isEditing ? "Tutorial updated successfully!" : "Tutorial added successfully!");
     } catch (error) {
       console.error(error);
-      alert('Error adding tutorial video.');
+      alert("Error saving tutorial.");
     }
+  };
+
+  const handleEditTutorial = (tutorial: Tutorial) => {
+    setTitle(tutorial.title);
+    setUrl(tutorial.url);
+    setDescription(tutorial.description);
+    setSelectedCourse(tutorial.subject?._id || "");
+    setSelectedSubject(tutorial.subject?._id || "");
+    setSelectedTopic(tutorial.topic?._id || "");
+    setIsEditing(true);
+    setCurrentTutorialId(tutorial._id);
   };
 
   const handleAddSubject = async () => {
@@ -111,11 +161,11 @@ const ManageTutorials = () => {
         course: selectedCourse,
       });
       setSubjects((prevSubjects) => [...prevSubjects, response.data]);
-      setNewSubjectName('');
-      alert('New subject added successfully!');
+      setNewSubjectName("");
+      alert("New subject added successfully!");
     } catch (error) {
-      console.error('Error adding subject:', error);
-      alert('Failed to add subject.');
+      console.error("Error adding subject:", error);
+      alert("Failed to add subject.");
     }
   };
 
@@ -125,27 +175,27 @@ const ManageTutorials = () => {
       return;
     }
     try {
-      const response = await axios.post('/api/topics', {
+      const response = await axios.post(`https://civilacademyapp.com/api/topics`, {
         name: newTopicName,
         subject: selectedSubject,
       });
       setTopics((prevTopics) => [...prevTopics, response.data]);
-      setNewTopicName('');
-      alert('New topic added successfully!');
+      setNewTopicName("");
+      alert("New topic added successfully!");
     } catch (error) {
-      console.error('Error adding topic:', error);
-      alert('Failed to add topic.');
+      console.error("Error adding topic:", error);
+      alert("Failed to add topic.");
     }
   };
 
   return (
-    <div className="p-8 bg-white rounded-lg shadow-md max-w-xl mx-auto mt-8 text-black">
-      <h1 className="text-2xl font-bold mb-4">Add Tutorial Video</h1>
-      <form onSubmit={handleSubmit}>
+    <div className="p-8 bg-white rounded-lg shadow-md max-w-3xl mx-auto mt-8 text-black">
+      <h1 className="text-2xl font-bold mb-4">{isEditing ? "Edit Tutorial Video" : "Add Tutorial Video"}</h1>
+      <form onSubmit={handleAddTutorial}>
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">Video Title</label>
           <input
-            title="title"
+          title="title"
             type="text"
             className="border p-2 w-full rounded-md"
             value={title}
@@ -156,7 +206,7 @@ const ManageTutorials = () => {
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
           <textarea
-            title="description"
+          title="desc"
             className="border p-2 w-full rounded-md"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
@@ -166,7 +216,7 @@ const ManageTutorials = () => {
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">Video URL (YouTube Embed)</label>
           <input
-            title="url"
+          title="text"
             type="text"
             className="border p-2 w-full rounded-md"
             value={url}
@@ -177,51 +227,56 @@ const ManageTutorials = () => {
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">Course</label>
           <select
-            title="selectCourse"
+          title="selectedCourse"
             value={selectedCourse}
             onChange={(e) => setSelectedCourse(e.target.value)}
             required
           >
             <option value="">Select Course</option>
             {courses.map((course) => (
-              <option key={course._id} value={course._id}>{course.title}</option>
+              <option key={course._id} value={course._id}>
+                {course.title}
+              </option>
             ))}
           </select>
         </div>
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">Subject</label>
           <select
-            title="selectSubject"
+          title="selectedSub"
             value={selectedSubject}
             onChange={(e) => setSelectedSubject(e.target.value)}
             required
           >
             <option value="">Select Subject</option>
             {subjects.map((subject) => (
-              <option key={subject._id} value={subject._id}>{subject.name}</option>
+              <option key={subject._id} value={subject._id}>
+                {subject.name}
+              </option>
             ))}
           </select>
         </div>
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">Topic</label>
           <select
-            title="selectTopic"
+          title="selectedTopic"
             value={selectedTopic}
             onChange={(e) => setSelectedTopic(e.target.value)}
             required
           >
             <option value="">Select Topic</option>
             {topics.map((topic) => (
-              <option key={topic._id} value={topic._id}>{topic.name}</option>
+              <option key={topic._id} value={topic._id}>
+                {topic.name}
+              </option>
             ))}
           </select>
         </div>
         <button type="submit" className="bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700">
-          Add Tutorial Video
+          {isEditing ? "Update Tutorial Video" : "Add Tutorial Video"}
         </button>
       </form>
-
-      {/* Add New Subject Section */}
+              {/* Add New Subject Section */}
       <div className="mt-8">
         <h2 className="text-xl font-bold">Add New Subject</h2>
         <input
@@ -256,6 +311,24 @@ const ManageTutorials = () => {
           Add Topic
         </button>
       </div>
+      {/* Tutorial List */}
+      <h2 className="text-xl font-bold text-gray-700 mt-8">Existing Tutorials</h2>
+      <ul className="mt-4">
+        {tutorials.map((tutorial) => (
+          <li key={tutorial._id} className="border-b py-4 flex justify-between items-center">
+            <div>
+              <p className="text-lg font-semibold">{tutorial.title}</p>
+              <p className="text-sm text-gray-500">{tutorial.description}</p>
+            </div>
+            <button
+              onClick={() => handleEditTutorial(tutorial)}
+              className="bg-yellow-500 text-white py-1 px-3 rounded-md hover:bg-yellow-600"
+            >
+              Edit
+            </button>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 };

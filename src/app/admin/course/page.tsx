@@ -39,7 +39,7 @@ const ManageCourses = () => {
   useEffect(() => {
     const fetchSubjects = async () => {
       try {
-        const res = await axios.get("/api/subjects");
+        const res = await axios.get(`https://civilacademyapp.com/api/subjects`);
         setSubjects(res.data);
       } catch (error) {
         console.error("Error fetching subjects:", error);
@@ -53,7 +53,7 @@ const ManageCourses = () => {
     if (subject) {
       const fetchTopics = async () => {
         try {
-          const res = await axios.get(`/api/topics?subject=${subject}`);
+          const res = await axios.get(`https://civilacademyapp.com/api/topics?subject=${subject}`);
           setTopics(res.data);
         } catch (error) {
           console.error("Error fetching topics:", error);
@@ -69,7 +69,7 @@ useEffect(() => {
   const fetchCourses = async () => {
     try {
       const isAdmin = window.location.pathname.includes("/admin");
-      const endpoint = isAdmin ? "/api/course/admin" : "/api/course";
+      const endpoint = isAdmin ? `https://civilacademyapp.com/api/course/admin` : `https://civilacademyapp.com/api/course`;
 
       const res = await axios.get(endpoint);
       setCourses(res.data);
@@ -98,20 +98,20 @@ useEffect(() => {
       if (editingCourse) {
         // Edit existing course
         formData.append("id", editingCourse._id);
-        await axios.post("/api/course/edit", formData, {
+        await axios.post(`https://civilacademyapp.com/api/course/edit`, formData, {
           headers: { "Content-Type": "multipart/form-data" },
         });
         alert("Course updated successfully!");
       } else {
         // Add a new course
-        await axios.post("/api/course", formData, {
+        await axios.post(`https://civilacademyapp.com/api/course`, formData, {
           headers: { "Content-Type": "multipart/form-data" },
         });
         alert("Course added successfully!");
       }
 
       // Refresh the course list and reset the form
-      const res = await axios.get("/api/course/admin");
+      const res = await axios.get(`https://civilacademyapp.com/api/course/admin`);
       setCourses(res.data);
       resetForm();
     } catch (error) {
@@ -128,7 +128,7 @@ useEffect(() => {
     }
 
     try {
-      const response = await axios.post("/api/newSubject", { name: newSubjectName });
+      const response = await axios.post(`https://civilacademyapp.com/api/newSubject`, { name: newSubjectName });
       setSubjects((prevSubjects) => [...prevSubjects, response.data]);
       setNewSubjectName("");
       alert("New subject added successfully!");
@@ -146,7 +146,7 @@ useEffect(() => {
     }
 
     try {
-      const response = await axios.post("/api/topics", { name: newTopicName, subject });
+      const response = await axios.post(`https://civilacademyapp.com/api/topics`, { name: newTopicName, subject });
       setTopics((prevTopics) => [...prevTopics, response.data]);
       setNewTopicName("");
       alert("New topic added successfully!");

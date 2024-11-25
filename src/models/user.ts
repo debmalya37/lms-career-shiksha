@@ -8,8 +8,8 @@ export interface User extends Document {
   course: Types.ObjectId[];
   subscription: number;
   profile: Types.ObjectId[];
-  phoneNo: string;
-  address: string;
+  phoneNo?: string;
+  address?: string;
   deviceIdentifier?: string | null 
 }
 
@@ -21,8 +21,8 @@ const userSchema = new Schema<User>({
   course: [{ type: Schema.Types.ObjectId, ref: "Course" }], // Correct type for an array of references
   subscription: { type: Number, required: true },
   profile: [{ type: Schema.Types.ObjectId, ref: 'Profile' }], // Correct type for an array of references
-  phoneNo: { type: String, required: true }, // New field
-  address: { type: String, required: true },
+  phoneNo: { type: String, required: false }, // New field
+  address: { type: String, required: false },
   deviceIdentifier: { type: String, default: null },
 });
 

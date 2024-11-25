@@ -18,7 +18,7 @@ export default function TestPage() {
   useEffect(() => {
     const fetchTestSeries = async () => {
       try {
-        const response = await axios.get('/api/test-series');
+        const response = await axios.get(`https://civilacademyapp.com/api/test-series`);
         setTestSeries(response.data);
       } catch (error) {
         setError('Failed to fetch test series.');

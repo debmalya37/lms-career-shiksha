@@ -37,6 +37,7 @@ export async function POST(request: Request) {
     const description = formData.get('description') as string;
     const subjects = formData.getAll('subjects') as string[];
     const courseImgFile = formData.get('courseImg') as File | null;
+    const isHidden = formData.get('isHidden') as string;
 
     if (!courseId) {
       return NextResponse.json({ error: 'Course ID is required' }, { status: 400 });
@@ -53,6 +54,7 @@ export async function POST(request: Request) {
     const updatedFields: any = {
       title,
       description,
+      isHidden,
       subjects,
     };
     if (courseImgUrl) updatedFields.courseImg = courseImgUrl;

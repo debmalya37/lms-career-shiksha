@@ -12,7 +12,7 @@ const ManageQuestionPapers = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await axios.post('/api/question-paper', { title, url, subject });
+      await axios.post(`https://civilacademyapp.com/api/question-paper`, { title, url, subject });
       setTitle('');
       setUrl('');
       setSubject('');

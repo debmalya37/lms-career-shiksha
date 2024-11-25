@@ -21,7 +21,7 @@ export default function Signup() {
     setError(null);
 
     try {
-      const response = await fetch('/api/signup', {
+      const response = await fetch('https://civilacademyapp.com/api/signup', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

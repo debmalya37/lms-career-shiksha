@@ -49,13 +49,13 @@ export default function AdminQuizPage() {
 
   useEffect(() => {
     async function fetchCourses() {
-      const response = await axios.get("/api/course/admin");
+      const response = await axios.get(`https://civilacademyapp.com/api/course/admin`);
       setCourses(response.data);
     }
     fetchCourses();
 
     async function fetchQuizzes() {
-      const response = await axios.get("/api/quiz/all");
+      const response = await axios.get(`https://civilacademyapp.com/api/quiz/all`);
       setQuizzes(response.data);
     }
     fetchQuizzes();
@@ -65,7 +65,7 @@ useEffect(() => {
   if (selectedCourse) {
     const fetchSubjects = async () => {
       try {
-        const response = await axios.get(`/api/subjects?course=${selectedCourse}`);
+        const response = await axios.get(`https://civilacademyapp.com/api/subjects?course=${selectedCourse}`);
         setSubjects(response.data);
       } catch (error) {
         console.error("Error fetching subjects:", error);
@@ -120,7 +120,7 @@ useEffect(() => {
       }
     });
 
-    const endpoint = selectedQuizId ? "/api/quiz/edit" : "/api/quiz";
+    const endpoint = selectedQuizId ? `https://civilacademyapp.com/api/quiz/edit` : `https://civilacademyapp.com/api/quiz`;
     await axios.post(endpoint, formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });

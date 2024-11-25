@@ -24,8 +24,8 @@ const ManageSubjects = () => {
     async function fetchData() {
       try {
         const [subjectRes, courseRes] = await Promise.all([
-          axios.get(`/api/subjects`),
-          axios.get(`/api/course`),
+          axios.get(`https://civilacademyapp.com/api/subjects`),
+          axios.get(`https://civilacademyapp.com/api/course`),
         ]);
         setSubjects(subjectRes.data);
         setCourses(courseRes.data);
@@ -49,15 +49,15 @@ const ManageSubjects = () => {
     try {
       if (editingSubject) {
         const editPayload = { ...basePayload, id: editingSubject._id }; // Include the ID for editing
-        await axios.post(`/api/subjects/edit`, editPayload);
+        await axios.post(`https://civilacademyapp.com/api/subjects/edit`, editPayload);
         alert("Subject updated successfully!");
       } else {
-        await axios.post(`/api/subjects`, basePayload);
+        await axios.post(`https://civilacademyapp.com/api/subjects`, basePayload);
         alert("Subject added successfully!");
       }
 
       // Refresh subjects and reset form
-      const res = await axios.get(`/api/subjects`);
+      const res = await axios.get(`https://civilacademyapp.com/api/subjects`);
       setSubjects(res.data);
       resetForm();
     } catch (error) {

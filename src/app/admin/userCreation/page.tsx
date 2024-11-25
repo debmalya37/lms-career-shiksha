@@ -48,7 +48,7 @@ const UserCreationPage = () => {
         console.log('Profile Data:', profileData); // Log the profile response
 
         // Define allowed emails
-        const allowedEmails = ['civilacademy.in@gmail.com'];
+        const allowedEmails = ['civilacademy.in@gmail.com', 'debmalyasen37@gmail.com'];
 
         // Check if the profile email is in the allowed list
         if (profileData?.email && allowedEmails.includes(profileData.email)) {
@@ -73,7 +73,7 @@ const UserCreationPage = () => {
     if (!isAdmin) return;
     const fetchCourses = async () => {
       try {
-        const response = await fetch('/api/course/admin');
+        const response = await fetch(`https://civilacademyapp.com/api/course/admin`);
         const data = await response.json();
         if (Array.isArray(data)) {
           setCourses(data);
@@ -85,7 +85,7 @@ const UserCreationPage = () => {
 
     const fetchUsers = async () => {
       try {
-        const response = await fetch('/api/usercreation');
+        const response = await fetch(`https://civilacademyapp.com/api/usercreation`);
         const data = await response.json();
         setUsers(data);
       } catch (error) {
@@ -93,8 +93,8 @@ const UserCreationPage = () => {
       }
     };
 
-    fetchCourses();
     fetchUsers();
+    fetchCourses();
   }, []);
 
   const handleEdit = (user: User) => {
@@ -123,7 +123,7 @@ const UserCreationPage = () => {
 
   const handleDeleteDeviceIdentifier = async (userId: string) => {
     try {
-      const response = await fetch('/api/usercreation/deleteDeviceIdentifier', {
+      const response = await fetch(`https://civilacademyapp.com/api/usercreation/deleteDeviceIdentifier`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId }),
@@ -161,7 +161,7 @@ const UserCreationPage = () => {
     if (isEditing && currentUserId) {
       // Use the update API for existing users
       try {
-        const response = await fetch('/api/updateUser', {
+        const response = await fetch(`https://civilacademyapp.com/api/updateUser`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(userData),
@@ -182,7 +182,7 @@ const UserCreationPage = () => {
     } else {
       // Add new user
       try {
-        const response = await fetch('/api/usercreation', {
+        const response = await fetch(`https://civilacademyapp.com/api/usercreation`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(userData),

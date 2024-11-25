@@ -69,7 +69,7 @@ function QuizAppContent() {
   useEffect(() => {
     const fetchCourses = async () => {
       try {
-        const response = await fetch("/api/course");
+        const response = await fetch(`https://civilacademyapp.com/api/course`);
         const data: Course[] = await response.json();
         setCourses(data);
       } catch (error) {
@@ -83,7 +83,7 @@ function QuizAppContent() {
     if (selectedCourse) {
       const fetchSubjects = async () => {
         try {
-          const response = await fetch(`/api/subjects?courseId=${selectedCourse}`);
+          const response = await fetch(`https://civilacademyapp.com/api/subjects?courseId=${selectedCourse}`);
           const data: Subject[] = await response.json();
           setSubjects(data);
         } catch (error) {
@@ -99,7 +99,7 @@ function QuizAppContent() {
       const fetchQuizData = async () => {
         setState((prevState) => ({ ...prevState, isLoading: true }));
         try {
-          const response = await fetch(`/api/quiz?quizId=${quizId}&courseId=${selectedCourse}&subjectId=${selectedSubject}`);
+          const response = await fetch(`https://civilacademyapp.com/api/quiz?quizId=${quizId}&courseId=${selectedCourse}&subjectId=${selectedSubject}`);
           const quizData: QuizData = await response.json();
 
           setState((prevState) => ({

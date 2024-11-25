@@ -17,7 +17,7 @@ const ManageLiveClasses = () => {
   useEffect(() => {
     const fetchCourses = async () => {
       try {
-        const response = await axios.get('/api/course');
+        const response = await axios.get(`https://civilacademyapp.com/api/course`);
         setCourses(response.data);
       } catch (error) {
         console.error('Error fetching courses:', error);
@@ -31,7 +31,7 @@ const ManageLiveClasses = () => {
     e.preventDefault();
 
     try {
-      await axios.post(`/api/live-classes`, { title, url, course: selectedCourse });
+      await axios.post(`https://civilacademyapp.com/api/live-classes`, { title, url, course: selectedCourse });
       setTitle('');
       setUrl('');
       setSelectedCourse('');

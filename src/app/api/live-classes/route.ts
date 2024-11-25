@@ -23,22 +23,40 @@ export async function POST(request: Request) {
 
 // GET method for fetching live classes from the last 24 hours
 // GET method for fetching live classes with course information
-export async function GET() {
+
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const courseId = searchParams.get("courseId"); // Get courseId from query params
+
   try {
-    await connectMongo(); // Connect to MongoDB
+    await connectMongo();
+
+    // Validate courseId
+    if (!courseId || !/^[0-9a-fA-F]{24}$/.test(courseId)) {
+      return NextResponse.json(
+        { error: "Invalid or missing courseId" },
+        { status: 400 }
+      );
+    }
 
     // Define the cutoff time for 24 hours ago
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
-    // Fetch live classes with course information
-    const liveClasses = await LiveClass.find({ createdAt: { $gte: twentyFourHoursAgo } })
-      .sort({ createdAt: -1 })
-      .populate('course', 'title') // Populate course title
+    // Fetch live classes under the given courseId and created in the last 24 hours
+    const liveClasses = await LiveClass.find({
+      course: courseId,
+      createdAt: { $gte: twentyFourHoursAgo }, // Filter for classes less than 24 hours old
+    })
+      .sort({ createdAt: -1 }) // Sort by the latest ones
+      .populate("course", "title") // Populate course title
       .lean();
 
     return NextResponse.json(liveClasses);
   } catch (error) {
-    console.error('Error fetching live classes:', error);
-    return NextResponse.json({ error: 'Failed to fetch live classes' }, { status: 500 });
+    console.error("Error fetching live classes:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch live classes" },
+      { status: 500 }
+    );
   }
 }

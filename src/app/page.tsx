@@ -54,7 +54,7 @@ export default function Home() {
         if (tutorialRes.data) setLatestTutorial(tutorialRes.data);
         
         // Fetch the latest live class
-        const liveClassRes = await axios.get(`https://civilacademyapp.com/api/latest-live`);
+        const liveClassRes = await axios.get(`https://civilacademyapp.com/api/live-classes?course=${profileRes.data.course?.id}`);
         console.log(liveClassRes);
         if (liveClassRes.data) setLatestLiveClass(liveClassRes.data);
         
