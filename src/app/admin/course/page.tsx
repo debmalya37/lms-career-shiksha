@@ -35,6 +35,16 @@ const ManageCourses = () => {
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
   const [isHidden, setIsHidden] = useState(false); // State for isHidden
 
+  // Function to fetch all courses
+  const fetchCourses = async () => {
+    try {
+      const res = await axios.get(`https://civilacademyapp.com/api/course/admin`);
+      setCourses(res.data);
+    } catch (error) {
+      console.error("Error fetching courses:", error);
+    }
+  };
+
   // Fetch subjects from the API
   useEffect(() => {
     const fetchSubjects = async () => {
@@ -63,23 +73,10 @@ const ManageCourses = () => {
     }
   }, [subject]);
 
-  // Fetch all courses
-  
-useEffect(() => {
-  const fetchCourses = async () => {
-    try {
-      const isAdmin = window.location.pathname.includes("/admin");
-      const endpoint = isAdmin ? `https://civilacademyapp.com/api/course/admin` : `https://civilacademyapp.com/api/course`;
-
-      const res = await axios.get(endpoint);
-      setCourses(res.data);
-    } catch (error) {
-      console.error("Error fetching courses:", error);
-    }
-  };
-  fetchCourses();
-}, []);
-
+  // Fetch all courses initially
+  useEffect(() => {
+    fetchCourses();
+  }, []);
 
   // Handle form submission for adding or editing a course
   const handleSubmit = async (e: React.FormEvent) => {
@@ -110,9 +107,8 @@ useEffect(() => {
         alert("Course added successfully!");
       }
 
-      // Refresh the course list and reset the form
-      const res = await axios.get(`https://civilacademyapp.com/api/course/admin`);
-      setCourses(res.data);
+      // Fetch updated courses after adding/editing
+      fetchCourses();
       resetForm();
     } catch (error) {
       console.error(error);
