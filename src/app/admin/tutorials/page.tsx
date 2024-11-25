@@ -139,16 +139,36 @@ const ManageTutorials = () => {
     }
   };
 
-  const handleEditTutorial = (tutorial: Tutorial) => {
-    setTitle(tutorial.title);
-    setUrl(tutorial.url);
-    setDescription(tutorial.description);
-    setSelectedCourse(tutorial.subject?._id || "");
-    setSelectedSubject(tutorial.subject?._id || "");
-    setSelectedTopic(tutorial.topic?._id || "");
-    setIsEditing(true);
-    setCurrentTutorialId(tutorial._id);
+  const handleEditTutorial = async (tutorial: Tutorial) => {
+    try {
+      // Prefill tutorial details
+      setTitle(tutorial.title);
+      setUrl(tutorial.url);
+      setDescription(tutorial.description);
+      setSelectedSubject(tutorial.subject?._id || "");
+      setSelectedTopic(tutorial.topic?._id || "");
+      setIsEditing(true);
+      setCurrentTutorialId(tutorial._id);
+  
+      // Fetch the topic details
+      const topicRes = await axios.get(`https://civilacademyapp.com/api/topics/specific?topic=${tutorial.topic._id}`);
+      const topic = topicRes.data[0];
+  
+      // Fetch the subject details
+      const subjectRes = await axios.get(`https://civilacademyapp.com/api/subjects/specific?subject=${topic.subject}`);
+      const subject = subjectRes.data[0];
+  
+      // Fetch the course details
+      const courseRes = await axios.get(`https://civilacademyapp.com/api/course/specific?subjectId=${subject._id}`);
+      const course = courseRes.data;
+  
+      setSelectedCourse(course._id); // Prefill course dropdown
+    } catch (error) {
+      console.error("Error prefetching tutorial details:", error);
+      alert("Failed to prefill tutorial details.");
+    }
   };
+  
 
   const handleAddSubject = async () => {
     if (!newSubjectName || !selectedCourse) {

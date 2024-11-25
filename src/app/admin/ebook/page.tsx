@@ -19,6 +19,7 @@ const ManageEBooks = () => {
   const [title, setTitle] = useState("");
   const [url, setUrl] = useState("");
   const [ebookImg, setEbookImg] = useState<File | null>(null);
+  const [existingEBookImg, setExistingEBookImg] = useState<string | null>(null);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [selectedSubject, setSelectedSubject] = useState("");
   const [ebooks, setEBooks] = useState<EBook[]>([]);
@@ -30,8 +31,8 @@ const ManageEBooks = () => {
     const fetchData = async () => {
       try {
         const [subjectResponse, ebookResponse] = await Promise.all([
-          axios.get(`https://civilacademyapp.com/api/subjects`),
-          axios.get(`https://civilacademyapp.com/api/ebook`),
+          axios.get(`/api/subjects`),
+          axios.get(`/api/ebook`),
         ]);
         setSubjects(subjectResponse.data);
         setEBooks(ebookResponse.data);
@@ -54,7 +55,7 @@ const ManageEBooks = () => {
     }
 
     try {
-      const endpoint = isEditing ? `https://civilacademyapp.com/api/ebook/edit` : `https://civilacademyapp.com/api/ebook`;
+      const endpoint = isEditing ? `/api/ebook/edit` : `/api/ebook`;
       const method = isEditing ? "POST" : "POST";
 
       if (isEditing && currentEBookId) {
@@ -68,7 +69,7 @@ const ManageEBooks = () => {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      const updatedEBooks = await axios.get(`https://civilacademyapp.com/api/ebook`);
+      const updatedEBooks = await axios.get(`/api/ebook`);
       setEBooks(updatedEBooks.data);
 
       // Reset form
@@ -76,6 +77,7 @@ const ManageEBooks = () => {
       setUrl("");
       setSelectedSubject("");
       setEbookImg(null);
+      setExistingEBookImg(null);
       setIsEditing(false);
       setCurrentEBookId(null);
 
@@ -90,6 +92,7 @@ const ManageEBooks = () => {
     setTitle(ebook.title);
     setUrl(ebook.url);
     setSelectedSubject(ebook.subject?._id || "");
+    setExistingEBookImg(ebook.ebookImg || null); // Show existing image if available
     setEbookImg(null); // Images aren't pre-filled; upload new one if required
     setIsEditing(true);
     setCurrentEBookId(ebook._id);
@@ -125,6 +128,13 @@ const ManageEBooks = () => {
         </div>
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">eBook Thumbnail</label>
+          {existingEBookImg && (
+            <img
+              src={existingEBookImg}
+              alt="Existing Thumbnail"
+              className="w-32 h-32 object-cover mb-2"
+            />
+          )}
           <input
           title="file"
             type="file"
@@ -158,9 +168,16 @@ const ManageEBooks = () => {
       <ul className="mt-4 space-y-4">
         {ebooks.map((ebook) => (
           <li key={ebook._id} className="flex justify-between items-center border-b pb-4">
-            <div>
-              <p className="text-lg font-semibold">{ebook.title}</p>
-              <p className="text-sm text-gray-500">{ebook.subject.name}</p>
+            <div className="flex items-center">
+              <img
+                src={ebook.ebookImg}
+                alt={ebook.title}
+                className="w-16 h-16 object-cover mr-4"
+              />
+              <div>
+                <p className="text-lg font-semibold">{ebook.title}</p>
+                <p className="text-sm text-gray-500">{ebook.subject.name}</p>
+              </div>
             </div>
             <button
               onClick={() => handleEdit(ebook)}
