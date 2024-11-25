@@ -4,8 +4,8 @@ import Tutorial from "@/models/tutorialModel";
 
 export async function GET(request: Request) {
   try {
-    const url = new URL(request.url);
-    const subjectIds = url.searchParams.get("subjectIds")?.split(",");
+    const { searchParams } = new URL(request.url); // Extract query parameters safely
+    const subjectIds = searchParams.get("subjectIds")?.split(",");
 
     await connectMongo();
 
