@@ -77,7 +77,7 @@ export async function POST(request: Request) {
       await connectMongo();
   
       // Step 1: Fetch courses without populating subjects
-      const courses = await Course.find({ isHidden: false }).lean();
+      const courses = await Course.find().lean();
       
       // Step 2: Extract unique subject IDs from courses
       const subjectIds: Types.ObjectId[] = courses.flatMap(course => course.subjects as Types.ObjectId[]);
