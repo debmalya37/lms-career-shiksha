@@ -1,4 +1,5 @@
 "use client";
+import axios from 'axios';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
@@ -73,13 +74,10 @@ const UserCreationPage = () => {
     if (!isAdmin) return;
     const fetchCourses = async () => {
       try {
-        const response = await fetch(`https://civilacademyapp.com/api/course/admin`);
-        const data = await response.json();
-        if (Array.isArray(data)) {
-          setCourses(data);
-        }
+        const response = await axios.get(`https://civilacademyapp.com/api/course/admin`);
+        setCourses(response.data);
       } catch (error) {
-        console.error('Error fetching courses:', error);
+        console.error("Error fetching courses:", error);
       }
     };
 
