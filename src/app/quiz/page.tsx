@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, Suspense } from "react";
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import ClipLoader from "react-spinners/ClipLoader";
 
@@ -12,6 +12,7 @@ type Answer = {
 type Question = {
   question: string;
   answers: Answer[];
+  image?: string; // Optional image field
 };
 
 type QuizData = {
@@ -46,9 +47,9 @@ type QuizState = {
 
 function QuizAppContent() {
   const searchParams = useSearchParams();
-  const quizId = searchParams.get('quizId') || "";
-  const initialCourseId = searchParams.get('courseId') || "";
-  const initialSubjectId = searchParams.get('subjectId') || "";
+  const quizId = searchParams.get("quizId") || "";
+  const initialCourseId = searchParams.get("courseId") || "";
+  const initialSubjectId = searchParams.get("subjectId") || "";
 
   const [state, setState] = useState<QuizState>({
     currentQuestion: 0,
@@ -99,7 +100,9 @@ function QuizAppContent() {
       const fetchQuizData = async () => {
         setState((prevState) => ({ ...prevState, isLoading: true }));
         try {
-          const response = await fetch(`https://civilacademyapp.com/api/quiz?quizId=${quizId}&courseId=${selectedCourse}&subjectId=${selectedSubject}`);
+          const response = await fetch(
+            `https://civilacademyapp.com/api/quiz?quizId=${quizId}&courseId=${selectedCourse}&subjectId=${selectedSubject}`
+          );
           const quizData: QuizData = await response.json();
 
           setState((prevState) => ({
@@ -218,6 +221,7 @@ function QuizAppContent() {
         </div>
       ) : state.showResults ? (
         <div className="bg-card p-8 rounded-lg shadow-md w-full max-w-md">
+          {/* Results Section */}
           <h2 className="text-2xl font-bold mb-4">Results</h2>
           <p className="text-lg mb-2">Score: {state.score}</p>
           <p className="text-lg mb-2">Correct Answers: {state.correctCount}</p>
@@ -251,7 +255,16 @@ function QuizAppContent() {
           <h2 className="text-2xl font-bold mb-4">
             Question {state.currentQuestion + 1}/{state.quizData.questions.length}
           </h2>
-          <p className="text-lg mb-6">{state.quizData.questions[state.currentQuestion].question}</p>
+          <p className="text-lg mb-4">{state.quizData.questions[state.currentQuestion].question}</p>
+          {state.quizData.questions[state.currentQuestion].image && (
+            <div className="mb-4">
+              <img
+                src={state.quizData.questions[state.currentQuestion].image}
+                alt="Question Image"
+                className="w-full rounded-lg shadow-md"
+              />
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-4">
             {state.quizData.questions[state.currentQuestion].answers.map((answer, index) => (
               <Button

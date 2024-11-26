@@ -8,6 +8,7 @@ import Footer from '@/components/Footer';
 import NotificationPopup from '@/components/NotificationPopup';
 import Link from 'next/link';
 import LiveClass from '@/models/liveClassesModel';
+import { useRouter } from 'next/navigation';
 
 // Define the structure of a course
 interface Course {
@@ -19,6 +20,7 @@ interface Course {
 }
 
 export default function Home() {
+  const router = useRouter();
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [latestLiveClass, setLatestLiveClass] = useState<any>(null);
   const [latestTutorial, setLatestTutorial] = useState<any>(null);
@@ -26,6 +28,23 @@ export default function Home() {
   const [userCourse, setUserCourse] = useState<Course | null>(null); // Use Course type here
   const [allCourses, setAllCourses] = useState<Course[]>([]); // Array of Course
   const [unsubscribedCourses, setUnsubscribedCourses] = useState<Course[]>([]); // Array of Course
+
+  // Check for session token and redirect if missing
+  useEffect(() => {
+    async function checkSession() {
+      try {
+        const res = await axios.get(`/api/session-status`, { withCredentials: true });
+        if (!res.data.sessionActive) {
+          router.push("/login");
+        }
+      } catch (error) {
+        console.error("Session check failed:", error);
+        router.push("/login");
+      }
+    }
+    checkSession();
+  }, [router]);
+
 
   // Fetch user profile to get the subscribed course and all courses
   useEffect(() => {
