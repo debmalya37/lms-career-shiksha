@@ -22,7 +22,6 @@ type QuizData = {
   negativeMarking: number;
   questions: Question[];
 };
-
 type Course = {
   _id: string;
   title: string;
@@ -31,6 +30,10 @@ type Course = {
 type Subject = {
   _id: string;
   name: string;
+};
+type UserProfile = {
+  name: string;
+  email: string;
 };
 
 type QuizState = {
@@ -50,7 +53,6 @@ function QuizAppContent() {
   const quizId = searchParams.get("quizId") || "";
   const initialCourseId = searchParams.get("courseId") || "";
   const initialSubjectId = searchParams.get("subjectId") || "";
-
   const [state, setState] = useState<QuizState>({
     currentQuestion: 0,
     score: 0,
@@ -62,11 +64,26 @@ function QuizAppContent() {
     quizData: null,
     incorrectQuestions: [],
   });
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [courses, setCourses] = useState<Course[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [selectedCourse, setSelectedCourse] = useState(initialCourseId);
   const [selectedSubject, setSelectedSubject] = useState(initialSubjectId);
 
+  useEffect(() => {
+    // Fetch user profile
+    const fetchUserProfile = async () => {
+      try {
+        const response = await fetch(`/api/profile`);
+        const profile = await response.json();
+        setUserProfile({ name: profile.name, email: profile.email });
+      } catch (error) {
+        console.error("Failed to fetch user profile:", error);
+      }
+    };
+
+    fetchUserProfile();
+  }, []);
   useEffect(() => {
     const fetchCourses = async () => {
       try {
@@ -79,7 +96,6 @@ function QuizAppContent() {
     };
     fetchCourses();
   }, []);
-
   useEffect(() => {
     if (selectedCourse) {
       const fetchSubjects = async () => {
@@ -94,7 +110,6 @@ function QuizAppContent() {
       fetchSubjects();
     }
   }, [selectedCourse]);
-
   useEffect(() => {
     if (quizId && selectedCourse && selectedSubject) {
       const fetchQuizData = async () => {
@@ -118,7 +133,7 @@ function QuizAppContent() {
       };
       fetchQuizData();
     }
-  }, [quizId, selectedCourse, selectedSubject]);
+  }, [quizId,  selectedCourse, selectedSubject]);
 
   useEffect(() => {
     if (state.timeLeft > 0 && !state.showResults && !state.isLoading) {
@@ -130,9 +145,15 @@ function QuizAppContent() {
       }, 1000);
       return () => clearInterval(timer);
     } else if (state.timeLeft === 0 && !state.isLoading) {
-      endQuiz("Time ended! OR any other issue, please try again");
+      endQuiz("Time's up! The quiz has ended.");
     }
   }, [state.timeLeft, state.showResults, state.isLoading]);
+
+  const formatTime = (time: number) => {
+    const minutes = Math.floor(time / 60);
+    const seconds = time % 60;
+    return `${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
+  };
 
   const handleAnswerClick = (isCorrect: boolean, userAnswer: string) => {
     if (!state.quizData || !state.quizData.questions[state.currentQuestion]) return;
@@ -175,44 +196,42 @@ function QuizAppContent() {
     }));
   };
 
+  const sendResultsByEmail = async () => {
+    const payload = {
+      quizTitle: state.quizData?.title || "",
+      score: state.score,
+      correctAnswers: state.correctCount,
+      incorrectAnswers: state.incorrectCount,
+      userName: userProfile?.name || "",
+      userEmail: userProfile?.email || "",
+    };
+
+    try {
+      await fetch(`/api/sendQuizResults`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+    } catch (error) {
+      console.error("Failed to send quiz results via email:", error);
+    }
+  };
+
   const endQuiz = (reason: string) => {
     setState((prevState) => ({
       ...prevState,
       showResults: true,
     }));
     alert(reason);
+    sendResultsByEmail();
   };
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground">
       <div className="mb-8">
-        <h2 className="text-2xl font-semibold mb-2">Selected Course and Subject</h2>
-        <select
-          title="selectedCourse"
-          value={selectedCourse}
-          onChange={(e) => setSelectedCourse(e.target.value)}
-          className="border border-gray-300 rounded px-3 py-2 mb-4 w-full"
-          disabled
-        >
-          {courses.map((course) => (
-            <option key={course._id} value={course._id}>
-              {course.title}
-            </option>
-          ))}
-        </select>
-        <select
-          title="selectedSubject"
-          value={selectedSubject}
-          onChange={(e) => setSelectedSubject(e.target.value)}
-          className="border border-gray-300 rounded px-3 py-2 w-full"
-          disabled
-        >
-          {subjects.map((subject) => (
-            <option key={subject._id} value={subject._id}>
-              {subject.name}
-            </option>
-          ))}
-        </select>
+        <h2 className="text-xl font-semibold mb-4">
+          Timer: {state.timeLeft > 0 ? formatTime(state.timeLeft) : "Time's up!"}
+        </h2>
       </div>
       {state.isLoading ? (
         <div className="flex flex-col items-center">
@@ -221,11 +240,11 @@ function QuizAppContent() {
         </div>
       ) : state.showResults ? (
         <div className="bg-card p-8 rounded-lg shadow-md w-full max-w-md">
-          {/* Results Section */}
           <h2 className="text-2xl font-bold mb-4">Results</h2>
           <p className="text-lg mb-2">Score: {state.score}</p>
           <p className="text-lg mb-2">Correct Answers: {state.correctCount}</p>
           <p className="text-lg mb-2">Incorrect Answers: {state.incorrectCount}</p>
+          
           {state.incorrectQuestions.length > 0 && (
             <div className="mt-4">
               <h3 className="text-lg font-semibold mb-2">Review Incorrect Answers:</h3>

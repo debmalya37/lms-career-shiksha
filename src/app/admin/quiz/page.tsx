@@ -199,65 +199,79 @@ useEffect(() => {
         </button>
         {/* Question and Answer Fields */}
         {questions.map((q, qIndex) => (
-          <div key={qIndex} className="mb-4 p-4 border rounded-md bg-gray-50">
-            <h3 className="text-lg font-semibold text-gray-700 mb-2">Question {qIndex + 1}</h3>
-            <input
-              value={q.question}
-              onChange={(e) => {
-                const newQuestions = [...questions];
-                newQuestions[qIndex].question = e.target.value;
-                setQuestions(newQuestions);
-              }}
-              placeholder="Question"
-              className="border p-2 rounded-md w-full mb-4"
-            />
-            <input
-              type="number"
-              value={q.marks}
-              onChange={(e) => {
-                const newQuestions = [...questions];
-                newQuestions[qIndex].marks = parseFloat(e.target.value);
-                setQuestions(newQuestions);
-              }}
-              placeholder="Marks"
-              className="border p-2 rounded-md w-full mb-4"
-            />
-            <input title="file" type="file" onChange={(e) => handleImageChange(e, qIndex)} />
-            <button
-              onClick={() => addAnswer(qIndex)}
-              className="bg-green-500 text-white py-1 px-3 rounded-md hover:bg-green-400 mt-4"
-            >
-              Add Answer
-            </button>
-            {q.answers.map((answer, aIndex) => (
-              <div key={aIndex} className="mt-4 flex items-center">
-                <input
-                  value={answer.text}
-                  onChange={(e) => {
-                    const newQuestions = [...questions];
-                    newQuestions[qIndex].answers[aIndex].text = e.target.value;
-                    setQuestions(newQuestions);
-                  }}
-                  placeholder="Answer"
-                  className="border p-2 rounded-md w-full mr-2"
-                />
-                <label className="flex items-center text-sm font-medium text-gray-700">
+            <div key={qIndex} className="mb-4 p-4 border rounded-md bg-gray-50">
+              <h3 className="text-lg font-semibold text-gray-700 mb-2">
+                Question {qIndex + 1}
+              </h3>
+              <input
+                value={q.question}
+                onChange={(e) => {
+                  const newQuestions = [...questions];
+                  newQuestions[qIndex].question = e.target.value;
+                  setQuestions(newQuestions);
+                }}
+                placeholder="Question"
+                className="border p-2 rounded-md w-full mb-4"
+              />
+              <input
+                type="number"
+                value={q.marks}
+                onChange={(e) => {
+                  const newQuestions = [...questions];
+                  newQuestions[qIndex].marks = parseFloat(e.target.value);
+                  setQuestions(newQuestions);
+                }}
+                placeholder="Marks"
+                className="border p-2 rounded-md w-full mb-4"
+              />
+              <input title="file" type="file" onChange={(e) => handleImageChange(e, qIndex)} />
+              <button
+                onClick={() => addAnswer(qIndex)}
+                className="bg-green-500 text-white py-1 px-3 rounded-md hover:bg-green-400 mt-4"
+              >
+                Add Answer
+              </button>
+              {q.answers.map((answer, aIndex) => (
+                <div key={aIndex} className="mt-4 flex items-center">
                   <input
-                    type="checkbox"
-                    checked={answer.isCorrect}
+                    value={answer.text}
                     onChange={(e) => {
                       const newQuestions = [...questions];
-                      newQuestions[qIndex].answers[aIndex].isCorrect = e.target.checked;
+                      newQuestions[qIndex].answers[aIndex].text = e.target.value;
                       setQuestions(newQuestions);
                     }}
-                    className="mr-1"
+                    placeholder="Answer"
+                    className="border p-2 rounded-md w-full mr-2"
                   />
-                  Correct?
-                </label>
+                  <label className="flex items-center text-sm font-medium text-gray-700">
+                    <input
+                      type="checkbox"
+                      checked={answer.isCorrect}
+                      onChange={(e) => {
+                        const newQuestions = [...questions];
+                        newQuestions[qIndex].answers[aIndex].isCorrect = e.target.checked;
+                        setQuestions(newQuestions);
+                      }}
+                      className="mr-1"
+                    />
+                    Correct?
+                  </label>
+                </div>
+              ))}
+              <div className="mt-4 flex justify-end">
+                <button
+                  onClick={() => {
+                    const newQuestions = questions.filter((_, index) => index !== qIndex);
+                    setQuestions(newQuestions);
+                  }}
+                  className="bg-red-500 text-white py-1 px-3 rounded-md hover:bg-red-400"
+                >
+                  Delete Question
+                </button>
               </div>
-            ))}
-          </div>
-        ))}
+            </div>
+          ))}
+
         <button
           onClick={handleSubmit}
           className="bg-indigo-600 text-white py-2 px-4 rounded-md mt-6 hover:bg-indigo-500 w-full"
@@ -270,35 +284,49 @@ useEffect(() => {
       <div className="max-w-4xl w-full bg-white p-8 rounded-lg shadow-lg">
         <h2 className="text-3xl font-semibold text-gray-800 mb-6 text-center">Existing Quizzes</h2>
         <ul>
-          {quizzes.map((quiz) => (
-            <li
-              key={quiz._id}
-              className="flex justify-between items-center border-b py-2"
-            >
-              <div className="flex items-center">
+  {quizzes.map((quiz) => (
+    <li
+      key={quiz._id}
+      className="flex justify-between items-center border-b py-2"
+    >
+      <div className="flex items-center">
+        <img
+          src={
+            typeof quiz.questions[0]?.image === "string"
+              ? quiz.questions[0]?.image
+              : ""
+          }
+          alt="Quiz Preview"
+          className="w-16 h-16 object-cover rounded-md mr-4"
+        />
+        <span>
+          <strong>{quiz.title}</strong> - {quiz.course} - {quiz.totalTime} mins
+        </span>
+      </div>
+      <div>
+        <button
+          onClick={() => handleEdit(quiz)}
+          className="bg-yellow-500 text-white py-1 px-3 rounded-md hover:bg-yellow-400 mr-2"
+        >
+          Edit
+        </button>
+        <button
+          onClick={async () => {
+            if (confirm('Are you sure you want to delete this quiz?')) {
+              await axios.delete(`https://civilacademyapp.com/api/quiz/delete?quizId=${quiz._id}`);
+              setQuizzes((prev) => prev.filter((q) => q._id !== quiz._id));
+              alert('Quiz deleted successfully!');
+            }
+          }}
+          className="bg-red-500 text-white py-1 px-3 rounded-md hover:bg-red-400"
+        >
+          Delete
+        </button>
+      </div>
+    </li>
+  ))}
+</ul>
 
-                <img
-                  src={
-                    typeof quiz.questions[0]?.image === "string"
-                      ? quiz.questions[0]?.image
-                      : "" // Provide a fallback in case it's not a string
-                  }
-                  alt="Quiz Preview"
-                  className="w-16 h-16 object-cover rounded-md mr-4"
-                />
-                <span>
-                  <strong>{quiz.title}</strong> - {quiz.course} - {quiz.totalTime} mins
-                </span>
-              </div>
-              <button
-                onClick={() => handleEdit(quiz)}
-                className="bg-yellow-500 text-white py-1 px-3 rounded-md hover:bg-yellow-400"
-              >
-                Edit
-              </button>
-            </li>
-          ))}
-        </ul>
       </div>
     </div>
   );

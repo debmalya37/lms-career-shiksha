@@ -2,21 +2,27 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { BellIcon, UserIcon } from '@heroicons/react/24/solid';
-import Navbar from '@/components/Navbar';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import NotificationPopup from '@/components/NotificationPopup';
 import LiveClasses from '@/components/LiveClasses';
 import Footer from '@/components/Footer';
-import NotificationPopup from '@/components/NotificationPopup';
-import Link from 'next/link';
-import LiveClass from '@/models/liveClassesModel';
-import { useRouter } from 'next/navigation';
 
 // Define the structure of a course
 interface Course {
   _id: string;
   title: string;
   description: string;
-  subjects: { name: string }[];
-  createdAt: string; // Or use Date if you handle it as a Date object later
+  subjects: { name: string }[] | string[]; // Handle both populated and non-populated subjects
+  createdAt: string;
+  isHidden?: boolean;
+}
+
+interface UserProfile {
+  name: string;
+  email: string;
+  subscription: number;
+  course: Course[]; // Array of user courses
 }
 
 export default function Home() {
@@ -25,9 +31,9 @@ export default function Home() {
   const [latestLiveClass, setLatestLiveClass] = useState<any>(null);
   const [latestTutorial, setLatestTutorial] = useState<any>(null);
   const [latestCourse, setLatestCourse] = useState<any>(null);
-  const [userCourse, setUserCourse] = useState<Course | null>(null); // Use Course type here
-  const [allCourses, setAllCourses] = useState<Course[]>([]); // Array of Course
-  const [unsubscribedCourses, setUnsubscribedCourses] = useState<Course[]>([]); // Array of Course
+  const [userCourses, setUserCourses] = useState<Course[]>([]); // Store all user courses
+  const [unsubscribedCourses, setUnsubscribedCourses] = useState<Course[]>([]); // Courses user hasn't subscribed to
+  const [allCourses, setAllCourses] = useState<Course[]>([]); // All available courses
 
   // Check for session token and redirect if missing
   useEffect(() => {
@@ -45,23 +51,20 @@ export default function Home() {
     checkSession();
   }, [router]);
 
-
-  // Fetch user profile to get the subscribed course and all courses
+  // Fetch user profile and courses
   useEffect(() => {
     async function fetchData() {
       try {
-        
-
         // Fetch user profile
         const profileRes = await axios.get(`https://civilacademyapp.com/api/profile`);
-        console.log("Profile Data:", profileRes.data); // Log the profile response
-        
-        if (profileRes.data && profileRes.data.course) {
-          console.log("User's Course Title:", profileRes.data.course.title); // Log the course title
-          setUserCourse(profileRes.data.course); // Store the entire course object
+        const profileData: UserProfile = profileRes.data;
+        console.log("Profile Data:", profileData);
+
+        // Set user courses
+        if (profileData?.course?.length) {
+          setUserCourses(profileData.course);
         }
-        
-        
+
         // Fetch all courses
         const allCoursesRes = await axios.get(`https://civilacademyapp.com/api/course/admin`);
         if (allCoursesRes.data) {
@@ -71,18 +74,16 @@ export default function Home() {
         // Fetch the latest tutorial
         const tutorialRes = await axios.get(`https://civilacademyapp.com/api/latestTutorial`);
         if (tutorialRes.data) setLatestTutorial(tutorialRes.data);
-        
+
         // Fetch the latest live class
-        const liveClassRes = await axios.get(`https://civilacademyapp.com/api/live-classes?course=${profileRes.data.course?.id}`);
-        console.log(liveClassRes);
+        const liveClassRes = await axios.get(
+          `https://civilacademyapp.com/api/live-classes?course=${profileData.course?.[0]?._id || ""}`
+        );
         if (liveClassRes.data) setLatestLiveClass(liveClassRes.data);
-        
-        
+
         // Fetch the latest course
         const courseRes = await axios.get(`https://civilacademyapp.com/api/latestCourse`);
         if (courseRes.data) setLatestCourse(courseRes.data);
-        
-
       } catch (error) {
         console.error('Error fetching data:', error);
       }
@@ -92,73 +93,94 @@ export default function Home() {
 
   // Filter unsubscribed courses
   useEffect(() => {
-    if (allCourses.length && userCourse) {
-      const filteredCourses = allCourses.filter((course: Course) => course._id !== userCourse._id);
+    if (allCourses.length && userCourses.length) {
+      const subscribedIds = userCourses.map(course => course._id);
+      const filteredCourses = allCourses.filter(course => !subscribedIds.includes(course._id));
       setUnsubscribedCourses(filteredCourses);
     }
-  }, [allCourses, userCourse]);
+  }, [allCourses, userCourses]);
 
   return (
     <main className="bg-yellow-100 min-h-screen">
-  <div className="container relative p-2 sm:p-4 ml-0 mr-0 pl-0 pr-0">
-  <div className="relative w-full flex justify-end mt-6">
-  <div className="flex items-center space-x-4 absolute right-0">
-    <BellIcon
-      className="h-8 w-8 text-blue-600 cursor-pointer"
-      onClick={() => setIsNotificationOpen(!isNotificationOpen)}
-    />
-    <Link href="/profile">
-      <UserIcon className="h-8 w-8 text-blue-600 cursor-pointer" />
-    </Link>
-  </div>
-</div>
-
-    {isNotificationOpen && (
-      <NotificationPopup
-        close={() => setIsNotificationOpen(false)}
-        latestLiveClass={latestLiveClass}
-        latestTutorial={latestTutorial}
-        latestCourse={latestCourse}
-      />
-    )}
-
-    <LiveClasses liveClass={latestLiveClass} />
-
-    <div className="container mx-auto mt-6">
-      <div className="mt-6">
-        {userCourse ? (
-          <h2 className="text-lg sm:text-2xl font-bold text-green-800 ml-2 sm:ml-5">
-            Your Subscribed Course: 
-            <Link href={`/courses/${userCourse._id}`}>
-              <span className="text-blue-600 underline ml-1 sm:ml-2">{userCourse.title}</span>
+      <div className="container relative p-2 sm:p-4 ml-0 mr-0 pl-0 pr-0">
+        <div className="relative w-full flex justify-end mt-6">
+          <div className="flex items-center space-x-4 absolute right-0">
+            <BellIcon
+              className="h-8 w-8 text-blue-600 cursor-pointer"
+              onClick={() => setIsNotificationOpen(!isNotificationOpen)}
+            />
+            <Link href="/profile">
+              <UserIcon className="h-8 w-8 text-blue-600 cursor-pointer" />
             </Link>
-          </h2>
-        ) : (
-          <p className="text-gray-600 text-sm sm:text-base ml-2">You have no active subscriptions.</p>
-        )}
-      </div>
-
-      <div className="mt-6">
-        <h2 className="text-lg sm:text-2xl font-bold text-green-800 ml-2 sm:ml-5">Courses You Haven&apos;t Subscribed To:</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4 mx-2 sm:mx-0">
-          {unsubscribedCourses.map((course: Course) => (
-            <div key={course._id} className="border p-4 rounded-lg bg-green-200 shadow-md">
-              <h3 className="text-base sm:text-lg font-semibold">{course.title}</h3>
-              <p className="text-gray-600 text-sm">{course.description}</p>
-              <p className="mt-2 text-xs sm:text-sm text-gray-500">Subject: {course.subjects.map(subject => subject.name).join(', ')}</p>
-              <p className="text-xs sm:text-sm text-gray-500">Created At: {new Date(course.createdAt).toLocaleDateString()}</p>
-              <Link href={`/contact`}>
-                <button className="mt-4 w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-500">
-                  Contact Us
-                </button>
-              </Link>
-            </div>
-          ))}
+          </div>
         </div>
+
+        {isNotificationOpen && (
+          <NotificationPopup
+            close={() => setIsNotificationOpen(false)}
+            latestLiveClass={latestLiveClass}
+            latestTutorial={latestTutorial}
+            latestCourse={latestCourse}
+          />
+        )}
+
+        <LiveClasses liveClass={latestLiveClass} />
+
+        <div className="container mx-auto mt-6">
+          <div className="mt-6">
+            {userCourses.length > 0 ? (
+              <div>
+                <h2 className="text-lg sm:text-2xl font-bold text-green-800 ml-2 sm:ml-5">
+                  Your Subscribed Courses:
+                </h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4 mx-2 sm:mx-0">
+                  {userCourses.map((course: Course) => (
+                    <div key={course._id} className="border p-4 rounded-lg bg-green-200 shadow-md">
+                      <h3 className="text-base sm:text-lg font-semibold">{course.title}</h3>
+                      <p className="text-gray-600 text-sm">{course.description}</p>
+                      <p className="mt-2 text-xs sm:text-sm text-gray-500">
+                        Subjects: {course.subjects.map(subject => typeof subject === 'string' ? subject : subject.name).join(', ')}
+                      </p>
+                      <p className="text-xs sm:text-sm text-gray-500">
+                        Created At: {new Date(course.createdAt).toLocaleDateString()}
+                      </p>
+                      <Link href={`/courses/${course._id}`}>
+                        <button className="mt-4 w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-500">
+                          Go to Course
+                        </button>
+                      </Link>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <p className="text-gray-600 text-sm sm:text-base ml-2">You have no active subscriptions.</p>
+            )}
+          </div>
+
+          <div className="mt-6">
+            <h2 className="text-lg sm:text-2xl font-bold text-green-800 ml-2 sm:ml-5">Courses You Haven&apos;t Subscribed To:</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4 mx-2 sm:mx-0">
+              {unsubscribedCourses.map((course: Course) => (
+                <div key={course._id} className="border p-4 rounded-lg bg-green-200 shadow-md">
+                  <h3 className="text-base sm:text-lg font-semibold">{course.title}</h3>
+                  <p className="text-gray-600 text-sm">{course.description}</p>
+                  <p className="mt-2 text-xs sm:text-sm text-gray-500">
+                    Subjects: {course.subjects.map(subject => typeof subject === 'string' ? subject : subject.name).join(', ')}
+                  </p>
+                  <p className="text-xs sm:text-sm text-gray-500">Created At: {new Date(course.createdAt).toLocaleDateString()}</p>
+                  <Link href={`/contact`}>
+                    <button className="mt-4 w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-500">
+                      Contact Us
+                    </button>
+                  </Link>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+        <Footer />
       </div>
-    </div>
-    <Footer />
-  </div>
-</main>
+    </main>
   );
 }

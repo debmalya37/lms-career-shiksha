@@ -15,7 +15,7 @@ interface User {
     _id: string;
     title: string;
   }[];
-  deviceIdentifier?: string | null; // Added deviceIdentifier field
+  deviceIdentifier?: string | null;
 }
 
 interface Course {
@@ -28,7 +28,7 @@ const UserCreationPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [subscription, setSubscription] = useState('');
-  const [selectedCourse, setSelectedCourse] = useState('');
+  const [selectedCourses, setSelectedCourses] = useState<string[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
   const [phoneNo, setPhoneNo] = useState('');
@@ -69,9 +69,7 @@ const UserCreationPage = () => {
     checkAdminStatus();
   }, [router,isAdmin]);
 
-
   useEffect(() => {
-    // if (!isAdmin) return;
     const fetchCourses = async () => {
       try {
         const response = await axios.get(`https://civilacademyapp.com/api/course/admin`);
@@ -102,7 +100,7 @@ const UserCreationPage = () => {
     setSubscription(String(user.subscription));
     setPhoneNo(user.phoneNo);
     setAddress(user.address);
-    setSelectedCourse(user.course && user.course[0]?._id || '');
+    setSelectedCourses(user.course ? user.course.map((c) => c._id) : []);
     setIsEditing(true);
     setCurrentUserId(user._id);
   };
@@ -116,7 +114,7 @@ const UserCreationPage = () => {
     setSubscription('');
     setPhoneNo('');
     setAddress('');
-    setSelectedCourse('');
+    setSelectedCourses([]);
   };
 
   const handleDeleteDeviceIdentifier = async (userId: string) => {
@@ -142,6 +140,16 @@ const UserCreationPage = () => {
       console.error('Error deleting device identifier:', error);
     }
   };
+  
+
+
+  const toggleCourseSelection = (courseId: string) => {
+    setSelectedCourses((prevSelected) =>
+      prevSelected.includes(courseId)
+        ? prevSelected.filter((id) => id !== courseId)
+        : [...prevSelected, courseId]
+    );
+  };
 
   const handleSubmit = async (e: any) => {
     e.preventDefault();
@@ -153,11 +161,10 @@ const UserCreationPage = () => {
       subscription: Number(subscription),
       phoneNo,
       address,
-      course: selectedCourse,
+      course: selectedCourses,
     };
 
     if (isEditing && currentUserId) {
-      // Use the update API for existing users
       try {
         const response = await fetch(`https://civilacademyapp.com/api/updateUser`, {
           method: 'POST',
@@ -178,7 +185,6 @@ const UserCreationPage = () => {
         console.error('Error updating user:', error);
       }
     } else {
-      // Add new user
       try {
         const response = await fetch(`https://civilacademyapp.com/api/usercreation`, {
           method: 'POST',
@@ -189,11 +195,12 @@ const UserCreationPage = () => {
         if (response.ok) {
           const newUser: User = await response.json();
           setUsers((prevUsers) => [...prevUsers, newUser]);
+          handleCancelEdit();
           setName('');
           setEmail('');
           setPassword('');
           setSubscription('');
-          setSelectedCourse('');
+          setSelectedCourses([]);
         } else {
           console.error('Failed to add user');
         }
@@ -207,6 +214,7 @@ const UserCreationPage = () => {
     <div className="container mx-auto p-8 bg-white rounded-lg shadow-md max-w-full mt-8 text-black">
       <h1 className="text-2xl font-bold text-blue-600 mb-4">User Creation</h1>
       <form onSubmit={handleSubmit}>
+        {/* Other form fields */}
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">Name</label>
           <input
@@ -274,21 +282,22 @@ const UserCreationPage = () => {
           />
         </div>
         <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-2">Select Course</label>
-          <select
-            title="selectedCourse"
-            className="border p-2 w-full rounded-md text-black"
-            value={selectedCourse}
-            onChange={(e) => setSelectedCourse(e.target.value)}
-            required
-          >
-            <option value="">--Select a Course--</option>
-            {courses.map((course: Course) => (
-              <option key={course._id} value={course._id}>
-                {course.title}
-              </option>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Select Courses</label>
+          <div>
+            {courses.map((course) => (
+              <div key={course._id} className="flex items-center mb-2">
+                <input
+                  type="checkbox"
+                  id={course._id}
+                  value={course._id}
+                  checked={selectedCourses.includes(course._id)}
+                  onChange={() => toggleCourseSelection(course._id)}
+                  className="mr-2"
+                />
+                <label htmlFor={course._id}>{course.title}</label>
+              </div>
             ))}
-          </select>
+          </div>
         </div>
         <button
           type="submit"
@@ -308,7 +317,7 @@ const UserCreationPage = () => {
           </button>
         )}
       </form>
-      {/* User Table */}
+      {/* User table remains unchanged */}
       <h2 className="text-xl font-bold text-blue-600 mt-6">User List</h2>
       <table className="min-w-full mt-4 bg-white border border-gray-300">
         <thead>

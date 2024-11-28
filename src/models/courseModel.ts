@@ -1,5 +1,6 @@
 // models/courseModel.ts
 import mongoose, { Schema, Document } from 'mongoose';
+import { Types } from 'mongoose';
 
 export interface ICourse extends Document {
   title: string;

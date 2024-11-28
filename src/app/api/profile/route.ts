@@ -2,27 +2,27 @@ import { NextResponse, NextRequest } from 'next/server';
 import connectMongo from '@/lib/db';
 import { User } from '@/models/user';
 import Profile from '@/models/profileModel';
-import Course from '@/models/courseModel'; // Ensure this model is imported
-// import '@/lib/subscriptionCron';
+import Course, { ICourse } from '@/models/courseModel';
+
 export async function GET(request: NextRequest) {
   const sessionToken = request.cookies.get('sessionToken')?.value;
   console.log('Received session token:', sessionToken); // Debugging
 
   try {
     await connectMongo();
-    
+
     // Find the user by session token
-    const user = await User.findOne({ sessionToken });
+    const user = await User.findOne({ sessionToken }).lean(); // Use lean() for better performance
     console.log('User fetched:', user); // Debugging
 
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    // Fetch course details separately
-    let courseDetails = null;
-    if (user.course) {
-      courseDetails = await Course.findById(user.course).lean(); // .lean() for better performance
+    // Fetch all course details if user has multiple courses
+    let courseDetails: ICourse[] = [];
+    if (user.course && Array.isArray(user.course) && user.course.length > 0) {
+      courseDetails = (await Course.find({ _id: { $in: user.course } }).lean()) as ICourse[]; // Explicitly cast the type
       console.log('Course details fetched:', courseDetails); // Debugging
     }
 
@@ -32,10 +32,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       email: user.email,
       name: user.name,
-      course: courseDetails, // Include course data
+      courses: courseDetails, // Include all courses data as an array
       subscription: user.subscription,
       phoneNo: user.phoneNo,
-      address:user.address,
+      address: user.address,
       profile,
     });
   } catch (error) {
@@ -43,6 +43,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Failed to fetch profile' }, { status: 500 });
   }
 }
+
+
 
 
 
