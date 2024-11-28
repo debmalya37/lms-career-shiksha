@@ -9,16 +9,17 @@ interface Tutorial {
   description: string;
 }
 
+interface Course {
+  _id: string;
+  title: string;
+  subjects: string[]; // Subject IDs
+}
+
 interface Profile {
   email: string;
   name: string;
-  course: { _id: string; title: string } | null;
+  courses: Course[]; // Array of user courses
   subscription: number;
-}
-
-interface Subject {
-  _id: string;
-  name: string;
 }
 
 export default function TutorialsPage() {
@@ -35,15 +36,15 @@ export default function TutorialsPage() {
         });
         const profile = await res.json();
 
-        if (!profile.error && profile.course) {
+        if (!profile.error && profile.courses?.length > 0) {
           setProfileData(profile);
 
-          console.log("Profile course:", profile.course);
+          console.log("User courses:", profile.courses);
 
-          // Extract subject IDs directly from the profile
-          const subjectIds = profile.course.subjects;
+          // Extract all subject IDs from the user's courses
+          const subjectIds = profile.courses.flatMap((course: { subjects: string }) => course.subjects);
 
-          if (subjectIds && subjectIds.length > 0) {
+          if (subjectIds.length > 0) {
             // Fetch tutorials using the subject IDs
             const tutorialRes = await fetch(
               `https://civilacademyapp.com/api/tutorials/specific?subjectIds=${subjectIds.join(",")}`
@@ -53,10 +54,10 @@ export default function TutorialsPage() {
             console.log("Tutorials fetched:", fetchedTutorials);
             setTutorials(fetchedTutorials);
           } else {
-            console.log("No subjects found for the course.");
+            console.log("No subjects found for the user's courses.");
           }
         } else {
-          console.error("Profile data error or no course found.");
+          console.error("Profile data error or no courses found.");
         }
       } catch (error) {
         console.error("Error fetching profile or tutorials:", error);
@@ -67,7 +68,6 @@ export default function TutorialsPage() {
 
     fetchProfileAndTutorials();
   }, []);
-  
 
   if (loading) {
     return (
@@ -88,7 +88,7 @@ export default function TutorialsPage() {
   if (tutorials.length === 0) {
     return (
       <div className="flex justify-center items-center h-screen">
-        <p>No tutorials available for your subscribed course.</p>
+        <p>No tutorials available for your subscribed courses.</p>
       </div>
     );
   }

@@ -1,49 +1,60 @@
-import connectMongo from '@/lib/db';
-import Course from '@/models/courseModel';
+"use client";
+import { useState, useEffect } from 'react';
+import axios from 'axios';
 import Link from 'next/link';
-import { cookies } from 'next/headers';
-import Image from 'next/image';
 
-async function fetchUserCourse() {
-  // Fetch the user's profile to get the assigned course
-  const res = await fetch(`https://civilacademyapp.com/api/profile`, {
-    credentials: 'include',
-    headers: {
-      cookie: `sessionToken=${cookies().get('sessionToken')?.value || ''}`,
-    },
-  });
-  const profile = await res.json();
-  return profile.course?._id;
+// Define the structure of a course
+interface Course {
+  _id: string;
+  title: string;
+  description: string;
+  subjects: { name: string }[] | string[]; // Handle both populated and non-populated subjects
+  courseImg?: string;
+  createdAt: string;
+  isHidden?: boolean;
 }
 
-async function fetchCoursesWithSubjectsAndTopics(userCourseId: string) {
-  await connectMongo();
-
-  // Fetch and filter courses based on the user’s assigned course
-  const courses = await Course.find({ _id: userCourseId })
-    .populate({
-      path: 'subjects',
-      select: 'name',
-    })
-    .lean();
-
-  return courses.map((course: any) => ({
-    ...course,
-    subjectNames: course.subjects.map((sub: any) => sub.name),
-  }));
+interface UserProfile {
+  name: string;
+  email: string;
+  subscription: number;
+  courses: Course[]; // Array of user courses
 }
 
-export default async function GlobalCoursesPage() {
-  const userCourseId = await fetchUserCourse(); // Get the user's course ID
-  const courses = userCourseId ? await fetchCoursesWithSubjectsAndTopics(userCourseId) : [];
+export default function CoursesPage() {
+  const [userCourses, setUserCourses] = useState<Course[]>([]); // Store all user courses
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+
+  useEffect(() => {
+    async function fetchUserCourses() {
+      try {
+        // Fetch user profile
+        const profileRes = await axios.get(`https://civilacademyapp.com/api/profile`, { withCredentials: true });
+        const profileData: UserProfile = profileRes.data;
+        console.log("User Profile Data:", profileData);
+
+        // Set user courses
+        if (profileData?.courses?.length) {
+          setUserCourses(profileData.courses); // Assign courses from API
+        }
+      } catch (error) {
+        console.error('Error fetching user courses:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    fetchUserCourses();
+  }, []);
 
   return (
     <div className="container mx-auto py-8 px-5 bg-yellow-100 text-black min-h-screen">
-      <h1 className="text-3xl font-bold text-black mb-6">My Course</h1>
+      <h1 className="text-3xl font-bold text-black mb-6">My Courses</h1>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {courses.length > 0 ? (
-          courses.map((course: any) => (
+      {isLoading ? (
+        <p>Loading courses...</p>
+      ) : userCourses.length > 0 ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {userCourses.map((course: Course) => (
             <div key={course._id} className="bg-white rounded-lg shadow-lg overflow-hidden">
               {/* Course Image */}
               {course.courseImg && (
@@ -61,7 +72,9 @@ export default async function GlobalCoursesPage() {
                 <h3 className="text-xl font-semibold mb-2 text-black">{course.title}</h3>
                 <p className="text-gray-700 mb-2">{course.description}</p>
                 <p className="text-gray-500 mb-2">Created on: {new Date(course.createdAt).toLocaleDateString()}</p>
-                <p className="text-gray-500 mb-4">Subjects: {course.subjectNames.join(', ')}</p>
+                <p className="text-gray-500 mb-4">
+                  Subjects: {course.subjects.map(subject => typeof subject === 'string' ? subject : subject.name).join(', ')}
+                </p>
 
                 <Link href={`/courses/${course._id}`}>
                   <button className="w-full bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition-colors">
@@ -70,11 +83,11 @@ export default async function GlobalCoursesPage() {
                 </Link>
               </div>
             </div>
-          ))
-        ) : (
-          <p>No courses found for your profile.</p>
-        )}
-      </div>
+          ))}
+        </div>
+      ) : (
+        <p>No courses found for your profile.</p>
+      )}
     </div>
   );
 }
