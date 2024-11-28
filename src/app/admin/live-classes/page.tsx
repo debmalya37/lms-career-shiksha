@@ -1,45 +1,86 @@
 "use client";
-import { useState, useEffect } from 'react';
-import axios from 'axios';
+import { useState, useEffect } from "react";
+import axios from "axios";
 
 interface Course {
   _id: string;
   title: string;
 }
 
-const ManageLiveClasses = () => {
-  const [title, setTitle] = useState('');
-  const [url, setUrl] = useState('');
-  const [selectedCourse, setSelectedCourse] = useState('');
-  const [courses, setCourses] = useState<Course[]>([]);
+interface LiveClass {
+  _id: string;
+  title: string;
+  url: string;
+  courses: string[]; // Array of course IDs
+}
 
-  // Fetch courses on component mount
+const ManageLiveClasses = () => {
+  const [title, setTitle] = useState("");
+  const [url, setUrl] = useState("");
+  const [selectedCourses, setSelectedCourses] = useState<string[]>([]);
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [liveClasses, setLiveClasses] = useState<LiveClass[]>([]);
+
+  // Fetch all courses on component mount
   useEffect(() => {
     const fetchCourses = async () => {
       try {
         const response = await axios.get(`https://civilacademyapp.com/api/course`);
         setCourses(response.data);
       } catch (error) {
-        console.error('Error fetching courses:', error);
+        console.error("Error fetching courses:", error);
       }
     };
 
     fetchCourses();
   }, []);
 
+  // Fetch live classes
+  useEffect(() => {
+    const fetchLiveClasses = async () => {
+      try {
+        const response = await axios.get(`https://civilacademyapp.com/api/live-classes`);
+        setLiveClasses(response.data);
+      } catch (error) {
+        console.error("Error fetching live classes:", error);
+      }
+    };
+
+    fetchLiveClasses();
+  }, []);
+
+  // Handle form submission to add live class under selected courses
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    try {
-      await axios.post(`https://civilacademyapp.com/api/live-classes`, { title, url, course: selectedCourse });
-      setTitle('');
-      setUrl('');
-      setSelectedCourse('');
-      alert('Live stream added successfully!');
-    } catch (error) {
-      console.error(error);
-      alert('Error adding live stream.');
+    if (selectedCourses.length === 0) {
+      alert("Please select at least one course.");
+      return;
     }
+
+    try {
+      await axios.post(`https://civilacademyapp.com/api/live-classes`, {
+        title,
+        url,
+        courses: selectedCourses, // Send selected course IDs
+      });
+      setTitle("");
+      setUrl("");
+      setSelectedCourses([]);
+      alert("Live stream added successfully!");
+    } catch (error) {
+      console.error("Error adding live class:", error);
+      alert("Error adding live stream.");
+    }
+  };
+
+  // Handle checkbox toggle for course selection
+  const toggleCourseSelection = (courseId: string) => {
+    setSelectedCourses((prev) =>
+      prev.includes(courseId)
+        ? prev.filter((id) => id !== courseId) // Remove if already selected
+        : [...prev, courseId] // Add if not selected
+    );
   };
 
   return (
@@ -49,7 +90,7 @@ const ManageLiveClasses = () => {
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">Stream Title</label>
           <input
-          title='title'
+            title="title"
             type="text"
             className="border p-2 w-full rounded-md"
             value={title}
@@ -61,7 +102,7 @@ const ManageLiveClasses = () => {
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">Stream URL</label>
           <input
-          title='url'
+            title="url"
             type="text"
             className="border p-2 w-full rounded-md"
             value={url}
@@ -71,27 +112,51 @@ const ManageLiveClasses = () => {
         </div>
 
         <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-2">Select Course</label>
-          <select
-          title='selectcourse'
-            value={selectedCourse}
-            onChange={(e) => setSelectedCourse(e.target.value)}
-            className="border p-2 w-full rounded-md"
-            required
-          >
-            <option value="">Select a course</option>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Select Courses</label>
+          <div className="grid grid-cols-2 gap-2">
             {courses.map((course) => (
-              <option key={course._id} value={course._id}>
-                {course.title}
-              </option>
+              <div key={course._id} className="flex items-center">
+                <input
+                  type="checkbox"
+                  id={course._id}
+                  checked={selectedCourses.includes(course._id)}
+                  onChange={() => toggleCourseSelection(course._id)}
+                  className="mr-2"
+                />
+                <label htmlFor={course._id} className="text-sm font-medium">
+                  {course.title}
+                </label>
+              </div>
             ))}
-          </select>
+          </div>
         </div>
 
-        <button type="submit" className="bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700">
+        <button
+          type="submit"
+          className="bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700"
+        >
           Add Live Stream
         </button>
       </form>
+
+      <div className="mt-8">
+        <h2 className="text-xl font-bold mb-4">Existing Live Classes</h2>
+        <ul className="space-y-4">
+          {liveClasses.map((liveClass) => (
+            <li key={liveClass._id} className="p-4 bg-gray-100 rounded-md shadow">
+              <h3 className="font-bold">{liveClass.title}</h3>
+              <p className="text-sm text-gray-600">URL: {liveClass.url}</p>
+              <p className="text-sm text-gray-600">
+                Courses:{" "}
+                {liveClass.courses
+                  .map((courseId) => courses.find((course) => course._id === courseId)?.title)
+                  .filter(Boolean)
+                  .join(", ")}
+              </p>
+            </li>
+          ))}
+        </ul>
+      </div>
     </div>
   );
 };

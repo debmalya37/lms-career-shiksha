@@ -5,13 +5,13 @@ import axios from "axios";
 
 // Define the Topic type
 interface Topic {
-  _id: string; // Assuming the topic has an ID
+  _id: string;
   name: string;
 }
 
 // Define the Subject type
 interface Subject {
-  _id: string; // Assuming the subject has an ID
+  _id: string;
   name: string;
 }
 
@@ -86,6 +86,21 @@ const ManageTopics = () => {
     setTopicName(topic.name); // Pre-fill the input field with the topic name
   };
 
+  // Handle delete button click
+  const handleDeleteClick = async (topicId: string) => {
+    if (confirm("Are you sure you want to delete this topic?")) {
+      try {
+        await axios.delete(`https://civilacademyapp.com/api/topics/delete?id=${topicId}`);
+        alert("Topic deleted successfully!");
+        // Refresh the topic list
+        setTopics((prevTopics) => prevTopics.filter((topic) => topic._id !== topicId));
+      } catch (error) {
+        console.error("Error deleting topic:", error);
+        alert("Failed to delete topic.");
+      }
+    }
+  };
+
   // Reset the form
   const resetForm = () => {
     setEditingTopic(null);
@@ -125,12 +140,20 @@ const ManageTopics = () => {
             {topics.map((topic) => (
               <li key={topic._id} className="flex justify-between items-center mb-2">
                 <span>{topic.name}</span>
-                <button
-                  onClick={() => handleEditClick(topic)}
-                  className="bg-green-500 text-white px-2 py-1 rounded-md hover:bg-green-600"
-                >
-                  Edit
-                </button>
+                <div className="flex space-x-2">
+                  <button
+                    onClick={() => handleEditClick(topic)}
+                    className="bg-green-500 text-white px-2 py-1 rounded-md hover:bg-green-600"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => handleDeleteClick(topic._id)}
+                    className="bg-red-500 text-white px-2 py-1 rounded-md hover:bg-red-600"
+                  >
+                    Delete
+                  </button>
+                </div>
               </li>
             ))}
           </ul>

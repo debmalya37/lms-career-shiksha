@@ -1,22 +1,26 @@
-import { NextResponse } from 'next/server';
-import connectMongo from '@/lib/db'; // Import the default connection function
-import LiveClass from '@/models/liveClassesModel'; // Import the LiveClass model
+import { NextResponse } from "next/server";
+import connectMongo from "@/lib/db";
+import LiveClass from "@/models/liveClassesModel";
 
-// POST method for adding a live class under a specific course
 export async function POST(request: Request) {
-  const { title, url, course } = await request.json();
+  const { title, url, courses } = await request.json();
 
   try {
-    await connectMongo(); // Connect to MongoDB
+    await connectMongo();
 
-    // Save the new live class with the course reference
-    const newLiveClass = new LiveClass({ title, url, course });
-    await newLiveClass.save();
+    // Create a live class for each selected course
+    const liveClasses = courses.map((courseId: string) => ({
+      title,
+      url,
+      course: courseId,
+    }));
 
-    return NextResponse.json({ message: 'Live class added successfully!' });
+    await LiveClass.insertMany(liveClasses);
+
+    return NextResponse.json({ message: "Live classes added successfully!" });
   } catch (error) {
-    console.error('Error adding live class:', error);
-    return NextResponse.json({ error: 'Failed to add live class' }, { status: 500 });
+    console.error("Error adding live classes:", error);
+    return NextResponse.json({ error: "Failed to add live classes" }, { status: 500 });
   }
 }
 
@@ -26,15 +30,24 @@ export async function POST(request: Request) {
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const courseId = searchParams.get("courseId"); // Get courseId from query params
+  const courseIds = searchParams.get("courseIds")?.split(","); // Get courseIds as a comma-separated list
 
   try {
     await connectMongo();
 
-    // Validate courseId
-    if (!courseId || !/^[0-9a-fA-F]{24}$/.test(courseId)) {
+    // Validate courseIds
+    if (!courseIds || courseIds.length === 0) {
       return NextResponse.json(
-        { error: "Invalid or missing courseId" },
+        { error: "Invalid or missing courseIds" },
+        { status: 400 }
+      );
+    }
+
+    // Check that all provided IDs are valid MongoDB ObjectId strings
+    const isValidObjectId = (id: string) => /^[0-9a-fA-F]{24}$/.test(id);
+    if (!courseIds.every(isValidObjectId)) {
+      return NextResponse.json(
+        { error: "One or more courseIds are invalid" },
         { status: 400 }
       );
     }
@@ -42,9 +55,9 @@ export async function GET(request: Request) {
     // Define the cutoff time for 24 hours ago
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
-    // Fetch live classes under the given courseId and created in the last 24 hours
+    // Fetch live classes under the given courseIds and created within the last 24 hours
     const liveClasses = await LiveClass.find({
-      course: courseId,
+      course: { $in: courseIds }, // Filter by course IDs
       createdAt: { $gte: twentyFourHoursAgo }, // Filter for classes less than 24 hours old
     })
       .sort({ createdAt: -1 }) // Sort by the latest ones
@@ -60,3 +73,4 @@ export async function GET(request: Request) {
     );
   }
 }
+

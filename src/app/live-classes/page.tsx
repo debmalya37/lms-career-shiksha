@@ -32,21 +32,24 @@ export default function LiveClassesPage() {
   useEffect(() => {
     const fetchLiveClasses = async () => {
       try {
-        // Fetch user profile to get courseId
+        // Fetch user profile to get courses
         const profileRes = await axios.get(`https://civilacademyapp.com/api/profile`, {
           withCredentials: true,
         });
         const profile = profileRes.data;
 
-        if (profile.error || !profile.course?._id) {
-          throw new Error("User does not have a valid course.");
+        if (profile.error || !profile.courses || profile.courses.length === 0) {
+          throw new Error("User does not have any subscribed courses.");
         }
 
-        const courseId = profile.course._id; // Get user's course ID
-        console.log("User's course ID:", courseId);
+        // Get user course IDs
+        const courseIds = profile.courses.map((course: { _id: string }) => course._id);
+        console.log("User's course IDs:", courseIds);
 
-        // Fetch live classes for the user's course
-        const liveClassesRes = await axios.get(`https://civilacademyapp.com/api/live-classes?courseId=${courseId}`);
+        // Fetch live classes for the user's courses
+        const liveClassesRes = await axios.get(
+          `https://civilacademyapp.com/api/live-classes?courseIds=${courseIds.join(",")}`
+        );
         const liveClassesData = liveClassesRes.data;
 
         // Validate and filter live classes using Zod

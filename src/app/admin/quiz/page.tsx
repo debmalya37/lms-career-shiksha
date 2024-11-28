@@ -203,16 +203,18 @@ useEffect(() => {
               <h3 className="text-lg font-semibold text-gray-700 mb-2">
                 Question {qIndex + 1}
               </h3>
-              <input
+              <textarea
                 value={q.question}
                 onChange={(e) => {
                   const newQuestions = [...questions];
                   newQuestions[qIndex].question = e.target.value;
                   setQuestions(newQuestions);
                 }}
-                placeholder="Question"
-                className="border p-2 rounded-md w-full mb-4"
+                placeholder="Type your question here..."
+                className="border p-2 rounded-md w-full mb-4 resize-none"
+                rows={3} // You can adjust the rows as needed
               />
+              
               <input
                 type="number"
                 value={q.marks}

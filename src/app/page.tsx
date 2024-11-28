@@ -30,10 +30,11 @@ export default function Home() {
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [latestLiveClass, setLatestLiveClass] = useState<any>(null);
   const [latestTutorial, setLatestTutorial] = useState<any>(null);
-  const [latestCourse, setLatestCourse] = useState<any>(null);
   const [userCourses, setUserCourses] = useState<Course[]>([]); // Store all user courses
   const [unsubscribedCourses, setUnsubscribedCourses] = useState<Course[]>([]); // Courses user hasn't subscribed to
   const [allCourses, setAllCourses] = useState<Course[]>([]); // All available courses
+  const [latestCourse, setLatestCourse] = useState<any>(null);
+  const [latestLiveClasses, setLatestLiveClasses] = useState<any[]>([]);
 
   // Check for session token and redirect if missing
   useEffect(() => {
@@ -75,11 +76,14 @@ export default function Home() {
         const tutorialRes = await axios.get(`https://civilacademyapp.com/api/latestTutorial`);
         if (tutorialRes.data) setLatestTutorial(tutorialRes.data);
   
-        // Fetch the latest live class
-        const liveClassRes = await axios.get(
-          `https://civilacademyapp.com/api/live-classes?course=${profileData.courses?.[0]?._id || ""}`
-        );
-        if (liveClassRes.data) setLatestLiveClass(liveClassRes.data);
+        // Fetch the latest live classes for all user courses
+        if (profileData.courses?.length) {
+          const courseIds = profileData.courses.map((course) => course._id).join(",");
+          const liveClassesRes = await axios.get(
+            `https://civilacademyapp.com/api/live-classes?courseIds=${courseIds}`
+          );
+          if (liveClassesRes.data) setLatestLiveClasses(liveClassesRes.data);
+        }
   
         // Fetch the latest course
         const courseRes = await axios.get(`https://civilacademyapp.com/api/latestCourse`);
@@ -119,13 +123,13 @@ export default function Home() {
         {isNotificationOpen && (
           <NotificationPopup
             close={() => setIsNotificationOpen(false)}
-            latestLiveClass={latestLiveClass}
+            latestLiveClasses={latestLiveClasses} // Updated to handle multiple live classes
             latestTutorial={latestTutorial}
             latestCourse={latestCourse}
           />
         )}
 
-        <LiveClasses liveClass={latestLiveClass} />
+        <LiveClasses liveClasses={latestLiveClasses} />
 
         <div className="container mx-auto mt-6">
           <div className="mt-6">
@@ -145,9 +149,9 @@ export default function Home() {
         <div key={course._id} className="border p-4 rounded-lg bg-green-200 shadow-md">
           <h3 className="text-base sm:text-lg font-semibold">{course.title}</h3>
           <p className="text-gray-600 text-sm">{course.description}</p>
-          <p className="mt-2 text-xs sm:text-sm text-gray-500">
+          {/* <p className="mt-2 text-xs sm:text-sm text-gray-500">
             Subjects: {course.subjects.map(subject => typeof subject === 'string' ? subject : subject.name).join(', ')}
-          </p>
+          </p> */}
           <p className="text-xs sm:text-sm text-gray-500">
             Created At: {new Date(course.createdAt).toLocaleDateString()}
           </p>

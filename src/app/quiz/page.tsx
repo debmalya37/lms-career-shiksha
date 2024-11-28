@@ -136,18 +136,27 @@ function QuizAppContent() {
   }, [quizId,  selectedCourse, selectedSubject]);
 
   useEffect(() => {
-    if (state.timeLeft > 0 && !state.showResults && !state.isLoading) {
+    if (state.timeLeft > 0) {
       const timer = setInterval(() => {
         setState((prevState) => ({
           ...prevState,
           timeLeft: prevState.timeLeft - 1,
         }));
       }, 1000);
+  
       return () => clearInterval(timer);
-    } else if (state.timeLeft === 0 && !state.isLoading) {
-      endQuiz("Time's up! The quiz has ended.");
     }
-  }, [state.timeLeft, state.showResults, state.isLoading]);
+  
+    if (state.timeLeft === 0 && !state.showResults) {
+      setState((prevState) => ({
+        ...prevState,
+        showResults: true,
+      }));
+      alert("Time's up! The quiz has ended.");
+      sendResultsByEmail();
+    }
+  }, [state.timeLeft, state.showResults]);
+  
 
   const formatTime = (time: number) => {
     const minutes = Math.floor(time / 60);

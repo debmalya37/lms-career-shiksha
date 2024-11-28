@@ -134,6 +134,7 @@ const ManageCourses = () => {
     }
   };
 
+
   // Handle adding a new topic
   const handleAddTopic = async () => {
     if (!newTopicName || !subject) {

@@ -3,8 +3,29 @@
 import Link from "next/link";
 import React, { useEffect, useState } from "react";
 
+interface Note {
+  _id: string;
+  title: string;
+  url: string;
+  subject: { name: string } | null; // Handle populated or non-populated subject
+}
+
+interface Course {
+  _id: string;
+  title: string;
+  subjects: string[]; // Array of subject IDs
+}
+
+interface UserProfile {
+  name: string;
+  email: string;
+  courses: Course[]; // Array of user courses
+  subscription: number;
+  error: any;
+}
+
 export default function NotesPage() {
-  const [notes, setNotes] = useState([]);
+  const [notes, setNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Fetch notes under user's subscribed subjects
@@ -15,18 +36,18 @@ export default function NotesPage() {
           method: "GET",
           credentials: "include",
         });
-        const profile = await res.json();
+        const profile: UserProfile = await res.json();
 
-        if (!profile.error && profile.course) {
-          console.log("Profile course:", profile.course);
+        if (!profile.error && profile.courses?.length > 0) {
+          console.log("User courses:", profile.courses);
 
-          // Extract subject IDs directly from the profile
-          const subjectIds = profile.course.subjects;
+          // Extract subject IDs from all user courses
+          const subjectIds = profile.courses.flatMap((course) => course.subjects);
 
-          if (subjectIds && subjectIds.length > 0) {
+          if (subjectIds.length > 0) {
             console.log("Subject IDs:", subjectIds);
 
-            // Fetch notes filtered by subjectIds
+            // Fetch notes filtered by subject IDs
             const notesRes = await fetch(
               `https://civilacademyapp.com/api/notes/specific?subject=${subjectIds.join(",")}`
             );
@@ -35,10 +56,10 @@ export default function NotesPage() {
             console.log("Fetched notes:", fetchedNotes);
             setNotes(fetchedNotes);
           } else {
-            console.warn("No subjects found for the user's course.");
+            console.warn("No subjects found for the user's courses.");
           }
         } else {
-          console.error("Profile data error or no course found.");
+          console.error("Profile data error or no courses found.");
         }
       } catch (error) {
         console.error("Error fetching notes:", error);
@@ -72,12 +93,10 @@ export default function NotesPage() {
           </thead>
           <tbody>
             {notes.length > 0 ? (
-              notes.map((note: any) => (
+              notes.map((note) => (
                 <tr key={note._id} className="border-b">
                   <td className="px-4 py-2">{note.title}</td>
-                  <td className="px-4 py-2">
-                    {note.subject?.name || "Unknown Subject"}
-                  </td>
+                  <td className="px-4 py-2">{note.subject?.name || "Unknown Subject"}</td>
                   <td className="px-4 py-2">
                     <Link
                       href={note.url}
