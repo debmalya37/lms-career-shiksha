@@ -30,7 +30,7 @@ export async function POST(request: Request) {
     user.sessionToken = sessionToken;
 
     const expirationDate = new Date();
-    expirationDate.setDate(expirationDate.getDate() + user.subscription);
+expirationDate.setDate(expirationDate.getDate() + (user?.subscription ?? 0));
 
     await user.save();
 
@@ -41,7 +41,7 @@ export async function POST(request: Request) {
         email: user.email,
         name: user.name,
         course: user.course,
-        subscription: user.subscription,
+        subscription: user?.subscription,
       },
     });
     response.cookies.set('sessionToken', sessionToken, {
