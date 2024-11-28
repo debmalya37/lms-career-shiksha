@@ -22,7 +22,7 @@ interface UserProfile {
   name: string;
   email: string;
   subscription: number;
-  course: Course[]; // Array of user courses
+  courses: Course[];  // Array of user courses
 }
 
 export default function Home() {
@@ -59,28 +59,28 @@ export default function Home() {
         const profileRes = await axios.get(`https://civilacademyapp.com/api/profile`);
         const profileData: UserProfile = profileRes.data;
         console.log("Profile Data:", profileData);
-
+  
         // Set user courses
-        if (profileData?.course?.length) {
-          setUserCourses(profileData.course);
+        if (profileData?.courses?.length) {
+          setUserCourses(profileData.courses); // Use `courses` from API
         }
-
+  
         // Fetch all courses
         const allCoursesRes = await axios.get(`https://civilacademyapp.com/api/course/admin`);
         if (allCoursesRes.data) {
           setAllCourses(allCoursesRes.data);
         }
-
+  
         // Fetch the latest tutorial
         const tutorialRes = await axios.get(`https://civilacademyapp.com/api/latestTutorial`);
         if (tutorialRes.data) setLatestTutorial(tutorialRes.data);
-
+  
         // Fetch the latest live class
         const liveClassRes = await axios.get(
-          `https://civilacademyapp.com/api/live-classes?course=${profileData.course?.[0]?._id || ""}`
+          `https://civilacademyapp.com/api/live-classes?course=${profileData.courses?.[0]?._id || ""}`
         );
         if (liveClassRes.data) setLatestLiveClass(liveClassRes.data);
-
+  
         // Fetch the latest course
         const courseRes = await axios.get(`https://civilacademyapp.com/api/latestCourse`);
         if (courseRes.data) setLatestCourse(courseRes.data);
@@ -90,6 +90,7 @@ export default function Home() {
     }
     fetchData();
   }, []);
+  
 
   // Filter unsubscribed courses
   useEffect(() => {
@@ -134,23 +135,35 @@ export default function Home() {
                   Your Subscribed Courses:
                 </h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4 mx-2 sm:mx-0">
-                  {userCourses.map((course: Course) => (
-                    <div key={course._id} className="border p-4 rounded-lg bg-green-200 shadow-md">
-                      <h3 className="text-base sm:text-lg font-semibold">{course.title}</h3>
-                      <p className="text-gray-600 text-sm">{course.description}</p>
-                      <p className="mt-2 text-xs sm:text-sm text-gray-500">
-                        Subjects: {course.subjects.map(subject => typeof subject === 'string' ? subject : subject.name).join(', ')}
-                      </p>
-                      <p className="text-xs sm:text-sm text-gray-500">
-                        Created At: {new Date(course.createdAt).toLocaleDateString()}
-                      </p>
-                      <Link href={`/courses/${course._id}`}>
-                        <button className="mt-4 w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-500">
-                          Go to Course
-                        </button>
-                      </Link>
-                    </div>
-                  ))}
+                {userCourses.length > 0 ? (
+  <div>
+    <h2 className="text-lg sm:text-2xl font-bold text-green-800 ml-2 sm:ml-5">
+      Your Subscribed Courses:
+    </h2>
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4 mx-2 sm:mx-0">
+      {userCourses.map((course: Course) => (
+        <div key={course._id} className="border p-4 rounded-lg bg-green-200 shadow-md">
+          <h3 className="text-base sm:text-lg font-semibold">{course.title}</h3>
+          <p className="text-gray-600 text-sm">{course.description}</p>
+          <p className="mt-2 text-xs sm:text-sm text-gray-500">
+            Subjects: {course.subjects.map(subject => typeof subject === 'string' ? subject : subject.name).join(', ')}
+          </p>
+          <p className="text-xs sm:text-sm text-gray-500">
+            Created At: {new Date(course.createdAt).toLocaleDateString()}
+          </p>
+          <Link href={`/courses/${course._id}`}>
+            <button className="mt-4 w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-500">
+              Go to Course
+            </button>
+          </Link>
+        </div>
+      ))}
+    </div>
+  </div>
+) : (
+  <p className="text-gray-600 text-sm sm:text-base ml-2">You have no active subscriptions.</p>
+)}
+
                 </div>
               </div>
             ) : (
