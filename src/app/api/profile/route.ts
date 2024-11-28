@@ -21,8 +21,8 @@ export async function GET(request: NextRequest) {
 
     // Fetch all course details if user has multiple courses
     let courseDetails: ICourse[] = [];
-    if (user.course && Array.isArray(user.course) && user.course.length > 0) {
-      courseDetails = (await Course.find({ _id: { $in: user.course } }).lean()) as ICourse[]; // Explicitly cast the type
+    if (user.course && Array.isArray(user?.course) && user?.course.length > 0) {
+      courseDetails = (await Course.find({ _id: { $in: user?.course } }).lean()) as ICourse[]; // Explicitly cast the type
       console.log('Course details fetched:', courseDetails); // Debugging
     }
 
@@ -33,9 +33,9 @@ export async function GET(request: NextRequest) {
       email: user.email,
       name: user.name,
       courses: courseDetails, // Include all courses data as an array
-      subscription: user.subscription,
-      phoneNo: user.phoneNo,
-      address: user.address,
+      subscription: user?.subscription,
+      phoneNo: user?.phoneNo,
+      address: user?.address,
       profile,
     });
   } catch (error) {

@@ -6,7 +6,7 @@ export interface User extends Document {
   password: string;
   sessionToken: string;
   course: Types.ObjectId[];
-  subscription: number;
+  subscription?: number;
   profile: Types.ObjectId[];
   phoneNo?: string;
   address?: string;
@@ -19,7 +19,7 @@ const userSchema = new Schema<User>({
   password: { type: String, required: true },
   sessionToken: { type: String, default: null },
   course: [{ type: Schema.Types.ObjectId, ref: "Course" }], // Correct type for an array of references
-  subscription: { type: Number, required: true },
+  subscription: { type: Number, required: false },
   profile: [{ type: Schema.Types.ObjectId, ref: 'Profile' }], // Correct type for an array of references
   phoneNo: { type: String, required: false }, // New field
   address: { type: String, required: false },
