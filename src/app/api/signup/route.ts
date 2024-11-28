@@ -18,7 +18,7 @@ export async function POST(request: Request) {
       password,
       phoneNo, // Add phoneNo
       address, // Add address
-      subscription: 0,
+      subscription: 30,
       course: [],
       sessionToken: null,
       deviceIdentifier: null,

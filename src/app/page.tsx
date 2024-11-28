@@ -131,9 +131,9 @@ export default function Home() {
           <div className="mt-6">
             {userCourses.length > 0 ? (
               <div>
-                <h2 className="text-lg sm:text-2xl font-bold text-green-800 ml-2 sm:ml-5">
+                {/* <h2 className="text-lg sm:text-2xl font-bold text-green-800 ml-2 sm:ml-5">
                   Your Subscribed Courses:
-                </h2>
+                </h2> */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4 mx-2 sm:mx-0">
                 {userCourses.length > 0 ? (
   <div>

@@ -20,7 +20,7 @@ const AdminPanel = () => {
         console.log("Profile Data:", profileData); // Log the profile response
 
         // Define allowed emails
-        const allowedEmails = ['debmalyasen37@gmail.com', 'civilacademy.in@gmail.com', 'civil1@hotmail.com', 'civil2@hotmail.com'];
+        const allowedEmails = ['debmalyasen37@gmail.com', 'civilacademy.in@gmail.com', 'civil1@hotmail.com', 'civil2@hotmail.com', 'Tech@kryptaroid.com'];
 
         // Check if the profile email is in the allowed list
         if (profileData?.email && allowedEmails.includes(profileData.email)) {

@@ -49,7 +49,7 @@ const UserCreationPage = () => {
         console.log('Profile Data:', profileData); // Log the profile response
 
         // Define allowed emails
-        const allowedEmails = ['civilacademy.in@gmail.com', 'debmalyasen37@gmail.com'];
+        const allowedEmails = ['civilacademy.in@gmail.com', 'debmalyasen37@gmail.com', 'Tech@kryptaroid.com'];
 
         // Check if the profile email is in the allowed list
         if (profileData?.email && allowedEmails.includes(profileData.email)) {
