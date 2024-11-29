@@ -57,6 +57,30 @@ export default function Home() {
     }
     checkSession();
   }, [router]);
+  const convertToEmbedUrl = (url: string): string => {
+    const embedUrlRegex = /^https:\/\/www\.youtube\.com\/embed\//;
+    const normalUrlRegex = /^https:\/\/www\.youtube\.com\/watch\?v=([a-zA-Z0-9_-]+)/;
+    const liveUrlRegex = /^https:\/\/(?:www\.)?youtube\.com\/live\/([a-zA-Z0-9_-]+)/;
+  
+    if (embedUrlRegex.test(url)) {
+      // If already an embed URL, return as is
+      return url;
+    }
+  
+    const normalMatch = url.match(normalUrlRegex);
+    if (normalMatch) {
+      const videoId = normalMatch[1];
+      return `https://www.youtube.com/embed/${videoId}`;
+    }
+  
+    const liveMatch = url.match(liveUrlRegex);
+    if (liveMatch) {
+      const videoId = liveMatch[1];
+      return `https://www.youtube.com/embed/${videoId}`;
+    }
+  
+    return url; // Return as is if it's not a recognizable YouTube URL
+  };
 
   // Fetch user profile and courses
   useEffect(() => {
@@ -87,13 +111,19 @@ export default function Home() {
         if (tutorialRes.data) setLatestTutorial(tutorialRes.data);
   
         // Fetch the latest live classes for all user courses
-        if (profileData.courses?.length) {
-          const courseIds = profileData.courses.map((course) => course._id).join(",");
-          const liveClassesRes = await axios.get(
-            `https://civilacademyapp.com/api/live-classes?courseIds=${courseIds}`
-          );
-          if (liveClassesRes.data) setLatestLiveClasses(liveClassesRes.data);
+      if (profileData.courses?.length) {
+        const courseIds = profileData.courses.map((course) => course._id).join(",");
+        const liveClassesRes = await axios.get(
+          `https://civilacademyapp.com/api/live-classes?courseIds=${courseIds}`
+        );
+        if (liveClassesRes.data) {
+          const transformedLiveClasses = liveClassesRes.data.map((liveClass: any) => ({
+            ...liveClass,
+            url: convertToEmbedUrl(liveClass.url), // Convert URL to embed format
+          }));
+          setLatestLiveClasses(transformedLiveClasses);
         }
+      }
   
         // Fetch the latest course
         const courseRes = await axios.get(`https://civilacademyapp.com/api/latestCourse`);
@@ -104,6 +134,8 @@ export default function Home() {
     }
     fetchData();
   }, []);
+  
+  
   
 
   // Filter unsubscribed courses
@@ -155,7 +187,7 @@ export default function Home() {
     <h2 className="text-lg sm:text-2xl font-bold text-green-800 ml-2 sm:ml-5">
       Your Subscribed Courses:
     </h2>
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4 mx-2 sm:mx-0">
+    <div className="grid grid-cols-1 sm:grid-cols-1 lg:grid-cols-1 gap-4 mt-4 mx-2 sm:mx-0">
       {userCourses.map((course: Course) => (
         <div key={course._id} className="border p-4 rounded-lg bg-green-200 shadow-md">
           <h3 className="text-base sm:text-lg font-semibold">{course.title}</h3>

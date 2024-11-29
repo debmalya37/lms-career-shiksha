@@ -8,9 +8,7 @@ import { z } from "zod";
 const liveClassSchema = z.object({
   _id: z.string(),
   title: z.string(),
-  url: z.string().regex(/^https:\/\/www\.youtube\.com\/embed\//, {
-    message: "URL must be a valid YouTube embed link",
-  }),
+  url: z.string(),
   course: z.object({
     _id: z.string(),
     title: z.string(),
@@ -23,6 +21,34 @@ interface LiveClass {
   url: string;
   course: { _id: string; title: string };
 }
+
+// Function to convert YouTube URLs to embed format
+const convertToEmbedUrl = (url: string): string => {
+  const embedUrlRegex = /^https:\/\/www\.youtube\.com\/embed\//;
+  const normalUrlRegex = /^https:\/\/www\.youtube\.com\/watch\?v=([a-zA-Z0-9_-]+)/;
+  const liveUrlRegex = /^https:\/\/(?:www\.)?youtube\.com\/live\/([a-zA-Z0-9_-]+)/;
+
+  if (embedUrlRegex.test(url)) {
+    // If already an embed URL, return as is
+    return url;
+  }
+
+  const normalMatch = url.match(normalUrlRegex);
+  if (normalMatch) {
+    const videoId = normalMatch[1];
+    return `https://www.youtube.com/embed/${videoId}`;
+  }
+
+  const liveMatch = url.match(liveUrlRegex);
+  if (liveMatch) {
+    const videoId = liveMatch[1];
+    return `https://www.youtube.com/embed/${videoId}`;
+  }
+
+  return url; // Return as is if it's not a recognizable YouTube URL
+};
+
+
 
 export default function LiveClassesPage() {
   const [liveClasses, setLiveClasses] = useState<LiveClass[]>([]);
@@ -52,11 +78,13 @@ export default function LiveClassesPage() {
         );
         const liveClassesData = liveClassesRes.data;
 
-        // Validate and filter live classes using Zod
-        const filteredLiveClasses = liveClassesData.filter((liveClass: LiveClass) => {
-          const result = liveClassSchema.safeParse(liveClass);
-          return result.success;
-        });
+        // Validate and filter live classes using Zod, then convert URLs to embed format
+        const filteredLiveClasses = liveClassesData
+          .filter((liveClass: LiveClass) => liveClassSchema.safeParse(liveClass).success)
+          .map((liveClass: LiveClass) => ({
+            ...liveClass,
+            url: convertToEmbedUrl(liveClass.url),
+          }));
 
         setLiveClasses(filteredLiveClasses);
       } catch (err) {
