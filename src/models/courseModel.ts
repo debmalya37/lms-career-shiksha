@@ -5,7 +5,7 @@ import { Types } from 'mongoose';
 export interface ICourse extends Document {
   title: string;
   description: string;
-  subjects: mongoose.Schema.Types.ObjectId[]; // Array of ObjectIds referencing Subject documents
+  subjects: Types.ObjectId[]; // Array of ObjectIds referencing Subject documents
   courseImg: string; 
   createdAt: Date;
   isHidden: boolean;

@@ -36,7 +36,7 @@ export async function POST(request: Request) {
     const formData = await request.formData();
     const title = formData.get('title') as string;
     const description = formData.get('description') as string;
-    const subjects = formData.getAll('subjects') as string[];
+    const subjects = formData.getAll('subjects') as string[]; // Accept multiple subject IDs
     const isHidden = formData.get('isHidden') === 'true';
     const courseImgFile = formData.get('courseImg') as File | null;
 
@@ -51,15 +51,23 @@ export async function POST(request: Request) {
       courseImgUrl = await uploadToCloudinary(bufferData);
     }
 
+    // Create the new course
     const newCourse = new Course({
       title,
       description,
       subjects,
       isHidden,
-      courseImg: courseImgUrl, // Save the Cloudinary image URL
+      courseImg: courseImgUrl,
     });
 
     await newCourse.save();
+
+    // Update subjects to reference this course
+    await Subject.updateMany(
+      { _id: { $in: subjects } },
+      { $addToSet: { courses: newCourse._id } } // Use `$addToSet` to avoid duplicates
+    );
+
     return NextResponse.json({ message: 'Course added successfully!' });
   } catch (error) {
     console.error("POST /api/course Error:", error);

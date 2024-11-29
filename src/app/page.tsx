@@ -13,6 +13,7 @@ interface Course {
   _id: string;
   title: string;
   description: string;
+  courseImg?: string;
   subjects: { name: string }[] | string[]; // Handle both populated and non-populated subjects
   createdAt: string;
   isHidden?: boolean;
@@ -184,17 +185,22 @@ export default function Home() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4 mx-2 sm:mx-0">
                 {userCourses.length > 0 ? (
   <div>
-    <h2 className="text-lg sm:text-2xl font-bold text-green-800 ml-2 sm:ml-5">
-      Your Subscribed Courses:
-    </h2>
-    <div className="grid grid-cols-1 sm:grid-cols-1 lg:grid-cols-1 gap-4 mt-4 mx-2 sm:mx-0">
-      {userCourses.map((course: Course) => (
-        <div key={course._id} className="border p-4 rounded-lg bg-green-200 shadow-md">
+  <h2 className="text-lg sm:text-2xl font-bold text-green-800 ml-2 sm:ml-5">
+    Your Subscribed Courses:
+  </h2>
+  <div className="grid grid-cols-1 sm:grid-cols-1 lg:grid-cols-1 gap-4 mt-4 mx-2 sm:mx-0">
+    {userCourses.map((course: Course) => (
+      <div key={course._id} className="border p-4 rounded-lg bg-green-200 shadow-md flex flex-col sm:flex-row items-center">
+        {course.courseImg && (
+          <img
+            src={course.courseImg}
+            alt={`${course.title} Thumbnail`}
+            className="w-24 h-24 rounded-md object-cover mr-4 mb-4 sm:mb-0"
+          />
+        )}
+        <div className="flex-1">
           <h3 className="text-base sm:text-lg font-semibold">{course.title}</h3>
           <p className="text-gray-600 text-sm">{course.description}</p>
-          {/* <p className="mt-2 text-xs sm:text-sm text-gray-500">
-            Subjects: {course.subjects.map(subject => typeof subject === 'string' ? subject : subject.name).join(', ')}
-          </p> */}
           <p className="text-xs sm:text-sm text-gray-500">
             Created At: {new Date(course.createdAt).toLocaleDateString()}
           </p>
@@ -204,9 +210,10 @@ export default function Home() {
             </button>
           </Link>
         </div>
-      ))}
-    </div>
+      </div>
+    ))}
   </div>
+</div>
 ) : (
   <p className="text-gray-600 text-sm sm:text-base ml-2">You have no active subscriptions.</p>
 )}
@@ -219,25 +226,46 @@ export default function Home() {
           </div>
 
           <div className="mt-6">
-            <h2 className="text-lg sm:text-2xl font-bold text-green-800 ml-2 sm:ml-5">Courses You Haven&apos;t Subscribed To:</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4 mx-2 sm:mx-0">
-              {unsubscribedCourses.map((course: Course) => (
-                <div key={course._id} className="border p-4 rounded-lg bg-green-200 shadow-md">
-                  <h3 className="text-base sm:text-lg font-semibold">{course.title}</h3>
-                  <p className="text-gray-600 text-sm">{course.description}</p>
-                  <p className="mt-2 text-xs sm:text-sm text-gray-500">
-                    Subjects: {course.subjects.map(subject => typeof subject === 'string' ? subject : subject.name).join(', ')}
-                  </p>
-                  <p className="text-xs sm:text-sm text-gray-500">Created At: {new Date(course.createdAt).toLocaleDateString()}</p>
-                  <Link href={`/contact`}>
-                    <button className="mt-4 w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-500">
-                      Contact Us
-                    </button>
-                  </Link>
-                </div>
-              ))}
-            </div>
-          </div>
+  <h2 className="text-lg sm:text-2xl font-bold text-green-800 ml-2 sm:ml-5">
+    Courses You Haven&apos;t Subscribed To:
+  </h2>
+  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4 mx-2 sm:mx-0">
+    {unsubscribedCourses.map((course: Course) => (
+      <div
+        key={course._id}
+        className="border p-4 rounded-lg bg-green-200 shadow-md flex flex-col items-center sm:flex-row"
+      >
+        {course.courseImg && (
+          <img
+            src={course.courseImg}
+            alt={`${course.title} Thumbnail`}
+            className="w-24 h-24 rounded-md object-cover mr-4 mb-4 sm:mb-0"
+          />
+        )}
+        <div className="flex-1">
+          <h3 className="text-base sm:text-lg font-semibold">{course.title}</h3>
+          <p className="text-gray-600 text-sm">{course.description}</p>
+          <p className="mt-2 text-xs sm:text-sm text-gray-500">
+            Subjects:{" "}
+            {course.subjects
+              .map((subject) =>
+                typeof subject === "string" ? subject : subject.name
+              )
+              .join(", ")}
+          </p>
+          <p className="text-xs sm:text-sm text-gray-500">
+            Created At: {new Date(course.createdAt).toLocaleDateString()}
+          </p>
+          <Link href={`/contact`}>
+            <button className="mt-4 w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-500">
+              Contact Us
+            </button>
+          </Link>
+        </div>
+      </div>
+    ))}
+  </div>
+</div>
         </div>
         <Footer />
       </div>

@@ -117,22 +117,41 @@ const ManageCourses = () => {
   };
 
   // Handle adding a new subject
-  const handleAddSubject = async () => {
-    if (!newSubjectName) {
-      alert("Please enter a subject name.");
-      return;
+const handleAddSubject = async () => {
+  if (!newSubjectName) {
+    alert("Please enter a subject name.");
+    return;
+  }
+
+  if (!editingCourse) {
+    alert("Please select a course before adding a subject.");
+    return;
+  }
+
+  try {
+    const formData = new FormData();
+    formData.append("name", newSubjectName);
+    formData.append("courses", editingCourse._id); // Link to the selected course
+    if (courseImg) {
+      formData.append("subjectImg", courseImg); // Optionally include an image
     }
 
-    try {
-      const response = await axios.post(`https://civilacademyapp.com/api/newSubject`, { name: newSubjectName });
-      setSubjects((prevSubjects) => [...prevSubjects, response.data]);
-      setNewSubjectName("");
-      alert("New subject added successfully!");
-    } catch (error) {
-      console.error("Error adding subject:", error);
-      alert("Failed to add subject.");
-    }
-  };
+    await axios.post(`https://civilacademyapp.com/api/subjects`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+
+    // Fetch the updated subjects and update the state
+    const updatedSubjects = await axios.get(`https://civilacademyapp.com/api/subjects`);
+    setSubjects(updatedSubjects.data);
+
+    setNewSubjectName(""); // Clear the input field
+    alert("New subject added successfully!");
+  } catch (error) {
+    console.error("Error adding subject:", error);
+    alert("Failed to add subject.");
+  }
+};
+
 
 
   // Handle adding a new topic
@@ -246,20 +265,20 @@ const ManageCourses = () => {
               </option>
             ))}
           </select>
-          <input
+          {/* <input
             type="text"
             className="border p-2 w-full rounded-md mt-2"
             placeholder="Enter new subject name"
             value={newSubjectName}
             onChange={(e) => setNewSubjectName(e.target.value)}
-          />
-          <button
+          /> */}
+          {/* <button
             type="button"
             onClick={handleAddSubject}
             className="mt-2 bg-green-500 text-white py-2 px-4 rounded-md hover:bg-green-600"
           >
             Add New Subject
-          </button>
+          </button> */}
         </div>
 
         {subject && (
@@ -278,7 +297,7 @@ const ManageCourses = () => {
                 </option>
               ))}
             </select>
-            <input
+            {/* <input
               type="text"
               className="border p-2 w-full rounded-md mt-2"
               placeholder="Enter new topic name"
@@ -291,7 +310,7 @@ const ManageCourses = () => {
               className="mt-2 bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600"
             >
               Add New Topic
-            </button>
+            </button> */}
           </div>
         )}
 

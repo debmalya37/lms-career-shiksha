@@ -3,6 +3,7 @@ import connectMongo from '@/lib/db';
 import Subject from '@/models/subjectModel';
 import { v2 as cloudinary } from 'cloudinary';
 import streamifier from 'streamifier';
+import Course from '@/models/courseModel';
 
 // Configure Cloudinary
 cloudinary.config({
@@ -32,7 +33,7 @@ async function uploadToCloudinary(buffer: Buffer): Promise<string> {
 export async function POST(request: Request) {
   const formData = await request.formData();
   const name = formData.get('name') as string;
-  const courses = formData.getAll('courses') as string[];
+  const courses = formData.getAll('courses') as string[]; // Array of course IDs
   const subjectImgFile = formData.get('subjectImg') as File | null;
 
   if (!name || courses.length === 0) {
@@ -52,11 +53,19 @@ export async function POST(request: Request) {
   try {
     await connectMongo();
 
+    // Create the new subject
     const newSubject = new Subject({ name, courses, subjectImg: subjectImgUrl });
     await newSubject.save();
 
+    // Update each course to include the new subject in its `subjects` array
+    await Course.updateMany(
+      { _id: { $in: courses } },
+      { $addToSet: { subjects: newSubject._id } } // Use `$addToSet` to avoid duplicates
+    );
+
     return NextResponse.json({ message: 'Subject added successfully!', subject: newSubject });
   } catch (error) {
+    console.error("POST /api/subjects Error:", error);
     return NextResponse.json({ error: 'Failed to add subject.' }, { status: 500 });
   }
 }
