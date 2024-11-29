@@ -84,6 +84,7 @@ function QuizAppContent() {
 
     fetchUserProfile();
   }, []);
+
   useEffect(() => {
     const fetchCourses = async () => {
       try {
@@ -96,6 +97,7 @@ function QuizAppContent() {
     };
     fetchCourses();
   }, []);
+
   useEffect(() => {
     if (selectedCourse) {
       const fetchSubjects = async () => {
@@ -110,6 +112,7 @@ function QuizAppContent() {
       fetchSubjects();
     }
   }, [selectedCourse]);
+
   useEffect(() => {
     if (quizId && selectedCourse && selectedSubject) {
       const fetchQuizData = async () => {
@@ -133,7 +136,7 @@ function QuizAppContent() {
       };
       fetchQuizData();
     }
-  }, [quizId,  selectedCourse, selectedSubject]);
+  }, [quizId, selectedCourse, selectedSubject]);
 
   useEffect(() => {
     if (state.timeLeft > 0) {
@@ -143,20 +146,19 @@ function QuizAppContent() {
           timeLeft: prevState.timeLeft - 1,
         }));
       }, 1000);
-  
+
       return () => clearInterval(timer);
     }
-  
-    if (state.timeLeft === 0 && !state.showResults) {
+
+    // Show results only if the quiz has started
+    if (state.timeLeft === 0 && state.quizData && !state.showResults) {
       setState((prevState) => ({
         ...prevState,
         showResults: true,
       }));
-      alert("Time's up! The quiz has ended.");
       sendResultsByEmail();
     }
-  }, [state.timeLeft, state.showResults]);
-  
+  }, [state.timeLeft, state.showResults, state.quizData]);
 
   const formatTime = (time: number) => {
     const minutes = Math.floor(time / 60);
@@ -225,16 +227,6 @@ function QuizAppContent() {
       console.error("Failed to send quiz results via email:", error);
     }
   };
-
-  const endQuiz = (reason: string) => {
-    setState((prevState) => ({
-      ...prevState,
-      showResults: true,
-    }));
-    alert(reason);
-    sendResultsByEmail();
-  };
-
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground">
       <div className="mb-8">
