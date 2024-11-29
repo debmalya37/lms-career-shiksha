@@ -9,8 +9,8 @@ interface LiveClassesProps {
 
 export default function LiveClasses({ liveClasses }: LiveClassesProps) {
   return (
-    <div className="mt-8 p-4">
-      <h2 className="text-green-700 text-2xl font-bold mb-4">Live Classes</h2>
+    <div className="mt-8 p-4 ml-0">
+      <h2 className="text-green-700 text-2xl font-bold mb-4 pl-5 pr-5">Live Classes</h2>
       {liveClasses.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {liveClasses.map((liveClass, index) => (
@@ -18,23 +18,21 @@ export default function LiveClasses({ liveClasses }: LiveClassesProps) {
               key={index}
               className="bg-white border border-gray-300 rounded-lg overflow-hidden shadow-md"
             >
-              <div className="relative w-full h-40 sm:h-48 bg-black">
-                <iframe
-                  src={liveClass.url}
-                  title={liveClass.title}
-                  className="w-full h-full"
-                  sandbox="allow-forms allow-scripts allow-pointer-lock allow-same-origin allow-top-navigation"
-                  allowFullScreen
-                />
-              </div>
+              <iframe
+                src={liveClass.url}
+                title={liveClass.title}
+                className="w-full h-full rounded-lg"
+                sandbox="allow-forms allow-scripts allow-pointer-lock allow-same-origin allow-top-navigation"
+                allowFullScreen
+              />
               <div className="p-4">
-                <h3 className="text-lg font-semibold text-gray-800 truncate">{liveClass.title}</h3>
-              </div>
+              <p className="text-lg font-semibold text-gray-800 truncate">{liveClass.title}</p>
+            </div>
             </div>
           ))}
         </div>
       ) : (
-        <div className="bg-green-200 w-full h-40 flex justify-center items-center rounded-lg text-black">
+        <div className="bg-green-200 w-full h-64 flex justify-center items-center rounded-lg text-black">
           <p className="text-lg">No live classes currently running</p>
         </div>
       )}

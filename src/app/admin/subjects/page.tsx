@@ -6,6 +6,7 @@ interface Subject {
   _id: string;
   name: string;
   course: string | string[]; // Course can be a single string or an array
+  subjectImg?: string;
 }
 
 interface Course {
@@ -19,13 +20,15 @@ const ManageSubjects = () => {
   const [courses, setCourses] = useState<Course[]>([]); // Define course type
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [editingSubject, setEditingSubject] = useState<Subject | null>(null);
+  const [subjectImg, setSubjectImg] = useState<File | null>(null);
+
 
   useEffect(() => {
     async function fetchData() {
       try {
         const [subjectRes, courseRes] = await Promise.all([
-          axios.get(`https://civilacademyapp.com/api/subjects`),
-          axios.get(`https://civilacademyapp.com/api/course`),
+          axios.get(`http://localhost:3000/api/subjects`),
+          axios.get(`http://localhost:3000/api/course`),
         ]);
         setSubjects(subjectRes.data);
         setCourses(courseRes.data);
@@ -36,40 +39,45 @@ const ManageSubjects = () => {
     fetchData();
   }, []);
 
-  // Add or edit a subject
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    // Create the payload object
-    const basePayload = {
-      name: subjectName,
-      course: selectedCourses.length === 1 ? selectedCourses[0] : selectedCourses,
-    };
-
+  
+    const formData = new FormData();
+    formData.append('name', subjectName);
+    selectedCourses.forEach((course) => formData.append('courses', course));
+    if (subjectImg) {
+      formData.append('subjectImg', subjectImg);
+    }
+  
     try {
       if (editingSubject) {
-        const editPayload = { ...basePayload, id: editingSubject._id }; // Include the ID for editing
-        await axios.post(`https://civilacademyapp.com/api/subjects/edit`, editPayload);
-        alert("Subject updated successfully!");
+        formData.append('id', editingSubject._id); // For editing
+        await axios.post(`http://localhost:3000/api/subjects/edit`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        alert('Subject updated successfully!');
       } else {
-        await axios.post(`https://civilacademyapp.com/api/subjects`, basePayload);
-        alert("Subject added successfully!");
+        await axios.post(`http://localhost:3000/api/subjects`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        alert('Subject added successfully!');
       }
-
-      // Refresh subjects and reset form
-      const res = await axios.get(`https://civilacademyapp.com/api/subjects`);
+  
+      // Refresh subjects
+      const res = await axios.get(`http://localhost:3000/api/subjects`);
       setSubjects(res.data);
       resetForm();
     } catch (error) {
-      console.error("Error adding/updating subject:", error);
-      alert("Failed to add/update subject.");
+      console.error('Error adding/updating subject:', error);
+      alert('Failed to add/update subject.');
     }
   };
+  
   // Delete a subject
   const handleDelete = async (subjectId: string) => {
     if (confirm("Are you sure you want to delete this subject?")) {
       try {
-        await axios.delete(`https://civilacademyapp.com/api/subjects/delete?id=${subjectId}`);
+        await axios.delete(`http://localhost:3000/api/subjects/delete?id=${subjectId}`);
         alert("Subject deleted successfully!");
 
         // Refresh the subject list
@@ -83,10 +91,12 @@ const ManageSubjects = () => {
 
   // Reset form to default state
   const resetForm = () => {
-    setSubjectName("");
+    setSubjectName('');
     setSelectedCourses([]);
+    setSubjectImg(null);
     setEditingSubject(null);
   };
+  
 
   // Handle subject edit
   const handleEdit = (subject: Subject) => {
@@ -113,6 +123,7 @@ const ManageSubjects = () => {
             required
           />
         </div>
+        
 
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">Select Courses</label>
@@ -132,6 +143,22 @@ const ManageSubjects = () => {
               </option>
             ))}
           </select>
+        </div>
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">Subject Image</label>
+          <input
+            title="subjectImg"
+            type="file"
+            accept="image/*"
+            onChange={(e) => setSubjectImg(e.target.files?.[0] || null)}
+          />
+          {editingSubject && editingSubject.subjectImg && (
+            <img
+              src={editingSubject.subjectImg}
+              alt="Subject Thumbnail"
+              className="w-20 h-20 mt-2 rounded-md"
+            />
+          )}
         </div>
 
         <button type="submit" className="bg-purple-600 text-white py-2 px-4 rounded-md hover:bg-purple-700">
