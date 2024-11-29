@@ -27,8 +27,8 @@ const ManageSubjects = () => {
     async function fetchData() {
       try {
         const [subjectRes, courseRes] = await Promise.all([
-          axios.get(`http://localhost:3000/api/subjects`),
-          axios.get(`http://localhost:3000/api/course`),
+          axios.get(`https://civilacademyapp.com/api/subjects`),
+          axios.get(`https://civilacademyapp.com/api/course`),
         ]);
         setSubjects(subjectRes.data);
         setCourses(courseRes.data);
@@ -52,19 +52,19 @@ const ManageSubjects = () => {
     try {
       if (editingSubject) {
         formData.append('id', editingSubject._id); // For editing
-        await axios.post(`http://localhost:3000/api/subjects/edit`, formData, {
+        await axios.post(`https://civilacademyapp.com/api/subjects/edit`, formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
         alert('Subject updated successfully!');
       } else {
-        await axios.post(`http://localhost:3000/api/subjects`, formData, {
+        await axios.post(`https://civilacademyapp.com/api/subjects`, formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
         alert('Subject added successfully!');
       }
   
       // Refresh subjects
-      const res = await axios.get(`http://localhost:3000/api/subjects`);
+      const res = await axios.get(`https://civilacademyapp.com/api/subjects`);
       setSubjects(res.data);
       resetForm();
     } catch (error) {
@@ -77,7 +77,7 @@ const ManageSubjects = () => {
   const handleDelete = async (subjectId: string) => {
     if (confirm("Are you sure you want to delete this subject?")) {
       try {
-        await axios.delete(`http://localhost:3000/api/subjects/delete?id=${subjectId}`);
+        await axios.delete(`https://civilacademyapp.com/api/subjects/delete?id=${subjectId}`);
         alert("Subject deleted successfully!");
 
         // Refresh the subject list
