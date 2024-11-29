@@ -24,6 +24,11 @@ interface UserProfile {
   subscription: number;
   courses: Course[];  // Array of user courses
 }
+interface AdminNotification {
+  _id: string;
+  text: string;
+  createdAt: string;
+}
 
 export default function Home() {
   const router = useRouter();
@@ -35,6 +40,7 @@ export default function Home() {
   const [allCourses, setAllCourses] = useState<Course[]>([]); // All available courses
   const [latestCourse, setLatestCourse] = useState<any>(null);
   const [latestLiveClasses, setLatestLiveClasses] = useState<any[]>([]);
+  const [adminNotifications, setAdminNotifications] = useState<AdminNotification[]>([]);
 
   // Check for session token and redirect if missing
   useEffect(() => {
@@ -60,18 +66,22 @@ export default function Home() {
         const profileRes = await axios.get(`https://civilacademyapp.com/api/profile`);
         const profileData: UserProfile = profileRes.data;
         console.log("Profile Data:", profileData);
-  
+        
         // Set user courses
         if (profileData?.courses?.length) {
           setUserCourses(profileData.courses); // Use `courses` from API
         }
-  
+        
         // Fetch all courses
         const allCoursesRes = await axios.get(`https://civilacademyapp.com/api/course/admin`);
         if (allCoursesRes.data) {
           setAllCourses(allCoursesRes.data);
         }
-  
+        
+        // Fetch admin notifications
+        const notificationsRes = await axios.get(`/api/notifications`);
+        setAdminNotifications(notificationsRes.data);
+
         // Fetch the latest tutorial
         const tutorialRes = await axios.get(`https://civilacademyapp.com/api/latestTutorial`);
         if (tutorialRes.data) setLatestTutorial(tutorialRes.data);
@@ -123,9 +133,10 @@ export default function Home() {
         {isNotificationOpen && (
           <NotificationPopup
             close={() => setIsNotificationOpen(false)}
-            latestLiveClasses={latestLiveClasses} // Updated to handle multiple live classes
+            latestLiveClasses={latestLiveClasses}
             latestTutorial={latestTutorial}
             latestCourse={latestCourse}
+            adminNotifications={adminNotifications} // Pass admin notifications
           />
         )}
 

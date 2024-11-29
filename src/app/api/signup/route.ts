@@ -15,7 +15,7 @@ export async function POST(request: Request) {
     }
 
     // Fetch the demo course ID
-    const demoCourse = await Course.findOne({ title: "demo course" }).lean<ICourse>();
+    const demoCourse = await Course.findOne({ title: "Free Demo Course" }).lean<ICourse>();
 
     if (!demoCourse) {
       return NextResponse.json({ error: 'Demo course not found' }, { status: 404 });

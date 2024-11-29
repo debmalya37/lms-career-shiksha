@@ -162,6 +162,21 @@ const ManageCourses = () => {
     setIsHidden(course.isHidden); // Set the isHidden value
     setCourseImg(null); // Reset file input
   };
+  // Handle deleting a course
+  const handleDelete = async (courseId: string) => {
+    if (confirm("Are you sure you want to delete this course?")) {
+      try {
+        await axios.delete(`https://civilacademyapp.com/api/course/delete?id=${courseId}`);
+        alert("Course deleted successfully!");
+        // Remove the deleted course from the state
+        setCourses((prevCourses) => prevCourses.filter((course) => course._id !== courseId));
+      } catch (error) {
+        console.error("Error deleting course:", error);
+        alert("Failed to delete course.");
+      }
+    }
+  };
+
 
   // Reset the form to initial state
   const resetForm = () => {
@@ -327,6 +342,12 @@ const ManageCourses = () => {
               >
                 Edit
               </button>
+              <button
+                  onClick={() => handleDelete(course._id)}
+                  className="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600"
+                >
+                  Delete
+                </button>
             </li>
           ))}
         </ul>

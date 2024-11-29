@@ -6,9 +6,10 @@ interface LiveClass {
 
 interface NotificationPopupProps {
   close: () => void;
-  latestLiveClasses: LiveClass[]; // Accept an array of live classes
+  latestLiveClasses: LiveClass[];
   latestTutorial: { title: string; url: string; createdAt: string } | null;
   latestCourse: { title: string; description: string; createdAt: string } | null;
+  adminNotifications: { _id: string; text: string; createdAt: string }[]; // Accept admin notifications
 }
 
 const NotificationPopup = ({
@@ -16,11 +17,14 @@ const NotificationPopup = ({
   latestLiveClasses,
   latestTutorial,
   latestCourse,
+  adminNotifications,
 }: NotificationPopupProps) => {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
       <div className="bg-white rounded-lg p-6 max-w-md w-full relative">
-        <button onClick={close} className="absolute top-2 right-2 text-gray-600">✖</button>
+        <button onClick={close} className="absolute top-2 right-2 text-gray-600">
+          ✖
+        </button>
         <h2 className="text-2xl font-bold text-center mb-4 text-blue-600">Notifications</h2>
 
         {/* Latest Live Classes */}
@@ -60,12 +64,28 @@ const NotificationPopup = ({
             </p>
           </div>
         )}
+
+        {/* Admin Notifications */}
+        {adminNotifications.length > 0 && (
+          <div className="mb-4">
+            <h3 className="font-semibold text-lg text-blue-700">Admin Notifications</h3>
+            {adminNotifications.map((notification) => (
+              <div key={notification._id} className="mb-2">
+                <p className="text-gray-950">{notification.text}</p>
+                <p className="text-gray-500 text-xs">
+                  {new Date(notification.createdAt).toLocaleString()}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
 };
 
 export default NotificationPopup;
+
 
 
 {/* Subscription Days Left */}

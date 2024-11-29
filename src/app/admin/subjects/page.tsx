@@ -65,6 +65,21 @@ const ManageSubjects = () => {
       alert("Failed to add/update subject.");
     }
   };
+  // Delete a subject
+  const handleDelete = async (subjectId: string) => {
+    if (confirm("Are you sure you want to delete this subject?")) {
+      try {
+        await axios.delete(`https://civilacademyapp.com/api/subjects/delete?id=${subjectId}`);
+        alert("Subject deleted successfully!");
+
+        // Refresh the subject list
+        setSubjects((prevSubjects) => prevSubjects.filter((subject) => subject._id !== subjectId));
+      } catch (error) {
+        console.error("Error deleting subject:", error);
+        alert("Failed to delete subject.");
+      }
+    }
+  };
 
   // Reset form to default state
   const resetForm = () => {
@@ -148,6 +163,12 @@ const ManageSubjects = () => {
               >
                 Edit
               </button>
+              <button
+                  onClick={() => handleDelete(subject._id)}
+                  className="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600"
+                >
+                  Delete
+                </button>
             </li>
           ))}
         </ul>
