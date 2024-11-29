@@ -139,18 +139,17 @@ function QuizAppContent() {
   }, [quizId, selectedCourse, selectedSubject]);
 
   useEffect(() => {
-    if (state.timeLeft > 0) {
+    if (state.timeLeft > 0 && !state.showResults) {
       const timer = setInterval(() => {
         setState((prevState) => ({
           ...prevState,
           timeLeft: prevState.timeLeft - 1,
         }));
       }, 1000);
-
-      return () => clearInterval(timer);
+  
+      return () => clearInterval(timer); // Cleanup timer on unmount or update
     }
-
-    // Show results only if the quiz has started
+  
     if (state.timeLeft === 0 && state.quizData && !state.showResults) {
       setState((prevState) => ({
         ...prevState,
@@ -159,6 +158,7 @@ function QuizAppContent() {
       sendResultsByEmail();
     }
   }, [state.timeLeft, state.showResults, state.quizData]);
+  
 
   const formatTime = (time: number) => {
     const minutes = Math.floor(time / 60);
