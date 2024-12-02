@@ -43,7 +43,9 @@ export async function GET() {
         course: user.course, // Get the course name
         address: user.address,
         phoneNo: user.phoneNo,
-        deviceIdentifier: user.deviceIdentifier
+        deviceIdentifier: user.deviceIdentifier,
+        createdAt: user.createdAt
+        
       }));
   
       return NextResponse.json(transformedUsers);

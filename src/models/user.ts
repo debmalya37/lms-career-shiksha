@@ -10,7 +10,7 @@ export interface User extends Document {
   profile: Types.ObjectId[];
   phoneNo?: string;
   address?: string;
-  deviceIdentifier?: string | null ;
+  deviceIdentifier?: string | null 
   createdAt: Date;
 }
 
