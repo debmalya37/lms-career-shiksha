@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 
 interface Course {
@@ -48,33 +48,41 @@ export default function AdminQuizPage() {
   const [totalTime, setTotalTime] = useState(0);
   const [questions, setQuestions] = useState<Question[]>([]);
 
-  useEffect(() => {
-    async function fetchCourses() {
+  // Fetch Courses
+  const fetchCourses = useCallback(async () => {
+    try {
       const response = await axios.get(`https://civilacademyapp.com/api/course`);
       setCourses(response.data);
+    } catch (error) {
+      console.error("Error fetching courses:", error);
     }
-    fetchCourses();
+  }, []);
 
-    async function fetchQuizzes() {
+  // Fetch Quizzes
+  const fetchQuizzes = useCallback(async () => {
+    try {
       const response = await axios.get(`https://civilacademyapp.com/api/quiz/all`);
       setQuizzes(response.data);
+    } catch (error) {
+      console.error("Error fetching quizzes:", error);
     }
-    fetchQuizzes();
   }, []);
-// Fetch subjects based on selected course
-// Update subjects whenever a course is selected
-useEffect(() => {
-  if (selectedCourse) {
-    const course = courses.find((course) => course._id === selectedCourse);
-    if (course) {
-      setSubjects(course.subjects); // Extract subjects directly from the selected course
+
+  // Fetch Subjects Based on Selected Course
+  useEffect(() => {
+    if (selectedCourse) {
+      const course = courses.find((course) => course._id === selectedCourse);
+      setSubjects(course ? course.subjects : []);
     } else {
-      setSubjects([]); // Clear subjects if no course matches
+      setSubjects([]);
     }
-  } else {
-    setSubjects([]); // Clear subjects if no course is selected
-  }
-}, [selectedCourse, courses]);
+  }, [selectedCourse, courses]);
+
+  // Fetch Initial Data
+  useEffect(() => {
+    fetchQuizzes();
+    fetchCourses();
+  }, [fetchQuizzes, fetchCourses]);
 
   const addQuestion = () =>
     setQuestions([...questions, { question: "", answers: [], marks: 0, image: undefined }]);
