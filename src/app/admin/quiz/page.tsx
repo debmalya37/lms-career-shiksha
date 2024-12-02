@@ -61,7 +61,7 @@ export default function AdminQuizPage() {
   // Fetch Quizzes
   const fetchQuizzes = useCallback(async () => {
     try {
-      const response = await axios.get(`https://civilacademyapp.com/api/quiz/all`);
+      const response = await axios.get(`https://civilacademyapp.com/api/quiz`);
       setQuizzes(response.data);
     } catch (error) {
       console.error("Error fetching quizzes:", error);

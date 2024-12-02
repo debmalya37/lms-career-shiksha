@@ -85,12 +85,23 @@ export async function GET(request: NextRequest) {
     await connectMongo();
 
     let quizzes;
+
     if (quizId) {
-      // If quizId is provided, fetch only that specific quiz
-      quizzes = await Quiz.findOne({ _id: quizId, course: courseId, subject: subjectId }).lean();
+      // Fetch specific quiz by ID, optionally filtered by courseId and subjectId
+      quizzes = await Quiz.findOne({ 
+        _id: quizId, 
+        ...(courseId && { course: courseId }), 
+        ...(subjectId && { subject: subjectId }) 
+      }).lean();
+    } else if (courseId || subjectId) {
+      // Fetch quizzes filtered by courseId or subjectId
+      quizzes = await Quiz.find({ 
+        ...(courseId && { course: courseId }), 
+        ...(subjectId && { subject: subjectId }) 
+      }).lean();
     } else {
-      // If no quizId, fetch all quizzes for the given course and subject
-      quizzes = await Quiz.find({ course: courseId, subject: subjectId }).lean();
+      // Fetch all quizzes without filters
+      quizzes = await Quiz.find({}).lean();
     }
 
     return NextResponse.json(quizzes);
@@ -99,4 +110,3 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Failed to fetch quiz data' }, { status: 500 });
   }
 }
-
