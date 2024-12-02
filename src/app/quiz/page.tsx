@@ -338,15 +338,25 @@ function QuizAppContent() {
             />
           )}
           <div className="grid grid-cols-2 gap-4">
-            {state.quizData?.questions[state.currentQuestion].answers.map((answer, index) => (
+          {state.quizData?.questions[state.currentQuestion].answers.map((answer, index) => {
+            const isSelected =
+              state.answers[state.currentQuestion] === answer.text;
+
+            return (
               <Button
                 key={index}
                 onClick={() => handleAnswerClick(answer.isCorrect, answer.text)}
+                className={`w-full ${
+                  isSelected
+                    ? "bg-white text-blue-800 border-blue-800" // Selected style
+                    : "bg-blue-800 text-white"
+                }`}
               >
                 {answer.text}
               </Button>
-            ))}
-          </div>
+            );
+          })}
+        </div>
           <div className="flex justify-between mt-4">
             <Button onClick={() => navigateQuestion("prev")}>Previous</Button>
             <Button onClick={() => navigateQuestion("next")}>Next</Button>
