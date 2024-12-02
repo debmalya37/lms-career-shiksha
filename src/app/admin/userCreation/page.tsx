@@ -2,6 +2,7 @@
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { CSVLink } from "react-csv"; // Import CSV download helper
 
 interface User {
   _id: string;
@@ -11,6 +12,7 @@ interface User {
   subscription: number;
   phoneNo: string;
   address: string;
+  createdAt: string; // Added createdAt field
   course?: {
     _id: string;
     title: string;
@@ -37,37 +39,37 @@ const UserCreationPage = () => {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const router = useRouter();
   const [isAdmin, setIsAdmin] = useState(false);
-  const [loading, setLoading] = useState(true); // Loading state to handle redirection
+  const [loading, setLoading] = useState(true);
 
-  // useEffect(() => {
-  //   const checkAdminStatus = async () => {
-  //     try {
-  //       // Fetch profile data from the API
-  //       const profileRes = await fetch(`https://civilacademyapp.com/api/profile`);
-  //       const profileData = await profileRes.json();
+  useEffect(() => {
+    const checkAdminStatus = async () => {
+      try {
+        // Fetch profile data from the API
+        const profileRes = await fetch(`https://civilacademyapp.com/api/profile`);
+        const profileData = await profileRes.json();
 
-  //       console.log('Profile Data:', profileData); // Log the profile response
+        console.log('Profile Data:', profileData); // Log the profile response
 
-  //       // Define allowed emails
-  //       const allowedEmails = ['civilacademy.in@gmail.com', 'debmalyasen37@gmail.com', 'Tech@kryptaroid.com'];
+        // Define allowed emails
+        const allowedEmails = ['civilacademy.in@gmail.com', 'debmalyasen37@gmail.com', 'Tech@kryptaroid.com'];
 
-  //       // Check if the profile email is in the allowed list
-  //       if (profileData?.email && allowedEmails.includes(profileData.email)) {
-  //         console.log("admin access allowed")
-  //         setIsAdmin(true);
-  //       } else {
-  //         router.push('/'); // Redirect to home if not authorized
-  //       }
-  //     } catch (error) {
-  //       console.error('Error fetching profile data:', error);
-  //       router.push('/'); // Redirect to home on error
-  //     } finally {
-  //       setLoading(false);
-  //     }
-  //   };
+        // Check if the profile email is in the allowed list
+        if (profileData?.email && allowedEmails.includes(profileData.email)) {
+          console.log("admin access allowed")
+          setIsAdmin(true);
+        } else {
+          router.push('/'); // Redirect to home if not authorized
+        }
+      } catch (error) {
+        console.error('Error fetching profile data:', error);
+        router.push('/'); // Redirect to home on error
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  //   checkAdminStatus();
-  // }, [router,isAdmin]);
+    checkAdminStatus();
+  }, [router,isAdmin]);
 
   useEffect(() => {
     const fetchCourses = async () => {
@@ -140,8 +142,6 @@ const UserCreationPage = () => {
       console.error('Error deleting device identifier:', error);
     }
   };
-  
-
 
   const toggleCourseSelection = (courseId: string) => {
     setSelectedCourses((prevSelected) =>
@@ -210,10 +210,25 @@ const UserCreationPage = () => {
     }
   };
 
+  const generateCSVData = () => {
+    return users.map((user) => ({
+      Name: user.name,
+      Email: user.email,
+      Password: user.password,
+      Subscription: user.subscription,
+      PhoneNo: user.phoneNo,
+      Address: user.address,
+      CreatedAt: new Date(user.createdAt).toLocaleDateString(),
+      Courses: user.course?.map((course) => course.title).join(", ") || "No course",
+      DeviceIdentifier: user.deviceIdentifier || "N/A",
+    }));
+  };
+
   return (
     <div className="container mx-auto p-8 bg-white rounded-lg shadow-md max-w-full mt-8 text-black">
       <h1 className="text-2xl font-bold text-blue-600 mb-4">User Creation</h1>
       <form onSubmit={handleSubmit}>
+        {/* Form fields remain unchanged */}
         {/* Other form fields */}
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">Name</label>
@@ -317,7 +332,15 @@ const UserCreationPage = () => {
           </button>
         )}
       </form>
-      {/* User table remains unchanged */}
+      <div className="mt-4">
+        <CSVLink
+          data={generateCSVData()}
+          filename="users_data.csv"
+          className="bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600"
+        >
+          Download CSV
+        </CSVLink>
+      </div>
       <h2 className="text-xl font-bold text-blue-600 mt-6">User List</h2>
       <table className="min-w-full mt-4 bg-white border border-gray-300">
         <thead>
@@ -328,8 +351,9 @@ const UserCreationPage = () => {
             <th className="border px-4 py-2">Subscription (Days)</th>
             <th className="border px-4 py-2">Phone No</th>
             <th className="border px-4 py-2">Address</th>
-            <th className="border px-4 py-2">Course</th>
+            <th className="border px-4 py-2">Courses</th>
             <th className="border px-4 py-2">Device Identifier</th>
+            <th className="border px-4 py-2">Created At</th>
             <th className="border px-4 py-2">Actions</th>
           </tr>
         </thead>
@@ -347,8 +371,9 @@ const UserCreationPage = () => {
                   <div key={idx}>{course.title}</div>
                 )) || 'No course'}
               </td>
+              <td className="border px-4 py-2 text-center">{user.deviceIdentifier || 'N/A'}</td>
               <td className="border px-4 py-2 text-center">
-                {user.deviceIdentifier || 'N/A'}
+                {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : "Not Available"}
               </td>
               <td className="border px-4 py-2">
                 <button
@@ -370,6 +395,7 @@ const UserCreationPage = () => {
           ))}
         </tbody>
       </table>
+      
     </div>
   );
 };
