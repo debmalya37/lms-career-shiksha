@@ -98,7 +98,7 @@ export default function Home() {
         }
         
         // Fetch all courses
-        const allCoursesRes = await axios.get(`https://civilacademyapp.com/api/course/admin`);
+        const allCoursesRes = await axios.get(`https://civilacademyapp.com/api/course`);
         if (allCoursesRes.data) {
           setAllCourses(allCoursesRes.data);
         }

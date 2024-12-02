@@ -12,6 +12,7 @@ type Answer = {
 type Question = {
   question: string;
   answers: Answer[];
+  marks: number;
   image?: string; // Optional image field
 };
 
@@ -41,10 +42,13 @@ type QuizState = {
   score: number;
   correctCount: number;
   incorrectCount: number;
+  skippedCount: number; // Count skipped questions
   showResults: boolean;
   timeLeft: number;
   isLoading: boolean;
   quizData: QuizData | null;
+  answers: Array<string | null>; // Tracks selected answers per question
+  visitedQuestions: boolean[]; // Tracks if a question was visited
   incorrectQuestions: { question: string; correctAnswer: string; userAnswer: string }[];
 };
 
@@ -58,10 +62,13 @@ function QuizAppContent() {
     score: 0,
     correctCount: 0,
     incorrectCount: 0,
+    skippedCount: 0,
     showResults: false,
     timeLeft: 0,
     isLoading: false,
     quizData: null,
+    answers: [], // Initialize with null for no answer
+    visitedQuestions: [],
     incorrectQuestions: [],
   });
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
@@ -69,7 +76,6 @@ function QuizAppContent() {
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [selectedCourse, setSelectedCourse] = useState(initialCourseId);
   const [selectedSubject, setSelectedSubject] = useState(initialSubjectId);
-
   useEffect(() => {
     // Fetch user profile
     const fetchUserProfile = async () => {
@@ -112,7 +118,6 @@ function QuizAppContent() {
       fetchSubjects();
     }
   }, [selectedCourse]);
-
   useEffect(() => {
     if (quizId && selectedCourse && selectedSubject) {
       const fetchQuizData = async () => {
@@ -128,6 +133,8 @@ function QuizAppContent() {
             quizData,
             timeLeft: quizData ? quizData.totalTime * 60 : 0,
             isLoading: false,
+            answers: Array(quizData.questions.length).fill(null), // Initialize answers array
+            visitedQuestions: Array(quizData.questions.length).fill(false), // Initialize visited array
           }));
         } catch (error) {
           console.error("Failed to fetch quiz data:", error);
@@ -137,7 +144,6 @@ function QuizAppContent() {
       fetchQuizData();
     }
   }, [quizId, selectedCourse, selectedSubject]);
-
   useEffect(() => {
     if (state.timeLeft > 0 && !state.showResults) {
       const timer = setInterval(() => {
@@ -159,7 +165,6 @@ function QuizAppContent() {
     }
   }, [state.timeLeft, state.showResults, state.quizData]);
   
-
   const formatTime = (time: number) => {
     const minutes = Math.floor(time / 60);
     const seconds = time % 60;
@@ -167,46 +172,94 @@ function QuizAppContent() {
   };
 
   const handleAnswerClick = (isCorrect: boolean, userAnswer: string) => {
-    if (!state.quizData || !state.quizData.questions[state.currentQuestion]) return;
+    const currentQuestionIndex = state.currentQuestion;
+    const currentQuestion = state.quizData?.questions[currentQuestionIndex];
 
-    const nextQuestion = state.currentQuestion + 1;
-    const currentQuestion = state.quizData.questions[state.currentQuestion];
+    if (!currentQuestion) return;
+
     const correctAnswer = currentQuestion.answers.find((ans) => ans.isCorrect)?.text || "N/A";
+    const questionMarks = currentQuestion.marks;
 
-    const updatedIncorrectQuestions = !isCorrect
-      ? [...state.incorrectQuestions, { question: currentQuestion.question, correctAnswer, userAnswer }]
-      : state.incorrectQuestions;
+    let updatedScore = state.score;
+    let updatedIncorrectCount = state.incorrectCount;
+    let updatedCorrectCount = state.correctCount;
 
-    const updatedCorrectCount = isCorrect ? state.correctCount + 1 : state.correctCount;
-    const updatedIncorrectCount = !isCorrect ? state.incorrectCount + 1 : state.incorrectCount;
-    const updatedScore = isCorrect ? state.score + 1 : state.score - (state.quizData?.negativeMarking ?? 0);
+    // If answered, calculate score
+    if (userAnswer) {
+      if (isCorrect) {
+        updatedScore += questionMarks;
+        updatedCorrectCount += 1;
+      } else {
+        updatedScore -= state.quizData?.negativeMarking ?? 0;
+        updatedIncorrectCount += 1;
+
+        setState((prevState) => ({
+          ...prevState,
+          incorrectQuestions: [
+            ...prevState.incorrectQuestions,
+            { question: currentQuestion.question, correctAnswer, userAnswer },
+          ],
+        }));
+      }
+    }
+
+    // Update answer and visited status
+    const updatedAnswers = [...state.answers];
+    updatedAnswers[currentQuestionIndex] = userAnswer;
+
+    const updatedVisitedQuestions = [...state.visitedQuestions];
+    updatedVisitedQuestions[currentQuestionIndex] = true;
 
     setState((prevState) => ({
       ...prevState,
+      answers: updatedAnswers,
+      visitedQuestions: updatedVisitedQuestions,
       score: updatedScore,
       correctCount: updatedCorrectCount,
       incorrectCount: updatedIncorrectCount,
-      incorrectQuestions: updatedIncorrectQuestions,
-      currentQuestion: nextQuestion,
-      showResults: nextQuestion >= (prevState.quizData?.questions.length ?? 0),
+    }));
+  };
+
+  const navigateQuestion = (direction: "next" | "prev") => {
+    const isLastQuestion =
+      state.currentQuestion === (state.quizData?.questions.length || 0) - 1;
+
+    if (direction === "next" && isLastQuestion) {
+      // Calculate skipped count
+      const skippedCount = state.visitedQuestions.filter((v, index) => !v && !state.answers[index]).length;
+
+      setState((prevState) => ({
+        ...prevState,
+        skippedCount,
+        showResults: true,
+      }));
+      return;
+    }
+
+    setState((prevState) => ({
+      ...prevState,
+      currentQuestion:
+        direction === "next"
+          ? Math.min(prevState.currentQuestion + 1, prevState.quizData?.questions.length! - 1)
+          : Math.max(prevState.currentQuestion - 1, 0),
     }));
   };
 
   const resetQuiz = () => {
-    if (!state.quizData) return;
-
     setState((prevState) => ({
       ...prevState,
       currentQuestion: 0,
       score: 0,
       correctCount: 0,
       incorrectCount: 0,
+      skippedCount: 0,
       showResults: false,
       timeLeft: (prevState.quizData?.totalTime ?? 0) * 60,
       incorrectQuestions: [],
+      answers: Array(prevState.quizData?.questions.length || 0).fill(null),
+      visitedQuestions: Array(prevState.quizData?.questions.length || 0).fill(false),
     }));
   };
-
   const sendResultsByEmail = async () => {
     const payload = {
       quizTitle: state.quizData?.title || "",
@@ -227,6 +280,7 @@ function QuizAppContent() {
       console.error("Failed to send quiz results via email:", error);
     }
   };
+  
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground">
       <div className="mb-8">
@@ -245,7 +299,6 @@ function QuizAppContent() {
           <p className="text-lg mb-2">Score: {state.score}</p>
           <p className="text-lg mb-2">Correct Answers: {state.correctCount}</p>
           <p className="text-lg mb-2">Incorrect Answers: {state.incorrectCount}</p>
-          
           {state.incorrectQuestions.length > 0 && (
             <div className="mt-4">
               <h3 className="text-lg font-semibold mb-2">Review Incorrect Answers:</h3>
@@ -266,39 +319,39 @@ function QuizAppContent() {
               </ul>
             </div>
           )}
+          <p className="text-lg mb-2">Skipped Questions: {state.skippedCount}</p>
           <Button onClick={resetQuiz} className="w-full mt-4">
             Try Again
           </Button>
         </div>
-      ) : state.quizData && state.quizData.questions.length > 0 ? (
+      ) : (
         <div className="bg-card p-8 rounded-lg shadow-md w-full max-w-md">
           <h2 className="text-2xl font-bold mb-4">
-            Question {state.currentQuestion + 1}/{state.quizData.questions.length}
+            Question {state.currentQuestion + 1}/{state.quizData?.questions.length}
           </h2>
-          <p className="text-lg mb-4">{state.quizData.questions[state.currentQuestion].question}</p>
-          {state.quizData.questions[state.currentQuestion].image && (
-            <div className="mb-4">
-              <img
-                src={state.quizData.questions[state.currentQuestion].image}
-                alt="Question Image"
-                className="w-full rounded-lg shadow-md"
-              />
-            </div>
+          <p className="text-lg mb-4">{state.quizData?.questions[state.currentQuestion].question}</p>
+          {state.quizData?.questions[state.currentQuestion].image && (
+            <img
+              src={state.quizData?.questions[state.currentQuestion].image}
+              alt="Question Image"
+              className="w-full rounded-lg mb-4"
+            />
           )}
           <div className="grid grid-cols-2 gap-4">
-            {state.quizData.questions[state.currentQuestion].answers.map((answer, index) => (
+            {state.quizData?.questions[state.currentQuestion].answers.map((answer, index) => (
               <Button
                 key={index}
                 onClick={() => handleAnswerClick(answer.isCorrect, answer.text)}
-                className="w-full"
               >
                 {answer.text}
               </Button>
             ))}
           </div>
+          <div className="flex justify-between mt-4">
+            <Button onClick={() => navigateQuestion("prev")}>Previous</Button>
+            <Button onClick={() => navigateQuestion("next")}>Next</Button>
+          </div>
         </div>
-      ) : (
-        <p>No quiz data available. Please try again later.</p>
       )}
     </div>
   );

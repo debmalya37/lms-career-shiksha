@@ -1,14 +1,12 @@
 "use client";
-import { useEffect, useState } from 'react';
-import ClipLoader from 'react-spinners/ClipLoader';
+import { useEffect, useState } from "react";
+import ClipLoader from "react-spinners/ClipLoader";
 
 interface ProfileData {
   email: string;
   name: string;
   subscription: number;
-  course?: {
-    title: string;
-  };
+  courses: Array<{ title: string }>; // Update to handle multiple courses
   profile?: {
     firstName: string;
     lastName: string;
@@ -23,8 +21,8 @@ export default function ProfilePage() {
     async function fetchProfile() {
       try {
         const res = await fetch(`https://civilacademyapp.com/api/profile`, {
-          method: 'GET',
-          credentials: 'include', // Ensure cookies are sent
+          method: "GET",
+          credentials: "include", // Ensure cookies are sent
         });
         const profile = await res.json();
         if (!profile.error) {
@@ -34,13 +32,19 @@ export default function ProfilePage() {
           setProgress((obtainedMarks / totalMarks) * 100);
         }
       } catch (error) {
-        console.error('Error fetching profile:', error);
+        console.error("Error fetching profile:", error);
       }
     }
     fetchProfile();
   }, []);
 
-  if (!profileData) return <p><ClipLoader /></p>;
+  if (!profileData) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <ClipLoader />
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto p-8 bg-white rounded-lg shadow-md max-w-xl mt-8">
@@ -52,7 +56,7 @@ export default function ProfilePage() {
             title="firstN"
             type="text"
             className="border p-2 w-full rounded-md text-gray-950"
-            value={profileData.profile?.firstName || ''}
+            value={profileData.profile?.firstName || ""}
             readOnly
           />
         </div>
@@ -62,7 +66,7 @@ export default function ProfilePage() {
             title="lastN"
             type="text"
             className="border p-2 w-full rounded-md text-gray-950"
-            value={profileData.profile?.lastName || ''}
+            value={profileData.profile?.lastName || ""}
             readOnly
           />
         </div>
@@ -77,14 +81,18 @@ export default function ProfilePage() {
           />
         </div>
         <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-2">Course</label>
-          <input
-            title="course"
-            type="text"
-            className="border p-2 w-full rounded-md text-gray-950"
-            value={profileData.course?.title || 'No course assigned'}
-            readOnly
-          />
+          <label className="block text-sm font-medium text-gray-700 mb-2">Courses</label>
+          <ul className="border p-2 rounded-md text-gray-950 list-disc pl-5 bg-gray-50">
+            {profileData.courses && profileData.courses.length > 0 ? (
+              profileData.courses.map((course, index) => (
+                <li key={index} className="text-gray-800">
+                  {course.title}
+                </li>
+              ))
+            ) : (
+              <li>No courses assigned</li>
+            )}
+          </ul>
         </div>
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">Subscription (Days)</label>

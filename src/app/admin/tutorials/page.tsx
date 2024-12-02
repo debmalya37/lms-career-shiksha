@@ -7,6 +7,8 @@ import axios from "axios";
 interface Course {
   _id: string;
   title: string;
+  subjects: Subject[];
+
 }
 
 interface Subject {
@@ -48,7 +50,7 @@ const ManageTutorials = () => {
   useEffect(() => {
     const fetchCourses = async () => {
       try {
-        const response = await axios.get(`https://civilacademyapp.com/api/course/admin`);
+        const response = await axios.get(`https://civilacademyapp.com/api/course`);
         setCourses(response.data);
       } catch (error) {
         console.error("Error fetching courses:", error);
@@ -60,17 +62,17 @@ const ManageTutorials = () => {
   // Fetch subjects based on selected course
   useEffect(() => {
     if (selectedCourse) {
-      const fetchSubjects = async () => {
-        try {
-          const response = await axios.get(`https://civilacademyapp.com/api/subjects?course=${selectedCourse}`);
-          setSubjects(response.data);
-        } catch (error) {
-          console.error("Error fetching subjects:", error);
-        }
-      };
-      fetchSubjects();
+      const course = courses.find((course) => course._id === selectedCourse);
+      if (course) {
+        setSubjects(course.subjects); // Extract subjects directly from the selected course
+      } else {
+        setSubjects([]); // Clear subjects if no course matches
+      }
+    } else {
+      setSubjects([]); // Clear subjects if no course is selected
     }
-  }, [selectedCourse]);
+  }, [selectedCourse, courses]);
+  
 
   // Fetch topics based on selected subject
   useEffect(() => {
