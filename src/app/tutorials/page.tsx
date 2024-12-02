@@ -12,7 +12,7 @@ interface Tutorial {
 interface Course {
   _id: string;
   title: string;
-  subjects: string[]; // Subject IDs
+  subjects: { _id: string; name: string }[]; // Updated to match enriched course structure
 }
 
 interface Profile {
@@ -23,7 +23,7 @@ interface Profile {
 }
 
 export default function TutorialsPage() {
-  const [tutorials, setTutorials] = useState<Tutorial[]>([]);
+  const [tutorials, setTutorials] = useState<Tutorial[] | null>(null);
   const [profileData, setProfileData] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -42,7 +42,9 @@ export default function TutorialsPage() {
           console.log("User courses:", profile.courses);
 
           // Extract all subject IDs from the user's courses
-          const subjectIds = profile.courses.flatMap((course: { subjects: string }) => course.subjects);
+          const subjectIds = profile.courses.flatMap((course: { subjects: any[]; }) =>
+            course.subjects.map((subject) => subject._id) // Extract _id from subjects
+          );
 
           if (subjectIds.length > 0) {
             // Fetch tutorials using the subject IDs
@@ -52,15 +54,18 @@ export default function TutorialsPage() {
             const fetchedTutorials = await tutorialRes.json();
 
             console.log("Tutorials fetched:", fetchedTutorials);
-            setTutorials(fetchedTutorials);
+            setTutorials(Array.isArray(fetchedTutorials) ? fetchedTutorials : null);
           } else {
             console.log("No subjects found for the user's courses.");
+            setTutorials(null);
           }
         } else {
           console.error("Profile data error or no courses found.");
+          setTutorials(null);
         }
       } catch (error) {
         console.error("Error fetching profile or tutorials:", error);
+        setTutorials(null);
       } finally {
         setLoading(false);
       }
@@ -85,7 +90,7 @@ export default function TutorialsPage() {
     );
   }
 
-  if (tutorials.length === 0) {
+  if (!tutorials || tutorials.length === 0) {
     return (
       <div className="flex justify-center items-center h-screen">
         <p>No tutorials available for your subscribed courses.</p>

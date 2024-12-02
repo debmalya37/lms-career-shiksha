@@ -1,7 +1,8 @@
 // api/tutorials/route.ts
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import connectMongo from '@/lib/db';
 import Tutorial from '@/models/tutorialModel';
+import { isValidObjectId } from 'mongoose';
 
 export async function POST(request: Request) {
   const { title, url, description, subject, topic } = await request.json();
@@ -18,12 +19,29 @@ export async function POST(request: Request) {
   }
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url);
+  const subjectIds = searchParams.get('subjectIds');
+
   try {
     await connectMongo();
-    const tutorials = await Tutorial.find({})
-      .populate('subject', 'name') // Populate subject
-      .populate('topic', 'name'); // Populate topic
+
+    if (!subjectIds) {
+      return NextResponse.json({ error: 'No subject IDs provided.' }, { status: 400 });
+    }
+
+    const idsArray = subjectIds.split(',').filter(isValidObjectId); // Validate ObjectIds
+    if (idsArray.length === 0) {
+      return NextResponse.json({ error: 'Invalid subject IDs provided.' }, { status: 400 });
+    }
+
+    const tutorials = await Tutorial.find({ subject: { $in: idsArray } })
+      .populate('subject', 'name') // Populate subject name
+      .populate('topic', 'name'); // Populate topic name
+
+    if (!tutorials.length) {
+      return NextResponse.json({ message: 'No tutorials found.' }, { status: 200 });
+    }
 
     return NextResponse.json(tutorials);
   } catch (error) {
