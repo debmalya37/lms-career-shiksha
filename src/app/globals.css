@@ -15,6 +15,21 @@
     --background-end-rgb: 0, 0, 0;
   }
 }
+.aspect-w-16.aspect-h-9 {
+  position: relative;
+  width: 100%;
+  padding-top: 56.25%; /* 16:9 aspect ratio */
+}
+
+.courseIdImg > img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 
 @layer utilities {
   .text-balance {

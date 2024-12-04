@@ -190,27 +190,40 @@ export default function Home() {
   </h2>
   <div className="grid grid-cols-1 sm:grid-cols-1 lg:grid-cols-1 gap-4 mt-4 mx-2 sm:mx-0">
     {userCourses.map((course: Course) => (
-      <div key={course._id} className="border p-4 rounded-lg bg-green-200 shadow-md flex flex-col sm:flex-row items-center">
-        {course.courseImg && (
+      <div
+      key={course._id}
+      className="bg-white rounded-lg shadow-lg overflow-hidden w-full max-w-sm h-96 flex flex-col"
+    >
+      {/* Course Image */}
+      {course.courseImg && (
+        <div className="h-48 w-full overflow-hidden">
           <img
             src={course.courseImg}
             alt={`${course.title} Thumbnail`}
-            className="w-24 h-24 rounded-md object-cover mr-4 mb-4 sm:mb-0"
+            className="w-full h-full object-cover object-center"
           />
-        )}
-        <div className="flex-1">
-          <h3 className="text-base sm:text-lg font-semibold">{course.title}</h3>
-          <p className="text-gray-600 text-sm">{course.description}</p>
-          <p className="text-xs sm:text-sm text-gray-500">
-            Created At: {new Date(course.createdAt).toLocaleDateString()}
-          </p>
-          <Link href={`/courses/${course._id}`}>
-            <button className="mt-4 w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-500">
-              Go to Course
-            </button>
-          </Link>
         </div>
+      )}
+    
+      {/* Course Details */}
+      <div className="p-4 flex flex-col flex-1 justify-between">
+        <div>
+          <h3 className="text-xl font-semibold mb-2 text-black truncate">{course.title}</h3>
+          <p className="text-gray-700 mb-2 line-clamp-3">{course.description}</p>
+          <p className="text-gray-500 mb-2 text-sm">
+            Created on: {new Date(course.createdAt).toLocaleDateString()}
+          </p>
+        </div>
+    
+        <Link href={`/courses/${course._id}`}>
+          <button className="w-full bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition-colors">
+            View
+          </button>
+        </Link>
       </div>
+    </div>
+    
+    
     ))}
   </div>
 </div>
@@ -232,37 +245,41 @@ export default function Home() {
   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4 mx-2 sm:mx-0">
     {unsubscribedCourses.map((course: Course) => (
       <div
-        key={course._id}
-        className="border p-4 rounded-lg bg-green-200 shadow-md flex flex-col items-center sm:flex-row"
-      >
-        {course.courseImg && (
-          <img
-            src={course.courseImg}
-            alt={`${course.title} Thumbnail`}
-            className="w-24 h-24 rounded-md object-cover mr-4 mb-4 sm:mb-0"
-          />
-        )}
-        <div className="flex-1">
-          <h3 className="text-base sm:text-lg font-semibold">{course.title}</h3>
-          <p className="text-gray-600 text-sm">{course.description}</p>
-          <p className="mt-2 text-xs sm:text-sm text-gray-500">
-            Subjects:{" "}
-            {course.subjects
-              .map((subject) =>
-                typeof subject === "string" ? subject : subject.name
-              )
-              .join(", ")}
-          </p>
-          <p className="text-xs sm:text-sm text-gray-500">
-            Created At: {new Date(course.createdAt).toLocaleDateString()}
-          </p>
-          <Link href={`/contact`}>
-            <button className="mt-4 w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-500">
-              Contact Us
-            </button>
-          </Link>
-        </div>
+      key={course._id}
+      className="bg-white rounded-lg shadow-lg overflow-hidden w-full max-w-sm h-96 flex flex-col"
+    >
+      {/* Course Image */}
+      {course.courseImg && (
+        <div className="h-48 w-full overflow-hidden">
+        <img
+          src={course.courseImg}
+          alt={`${course.title} Thumbnail`}
+          className="w-full h-full object-cover object-center"
+        />
       </div>
+      )}
+    
+      {/* Course Details */}
+      <div className="p-4 flex flex-col flex-1">
+        <h3 className="text-xl font-semibold mb-2 text-black truncate">{course.title}</h3>
+        <p className="text-gray-700 mb-2 line-clamp-3">{course.description}</p>
+        <p className="text-gray-500 mb-2 text-sm">
+          Created on: {new Date(course.createdAt).toLocaleDateString()}
+        </p>
+        {/* <p className="text-gray-500 mb-4 text-sm truncate">
+          Subjects:{" "}
+          {course.subjects
+            .map((subject) => (typeof subject === "string" ? subject : subject.name))
+            .join(", ")}
+        </p> */}
+    
+        <Link href={`/courses/${course._id}`}>
+          <button className="w-full bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition-colors mt-auto">
+            View
+          </button>
+        </Link>
+      </div>
+    </div>
     ))}
   </div>
 </div>

@@ -39,7 +39,11 @@ const QuizSchema = new Schema({
   course: { type: Schema.Types.ObjectId, ref: 'Course', required: true },
   subject: { type: Schema.Types.ObjectId, ref: 'Subject', required: true },
   questions: [QuestionSchema],
-  negativeMarking: { type: Number, required: true },
+  negativeMarking: { 
+    type: Number, 
+    required: true, 
+    default: 0.0 // Ensure a default floating-point value
+  },
   totalTime: { type: Number, required: true },
 });
 

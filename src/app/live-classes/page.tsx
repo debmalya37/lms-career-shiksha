@@ -115,7 +115,7 @@ export default function LiveClassesPage() {
   }
 
   return (
-    <div className="container mx-auto py-8 bg-yellow-100 pr-5 pl-5 h-full">
+    <div className="container mx-auto py-8 bg-yellow-100 pr-5 pl-5 h-[100vh]">
       <h1 className="text-3xl font-bold text-gray-800 mb-6">Live Classes</h1>
       <div className="flex flex-col gap-8">
         {liveClasses.length === 0 && !loading && <p>No valid live classes found.</p>}

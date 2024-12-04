@@ -187,11 +187,13 @@ export default function AdminQuizPage() {
           </select>
           <input
             type="number"
+            step="0.01" // Allow decimal values
             value={negativeMarking}
             onChange={(e) => setNegativeMarking(parseFloat(e.target.value))}
-            placeholder="Negative Marking"
+            placeholder="Negative Marking (e.g., -0.25)"
             className="border p-2 rounded-md w-full"
           />
+
           <input
             type="number"
             value={totalTime}
