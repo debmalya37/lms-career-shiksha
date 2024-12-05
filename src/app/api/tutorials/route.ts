@@ -26,10 +26,13 @@ export async function GET(request: NextRequest) {
   try {
     await connectMongo();
 
+    // Check if no searchParams are provided
     if (!subjectIds) {
-      return NextResponse.json({ error: 'No subject IDs provided.' }, { status: 400 });
+      const tutorials = await Tutorial.find({}).lean(); // Fetch all tutorials
+      return NextResponse.json(tutorials);
     }
 
+    // If subjectIds are provided, validate and fetch filtered results
     const idsArray = subjectIds.split(',').filter(isValidObjectId); // Validate ObjectIds
     if (idsArray.length === 0) {
       return NextResponse.json({ error: 'Invalid subject IDs provided.' }, { status: 400 });
