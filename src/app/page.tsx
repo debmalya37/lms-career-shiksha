@@ -273,9 +273,9 @@ export default function Home() {
             .join(", ")}
         </p> */}
     
-        <Link href={`/courses/${course._id}`}>
+        <Link href={`/contact`}>
           <button className="w-full bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition-colors mt-auto">
-            View
+            Contact Us
           </button>
         </Link>
       </div>
