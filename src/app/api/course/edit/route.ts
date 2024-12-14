@@ -1,8 +1,8 @@
-import { NextResponse } from 'next/server';
-import connectMongo from '@/lib/db';
-import Course from '@/models/courseModel';
-import { v2 as cloudinary } from 'cloudinary';
-import streamifier from 'streamifier';
+import { NextResponse } from "next/server";
+import connectMongo from "@/lib/db";
+import Course from "@/models/courseModel";
+import { v2 as cloudinary } from "cloudinary";
+import streamifier from "streamifier";
 
 // Configure Cloudinary
 cloudinary.config({
@@ -15,12 +15,12 @@ cloudinary.config({
 async function uploadToCloudinary(buffer: Buffer): Promise<string> {
   return new Promise((resolve, reject) => {
     const uploadStream = cloudinary.uploader.upload_stream(
-      { folder: 'courses' },
+      { folder: "courses" },
       (error, result) => {
         if (error) {
           reject(error);
         } else {
-          resolve(result?.secure_url || '');
+          resolve(result?.secure_url || "");
         }
       }
     );
@@ -32,25 +32,34 @@ export async function POST(request: Request) {
   try {
     await connectMongo();
     const formData = await request.formData();
-    const courseId = formData.get('id') as string; // Pass course ID for identification
-    const title = formData.get('title') as string;
-    const description = formData.get('description') as string;
-    const subjects = formData.getAll('subjects') as string[];
-    const courseImgFile = formData.get('courseImg') as File | null;
-    const isHidden = formData.get('isHidden') === 'true';
 
-    if (!courseId) {
-      return NextResponse.json({ error: 'Course ID is required' }, { status: 400 });
+    // Validate incoming data
+    const courseId = formData.get("id") as string;
+    const title = formData.get("title") as string;
+    const description = formData.get("description") as string;
+    const subjects = JSON.parse(formData.get("subjects") as string || "[]");
+    const courseImgFile = formData.get("courseImg") as File | null;
+    const isHidden = formData.get("isHidden") === "true";
+
+    if (!courseId || !title || !description) {
+      console.error("Validation Error: Missing required fields.");
+      return NextResponse.json(
+        { error: "Course ID, title, and description are required." },
+        { status: 400 }
+      );
     }
 
-    let courseImgUrl = '';
+    // Log the incoming data for debugging
+    console.log("Incoming Data:", { courseId, title, description, subjects, isHidden });
+
+    // Handle image upload
+    let courseImgUrl = "";
     if (courseImgFile) {
       const buffer = await courseImgFile.arrayBuffer();
-      const bufferData = Buffer.from(buffer);
-      courseImgUrl = await uploadToCloudinary(bufferData);
+      courseImgUrl = await uploadToCloudinary(Buffer.from(buffer));
     }
 
-    // Update the course
+    // Prepare fields for update
     const updatedFields: any = {
       title,
       description,
@@ -59,15 +68,17 @@ export async function POST(request: Request) {
     };
     if (courseImgUrl) updatedFields.courseImg = courseImgUrl;
 
+    // Update the course in the database
     const updatedCourse = await Course.findByIdAndUpdate(courseId, updatedFields, { new: true });
 
     if (!updatedCourse) {
-      return NextResponse.json({ error: 'Course not found or update failed' }, { status: 404 });
+      console.error("Update Error: Course not found.");
+      return NextResponse.json({ error: "Course not found or update failed." }, { status: 404 });
     }
 
-    return NextResponse.json({ message: 'Course updated successfully!', course: updatedCourse });
+    return NextResponse.json({ message: "Course updated successfully!", course: updatedCourse });
   } catch (error) {
     console.error("POST /api/course/edit Error:", error);
-    return NextResponse.json({ error: 'Failed to edit course' }, { status: 500 });
+    return NextResponse.json({ error: "Failed to edit course." }, { status: 500 });
   }
 }

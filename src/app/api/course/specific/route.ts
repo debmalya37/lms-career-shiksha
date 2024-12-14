@@ -10,16 +10,19 @@ export async function GET(request: Request) {
     await connectMongo();
 
     if (subjectId) {
-      // Find the course containing the specific subject
-      const course = await Course.findOne({ subjects: subjectId }).select('title _id').lean();
-      if (!course) return NextResponse.json({ error: 'Course not found' }, { status: 404 });
-      return NextResponse.json(course);
+      // Find all courses containing the specific subject
+      const courses = await Course.find({ subjects: subjectId }).select('title _id').lean();
+      if (!courses.length) {
+        return NextResponse.json({ error: 'No courses found for the given subject' }, { status: 404 });
+      }
+      return NextResponse.json(courses);
     }
 
     // Default behavior: return all courses
-    const courses = await Course.find().select('title').lean();
+    const courses = await Course.find().select('title _id').lean();
     return NextResponse.json(courses);
   } catch (error) {
+    console.error("GET /api/course/specific Error:", error);
     return NextResponse.json({ error: 'Failed to fetch courses' }, { status: 500 });
   }
 }

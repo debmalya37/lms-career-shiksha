@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import axios from "axios";
+import { XCircleIcon } from "lucide-react";
 
 interface Subject {
   _id: string;
@@ -81,16 +82,19 @@ const ManageCourses = () => {
   // Handle form submission for adding or editing a course
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
+  
     const formData = new FormData();
     formData.append("title", title);
     formData.append("description", description);
-    formData.append("subjects", subject);
-    formData.append("isHidden", String(isHidden)); // Add isHidden field
+    formData.append(
+      "subjects",
+      JSON.stringify(editingCourse?.subjects.map((subj) => subj._id) || [])
+    );
+    formData.append("isHidden", String(isHidden));
     if (courseImg) {
       formData.append("courseImg", courseImg);
     }
-
+  
     try {
       if (editingCourse) {
         // Edit existing course
@@ -106,15 +110,16 @@ const ManageCourses = () => {
         });
         alert("Course added successfully!");
       }
-
+  
       // Fetch updated courses after adding/editing
       fetchCourses();
       resetForm();
     } catch (error) {
-      console.error(error);
+      console.error("Error in handleSubmit:", error);
       alert("Error adding/updating course.");
     }
   };
+  
 
   // Handle adding a new subject
 const handleAddSubject = async () => {
@@ -170,6 +175,13 @@ const handleAddSubject = async () => {
       console.error("Error adding topic:", error);
       alert("Failed to add topic.");
     }
+  };
+
+  // Remove a subject from the course
+  const handleRemoveSubject = (subjectId: string) => {
+    if (!editingCourse) return;
+    const updatedSubjects = editingCourse.subjects.filter((subj) => subj._id !== subjectId);
+    setEditingCourse({ ...editingCourse, subjects: updatedSubjects });
   };
 
   // Open the edit form with pre-filled values
@@ -248,7 +260,26 @@ const handleAddSubject = async () => {
             <p className="text-sm text-gray-600 mt-2">Current Image: {editingCourse.courseImg}</p>
           )}
         </div>
-
+        {editingCourse && (
+          <div className="mb-4">
+            <h2 className="text-lg font-medium mb-2">Subjects in this Course</h2>
+            <ul className="space-y-2">
+              {editingCourse.subjects.map((subj) => (
+                <li key={subj._id} className="flex justify-between items-center bg-gray-100 p-2 rounded-md">
+                  <span>{subj.name}</span>
+                  <button
+                  title="removeSubject"
+                    type="button"
+                    onClick={() => handleRemoveSubject(subj._id)}
+                    className="text-red-500 hover:text-red-700"
+                  >
+                    <XCircleIcon className="w-5 h-5" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">Subject</label>
           <select
@@ -355,6 +386,8 @@ const handleAddSubject = async () => {
                   Hidden: {course.isHidden ? "Yes" : "No"}
                 </p>
               </div>
+
+
               <button
                 onClick={() => handleEditClick(course)}
                 className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600"

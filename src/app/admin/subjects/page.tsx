@@ -5,7 +5,7 @@ import axios from "axios";
 interface Subject {
   _id: string;
   name: string;
-  course: string | string[]; // Course can be a single string or an array
+  courses: string[]; // Store course IDs initially
   subjectImg?: string;
 }
 
@@ -17,12 +17,13 @@ interface Course {
 const ManageSubjects = () => {
   const [subjectName, setSubjectName] = useState("");
   const [selectedCourses, setSelectedCourses] = useState<string[]>([]);
-  const [courses, setCourses] = useState<Course[]>([]); // Define course type
+  const [courses, setCourses] = useState<Course[]>([]); // All available courses
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [editingSubject, setEditingSubject] = useState<Subject | null>(null);
   const [subjectImg, setSubjectImg] = useState<File | null>(null);
+  const [subjectCourses, setSubjectCourses] = useState<Course[]>([]); // Courses for the editing subject
 
-
+  // Fetch subjects and all available courses
   useEffect(() => {
     async function fetchData() {
       try {
@@ -39,48 +40,65 @@ const ManageSubjects = () => {
     fetchData();
   }, []);
 
+  // Fetch course details for the editing subject
+  useEffect(() => {
+    if (editingSubject) {
+      const fetchSubjectCourses = async () => {
+        try {
+          // Fetch all courses for the subject ID
+          const response = await axios.get(
+            `https://civilacademyapp.com/api/course/specific?subjectId=${editingSubject._id}`
+          );
+          setSubjectCourses(response.data); // Set courses directly from API response
+        } catch (error) {
+          console.error("Error fetching subject courses:", error);
+        }
+      };
+      fetchSubjectCourses();
+    } else {
+      setSubjectCourses([]); // Reset when no subject is being edited
+    }
+  }, [editingSubject]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-  
+
     const formData = new FormData();
-    formData.append('name', subjectName);
-    selectedCourses.forEach((course) => formData.append('courses', course));
+    formData.append("name", subjectName);
+    selectedCourses.forEach((course) => formData.append("courses", course));
     if (subjectImg) {
-      formData.append('subjectImg', subjectImg);
+      formData.append("subjectImg", subjectImg);
     }
-  
+
     try {
       if (editingSubject) {
-        formData.append('id', editingSubject._id); // For editing
+        formData.append("id", editingSubject._id); // For editing
         await axios.post(`https://civilacademyapp.com/api/subjects/edit`, formData, {
-          headers: { 'Content-Type': 'multipart/form-data' },
+          headers: { "Content-Type": "multipart/form-data" },
         });
-        alert('Subject updated successfully!');
+        alert("Subject updated successfully!");
       } else {
         await axios.post(`https://civilacademyapp.com/api/subjects`, formData, {
-          headers: { 'Content-Type': 'multipart/form-data' },
+          headers: { "Content-Type": "multipart/form-data" },
         });
-        alert('Subject added successfully!');
+        alert("Subject added successfully!");
       }
-  
+
       // Refresh subjects
       const res = await axios.get(`https://civilacademyapp.com/api/subjects`);
       setSubjects(res.data);
       resetForm();
     } catch (error) {
-      console.error('Error adding/updating subject:', error);
-      alert('Failed to add/update subject.');
+      console.error("Error adding/updating subject:", error);
+      alert("Failed to add/update subject.");
     }
   };
-  
-  // Delete a subject
+
   const handleDelete = async (subjectId: string) => {
     if (confirm("Are you sure you want to delete this subject?")) {
       try {
         await axios.delete(`https://civilacademyapp.com/api/subjects/delete?id=${subjectId}`);
         alert("Subject deleted successfully!");
-
-        // Refresh the subject list
         setSubjects((prevSubjects) => prevSubjects.filter((subject) => subject._id !== subjectId));
       } catch (error) {
         console.error("Error deleting subject:", error);
@@ -89,22 +107,19 @@ const ManageSubjects = () => {
     }
   };
 
-  // Reset form to default state
   const resetForm = () => {
-    setSubjectName('');
+    setSubjectName("");
     setSelectedCourses([]);
     setSubjectImg(null);
     setEditingSubject(null);
+    setSubjectCourses([]);
   };
-  
 
-  // Handle subject edit
   const handleEdit = (subject: Subject) => {
     setEditingSubject(subject);
     setSubjectName(subject.name);
-    setSelectedCourses(
-      Array.isArray(subject.course) ? subject.course : [subject.course]
-    );
+    setSelectedCourses(subject.courses);
+    setSubjectImg(null);
   };
 
   return (
@@ -115,7 +130,7 @@ const ManageSubjects = () => {
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">Subject Name</label>
           <input
-          title="sub"
+          title="subject name"
             type="text"
             className="border p-2 w-full rounded-md"
             value={subjectName}
@@ -123,12 +138,11 @@ const ManageSubjects = () => {
             required
           />
         </div>
-        
 
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">Select Courses</label>
           <select
-          title="couse"
+          title="selected course"
             multiple
             className="border p-2 w-full rounded-md"
             value={selectedCourses}
@@ -147,19 +161,27 @@ const ManageSubjects = () => {
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">Subject Image</label>
           <input
-            title="subjectImg"
+          title="upload img"
             type="file"
             accept="image/*"
             onChange={(e) => setSubjectImg(e.target.files?.[0] || null)}
           />
           {editingSubject && editingSubject.subjectImg && (
-            <img
-              src={editingSubject.subjectImg}
-              alt="Subject Thumbnail"
-              className="w-20 h-20 mt-2 rounded-md"
-            />
+            <img src={editingSubject.subjectImg} alt="Subject Thumbnail" className="w-20 h-20 mt-2 rounded-md" />
           )}
         </div>
+        {editingSubject && (
+          <div className="mb-4">
+            <h2 className="text-lg font-medium mb-2">Courses for this Subject</h2>
+            <ul className="list-disc pl-5">
+              {subjectCourses.map((course) => (
+                <li key={course._id} className="text-gray-700">
+                  {course.title}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         <button type="submit" className="bg-purple-600 text-white py-2 px-4 rounded-md hover:bg-purple-700">
           {editingSubject ? "Update Subject" : "Add Subject"}
@@ -175,7 +197,6 @@ const ManageSubjects = () => {
         )}
       </form>
 
-      {/* Subject List */}
       <div className="mt-8">
         <h2 className="text-xl font-semibold mb-4">Existing Subjects</h2>
         <ul className="space-y-4">
@@ -191,11 +212,11 @@ const ManageSubjects = () => {
                 Edit
               </button>
               <button
-                  onClick={() => handleDelete(subject._id)}
-                  className="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600"
-                >
-                  Delete
-                </button>
+                onClick={() => handleDelete(subject._id)}
+                className="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600"
+              >
+                Delete
+              </button>
             </li>
           ))}
         </ul>
