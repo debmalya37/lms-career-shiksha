@@ -173,18 +173,21 @@ function QuizAppContent() {
 
   const handleAnswerClick = (isCorrect: boolean, userAnswer: string) => {
     const currentQuestionIndex = state.currentQuestion;
+  
+    // If the user has already answered this question, do nothing
+    if (state.answers[currentQuestionIndex] !== null) return;
+  
     const currentQuestion = state.quizData?.questions[currentQuestionIndex];
-
     if (!currentQuestion) return;
-
+  
     const correctAnswer = currentQuestion.answers.find((ans) => ans.isCorrect)?.text || "N/A";
     const questionMarks = currentQuestion.marks;
-
+  
     let updatedScore = state.score;
     let updatedIncorrectCount = state.incorrectCount;
     let updatedCorrectCount = state.correctCount;
-
-    // If answered, calculate score
+  
+    // Calculate the score based on the answer
     if (userAnswer) {
       if (isCorrect) {
         updatedScore += questionMarks;
@@ -192,7 +195,7 @@ function QuizAppContent() {
       } else {
         updatedScore -= state.quizData?.negativeMarking ?? 0;
         updatedIncorrectCount += 1;
-
+  
         setState((prevState) => ({
           ...prevState,
           incorrectQuestions: [
@@ -202,14 +205,14 @@ function QuizAppContent() {
         }));
       }
     }
-
-    // Update answer and visited status
+  
+    // Update the answer and visited status
     const updatedAnswers = [...state.answers];
     updatedAnswers[currentQuestionIndex] = userAnswer;
-
+  
     const updatedVisitedQuestions = [...state.visitedQuestions];
     updatedVisitedQuestions[currentQuestionIndex] = true;
-
+  
     setState((prevState) => ({
       ...prevState,
       answers: updatedAnswers,
@@ -219,6 +222,7 @@ function QuizAppContent() {
       incorrectCount: updatedIncorrectCount,
     }));
   };
+  
 
   const navigateQuestion = (direction: "next" | "prev") => {
     const isLastQuestion =
@@ -329,7 +333,13 @@ function QuizAppContent() {
           <h2 className="text-2xl font-bold mb-4">
             Question {state.currentQuestion + 1}/{state.quizData?.questions.length}
           </h2>
-          <p className="text-lg mb-4">{state.quizData?.questions[state.currentQuestion].question}</p>
+          <p
+              className="text-lg mb-4"
+              style={{ whiteSpace: "pre-wrap" }} // Preserve line breaks and spaces
+          >
+              {state.quizData?.questions[state.currentQuestion].question}
+          </p>
+
           {state.quizData?.questions[state.currentQuestion].image && (
             <img
               src={state.quizData?.questions[state.currentQuestion].image}
@@ -338,25 +348,26 @@ function QuizAppContent() {
             />
           )}
           <div className="grid grid-cols-2 gap-4">
-          {state.quizData?.questions[state.currentQuestion].answers.map((answer, index) => {
-            const isSelected =
-              state.answers[state.currentQuestion] === answer.text;
+            {state.quizData?.questions[state.currentQuestion].answers.map((answer, index) => {
+              const isSelected = state.answers[state.currentQuestion] === answer.text;
 
-            return (
-              <Button
-                key={index}
-                onClick={() => handleAnswerClick(answer.isCorrect, answer.text)}
-                className={`w-full ${
-                  isSelected
-                    ? "bg-white text-blue-800 border-blue-800" // Selected style
-                    : "bg-blue-800 text-white"
-                }`}
-              >
-                {answer.text}
-              </Button>
-            );
-          })}
-        </div>
+              return (
+                <Button
+                  key={index}
+                  onClick={() => handleAnswerClick(answer.isCorrect, answer.text)}
+                  className={`w-full ${
+                    isSelected
+                      ? "bg-white text-blue-800 border-blue-800" // Selected style
+                      : "bg-blue-800 text-white"
+                  }`}
+                  disabled={state.answers[state.currentQuestion] !== null} // Disable after selection
+                >
+                  {answer.text}
+                </Button>
+              );
+            })}
+          </div>
+
           <div className="flex justify-between mt-4">
             <Button onClick={() => navigateQuestion("prev")}>Previous</Button>
             <Button onClick={() => navigateQuestion("next")}>Next</Button>

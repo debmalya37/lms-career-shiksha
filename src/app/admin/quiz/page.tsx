@@ -214,17 +214,29 @@ export default function AdminQuizPage() {
               <h3 className="text-lg font-semibold text-gray-700 mb-2">
                 Question {qIndex + 1}
               </h3>
-              <textarea
-                value={q.question}
-                onChange={(e) => {
-                  const newQuestions = [...questions];
-                  newQuestions[qIndex].question = e.target.value;
-                  setQuestions(newQuestions);
-                }}
-                placeholder="Type your question here..."
-                className="border p-2 rounded-md w-full mb-4 resize-none"
-                rows={3} // You can adjust the rows as needed
-              />
+              {/* Question Textarea */}
+  <textarea
+    value={q.question}
+    onChange={(e) => {
+      const newQuestions = [...questions];
+      newQuestions[qIndex].question = e.target.value;
+      setQuestions(newQuestions);
+    }}
+    placeholder="Type your question here..."
+    className="border p-2 rounded-md w-full mb-4 resize-none"
+    rows={3} // Adjust rows as needed
+  />
+
+  {/* Question Preview */}
+  <div className="question-preview bg-gray-100 p-4 rounded-md">
+    <h3 className="text-lg font-semibold text-gray-700 mb-2">Preview:</h3>
+    <p
+      style={{ whiteSpace: "pre-wrap" }} // Preserve spaces and line breaks
+      className="text-gray-800"
+    >
+      {q.question}
+    </p>
+  </div>
               
               <input
                 type="number"
