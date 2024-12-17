@@ -39,7 +39,7 @@ const ManageCourses = () => {
   // Function to fetch all courses
   const fetchCourses = async () => {
     try {
-      const res = await axios.get(`https://www.civilacademyapp.com/api/course`);
+      const res = await axios.get(`https://civilacademyapp.com/api/course`);
       setCourses(res.data);
     } catch (error) {
       console.error("Error fetching courses:", error);
@@ -50,7 +50,7 @@ const ManageCourses = () => {
   useEffect(() => {
     const fetchSubjects = async () => {
       try {
-        const res = await axios.get(`https://www.civilacademyapp.com/api/subjects`);
+        const res = await axios.get(`https://civilacademyapp.com/api/subjects`);
         setSubjects(res.data);
       } catch (error) {
         console.error("Error fetching subjects:", error);
@@ -64,7 +64,7 @@ const ManageCourses = () => {
     if (subject) {
       const fetchTopics = async () => {
         try {
-          const res = await axios.get(`https://www.civilacademyapp.com/api/topics?subject=${subject}`);
+          const res = await axios.get(`https://civilacademyapp.com/api/topics?subject=${subject}`);
           setTopics(res.data);
         } catch (error) {
           console.error("Error fetching topics:", error);
@@ -105,13 +105,13 @@ const ManageCourses = () => {
       if (editingCourse) {
         // Edit existing course
         formData.append("id", editingCourse._id);
-        await axios.post(`https://www.civilacademyapp.com/api/course/edit`, formData, {
+        await axios.post(`https://civilacademyapp.com/api/course/edit`, formData, {
           headers: { "Content-Type": "multipart/form-data" },
         });
         alert("Course updated successfully!");
       } else {
         // Add a new course
-        await axios.post(`https://www.civilacademyapp.com/api/course`, formData, {
+        await axios.post(`https://civilacademyapp.com/api/course`, formData, {
           headers: { "Content-Type": "multipart/form-data" },
         });
         alert("Course added successfully!");
@@ -149,12 +149,12 @@ const handleAddSubject = async () => {
       formData.append("subjectImg", courseImg); // Optionally include an image
     }
 
-    await axios.post(`https://www.civilacademyapp.com/api/subjects`, formData, {
+    await axios.post(`https://civilacademyapp.com/api/subjects`, formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
 
     // Fetch the updated subjects and update the state
-    const updatedSubjects = await axios.get(`https://www.civilacademyapp.com/api/subjects`);
+    const updatedSubjects = await axios.get(`https://civilacademyapp.com/api/subjects`);
     setSubjects(updatedSubjects.data);
 
     setNewSubjectName(""); // Clear the input field
@@ -175,7 +175,7 @@ const handleAddSubject = async () => {
     }
 
     try {
-      const response = await axios.post(`https://www.civilacademyapp.com/api/topics`, { name: newTopicName, subject });
+      const response = await axios.post(`https://civilacademyapp.com/api/topics`, { name: newTopicName, subject });
       setTopics((prevTopics) => [...prevTopics, response.data]);
       setNewTopicName("");
       alert("New topic added successfully!");
@@ -207,7 +207,7 @@ const handleAddSubject = async () => {
   const handleDelete = async (courseId: string) => {
     if (confirm("Are you sure you want to delete this course?")) {
       try {
-        await axios.delete(`https://www.civilacademyapp.com/api/course/delete?id=${courseId}`);
+        await axios.delete(`https://civilacademyapp.com/api/course/delete?id=${courseId}`);
         alert("Course deleted successfully!");
         // Remove the deleted course from the state
         setCourses((prevCourses) => prevCourses.filter((course) => course._id !== courseId));
