@@ -87,10 +87,13 @@ const ManageCourses = () => {
     formData.append("title", title);
     formData.append("description", description);
   
-    // Add the selected subject (from dropdown) to FormData
-    if (subject) {
-      formData.append("subjects", subject);
-    }
+    // Append subjects as a JSON string
+    const subjectsArray = [
+      ...(editingCourse?.subjects.map((subj) => subj._id) || []), // Existing subjects
+      ...(subject ? [subject] : []), // Add the newly selected subject
+    ];
+    formData.append("subjects", JSON.stringify(subjectsArray));
+    
   
     formData.append("isHidden", String(isHidden));
   
@@ -122,6 +125,7 @@ const ManageCourses = () => {
       alert("Error adding/updating course.");
     }
   };
+  
   
   
 
@@ -184,9 +188,11 @@ const handleAddSubject = async () => {
   // Remove a subject from the course
   const handleRemoveSubject = (subjectId: string) => {
     if (!editingCourse) return;
+  
     const updatedSubjects = editingCourse.subjects.filter((subj) => subj._id !== subjectId);
     setEditingCourse({ ...editingCourse, subjects: updatedSubjects });
   };
+  
 
   // Open the edit form with pre-filled values
   const handleEditClick = (course: Course) => {

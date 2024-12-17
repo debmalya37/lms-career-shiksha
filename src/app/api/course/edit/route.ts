@@ -59,17 +59,23 @@ export async function POST(request: Request) {
       courseImgUrl = await uploadToCloudinary(Buffer.from(buffer));
     }
 
+    // Ensure subjects are unique
+    const uniqueSubjects = Array.from(new Set(subjects));
+
     // Prepare fields for update
     const updatedFields: any = {
       title,
       description,
       isHidden,
-      subjects,
+      subjects: uniqueSubjects, // Overwrite subjects array with unique values
     };
     if (courseImgUrl) updatedFields.courseImg = courseImgUrl;
 
-    // Update the course in the database
-    const updatedCourse = await Course.findByIdAndUpdate(courseId, updatedFields, { new: true });
+    const updatedCourse = await Course.findByIdAndUpdate(
+      courseId,
+      updatedFields,
+      { new: true }
+    );
 
     if (!updatedCourse) {
       console.error("Update Error: Course not found.");
