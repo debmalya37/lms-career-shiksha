@@ -86,11 +86,14 @@ const ManageCourses = () => {
     const formData = new FormData();
     formData.append("title", title);
     formData.append("description", description);
-    formData.append(
-      "subjects",
-      JSON.stringify(editingCourse?.subjects.map((subj) => subj._id) || [])
-    );
+  
+    // Add the selected subject (from dropdown) to FormData
+    if (subject) {
+      formData.append("subjects", subject);
+    }
+  
     formData.append("isHidden", String(isHidden));
+  
     if (courseImg) {
       formData.append("courseImg", courseImg);
     }
@@ -119,6 +122,7 @@ const ManageCourses = () => {
       alert("Error adding/updating course.");
     }
   };
+  
   
 
   // Handle adding a new subject

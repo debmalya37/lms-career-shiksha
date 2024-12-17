@@ -18,16 +18,19 @@ export default function LiveClasses({ liveClasses }: LiveClassesProps) {
               key={index}
               className="bg-white border border-gray-300 rounded-lg overflow-hidden shadow-md"
             >
-              <iframe
-                src={liveClass.url}
-                title={liveClass.title}
-                className="w-full h-full rounded-lg"
-                sandbox="allow-forms allow-scripts allow-pointer-lock allow-same-origin allow-top-navigation"
-                allowFullScreen
-              />
+              <div className="w-full h-48"> {/* Maintains 16:9 aspect ratio */}
+                <iframe
+                  src={liveClass.url}
+                  title={liveClass.title}
+                  className="w-full h-full rounded-lg"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  sandbox="allow-forms allow-scripts allow-pointer-lock allow-same-origin allow-top-navigation"
+                  allowFullScreen
+                />
+              </div>
               <div className="p-4">
-              <p className="text-lg font-semibold text-gray-800 truncate">{liveClass.title}</p>
-            </div>
+                <p className="text-lg font-semibold text-gray-800 truncate">{liveClass.title}</p>
+              </div>
             </div>
           ))}
         </div>
