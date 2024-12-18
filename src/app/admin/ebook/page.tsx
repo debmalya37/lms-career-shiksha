@@ -176,7 +176,10 @@ const ManageEBooks = () => {
               />
               <div>
                 <p className="text-lg font-semibold">{ebook.title}</p>
-                <p className="text-sm text-gray-500">{ebook.subject.name}</p>
+                <p className="text-sm text-gray-500">
+                  {ebook.subject ? ebook.subject.name : "No Subject"}
+                </p>
+
               </div>
             </div>
             <button
