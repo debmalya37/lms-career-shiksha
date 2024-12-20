@@ -30,7 +30,7 @@ export default async function TutorialPage({ params }: { params: { tutorialId: s
           <div className="w-full h-96 bg-gray-100 rounded-md overflow-hidden">
             <iframe
               title={tutorial.title}
-              src={tutorial.url}
+              src={`${tutorial.url}?controls=0&showinfo=0&mode=opaque&amp;rel=0&amp;autohide=1&amp;&amp;wmode=transparent`}
               className="w-full h-full"
               sandbox="allow-forms allow-scripts allow-pointer-lock allow-same-origin allow-top-navigation"
               allowFullScreen
