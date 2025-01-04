@@ -87,13 +87,14 @@ const ManageCourses = () => {
     formData.append("title", title);
     formData.append("description", description);
   
-    // Append subjects as a JSON string
+    // Append each subject ID individually
     const subjectsArray = [
       ...(editingCourse?.subjects.map((subj) => subj._id) || []), // Existing subjects
       ...(subject ? [subject] : []), // Add the newly selected subject
     ];
-    formData.append("subjects", JSON.stringify(subjectsArray));
-    
+    subjectsArray.forEach((subjectId) => {
+      formData.append("subjects", subjectId);
+    });
   
     formData.append("isHidden", String(isHidden));
   
@@ -125,6 +126,7 @@ const ManageCourses = () => {
       alert("Error adding/updating course.");
     }
   };
+  
   
   
   
