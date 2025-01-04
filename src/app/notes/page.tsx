@@ -7,19 +7,24 @@ interface Note {
   _id: string;
   title: string;
   url: string;
-  subject: { name: string } | null; // Handle populated or non-populated subject
+  subject: { name: string } | null;
+}
+
+interface Subject {
+  _id: string;
+  name: string;
 }
 
 interface Course {
   _id: string;
   title: string;
-  subjects: string[]; // Array of subject IDs
+  subjects: (Subject | string)[]; // Subjects can be either strings (IDs) or objects
 }
 
 interface UserProfile {
   name: string;
   email: string;
-  courses: Course[]; // Array of user courses
+  courses: Course[];
   subscription: number;
   error: any;
 }
@@ -28,7 +33,6 @@ export default function NotesPage() {
   const [notes, setNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Fetch notes under user's subscribed subjects
   useEffect(() => {
     async function fetchNotesForUser() {
       try {
@@ -41,11 +45,15 @@ export default function NotesPage() {
         if (!profile.error && profile.courses?.length > 0) {
           console.log("User courses:", profile.courses);
 
-          // Extract subject IDs from all user courses
-          const subjectIds = profile.courses.flatMap((course) => course.subjects);
+          // Extract subject IDs from courses
+          const subjectIds = profile.courses.flatMap((course) =>
+            course.subjects.map((subject) =>
+              typeof subject === "string" ? subject : subject._id // Handle both string and object
+            )
+          );
 
           if (subjectIds.length > 0) {
-            console.log("Subject IDs:", subjectIds);
+            console.log("Extracted Subject IDs:", subjectIds);
 
             // Fetch notes filtered by subject IDs
             const notesRes = await fetch(
@@ -56,7 +64,7 @@ export default function NotesPage() {
             console.log("Fetched notes:", fetchedNotes);
             setNotes(fetchedNotes);
           } else {
-            console.warn("No subjects found for the user's courses.");
+            console.warn("No valid subject IDs found.");
           }
         } else {
           console.error("Profile data error or no courses found.");
