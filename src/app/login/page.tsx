@@ -49,10 +49,11 @@ const LoginPage = () => {
         const errorData = await response.json();
         setErrorMessage(errorData.error || "Failed to log in");
       }
-    } catch (error) {
-      console.error("Error during login:", error);
-      setErrorMessage("An error occurred during login");
+    } catch (error:any) {
+      console.error('Error during login:', error); // Log detailed error
+      setErrorMessage(`Login failed: ${error.message || 'Unknown error'}`);
     }
+    
   };
 
   return (
