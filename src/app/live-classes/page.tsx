@@ -115,7 +115,7 @@ export default function LiveClassesPage() {
   }
 
   return (
-    <div className="container mx-auto py-8 bg-yellow-100 pr-5 pl-5 h-[100vh]">
+    <div className="container mx-auto py-8 bg-yellow-100 pr-5 pl-5 h-[110vh] pb-2 mb-40">
       <h1 className="text-3xl font-bold text-gray-800 mb-6">Live Classes</h1>
       <div className="flex flex-col gap-8">
         {liveClasses.length === 0 && !loading && <p>No valid live classes found.</p>}
@@ -125,7 +125,7 @@ export default function LiveClassesPage() {
           const chatUrl = `https://www.youtube.com/live_chat?v=${videoId}&embed_domain=${window.location.hostname}`;
 
           return (
-            <div key={liveClass._id} className="bg-white rounded-lg shadow-md p-4">
+            <div key={liveClass._id} className="bg-white rounded-lg shadow-md p-4 h-[110vh]" >
               <h3 className="text-xl font-semibold mb-4">{liveClass.title}</h3>
               <p className="text-gray-600 mb-4">Course: {liveClass.course.title}</p>
               <div className="flex flex-col lg:flex-row gap-4">
