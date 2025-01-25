@@ -19,7 +19,7 @@ export default function ManageNotifications() {
   useEffect(() => {
     const fetchNotifications = async () => {
       try {
-        const response = await axios.get(`https://civilacademyapp.com/api/notifications`);
+        const response = await axios.get(`api/notifications`);
         setNotifications(response.data);
       } catch (err) {
         console.error("Error fetching notifications:", err);
@@ -40,11 +40,11 @@ export default function ManageNotifications() {
 
     try {
       setLoading(true);
-      const response = await axios.post(`https://civilacademyapp.com/api/notifications`, { text: notificationText });
+      const response = await axios.post(`/api/notifications`, { text: notificationText });
       alert(response.data.message);
 
       // Refresh notifications after adding
-      const updatedNotifications = await axios.get(`https://civilacademyapp.com/api/notifications`);
+      const updatedNotifications = await axios.get(`/api/notifications`);
       setNotifications(updatedNotifications.data);
 
       // Reset form

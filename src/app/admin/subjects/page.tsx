@@ -28,8 +28,8 @@ const ManageSubjects = () => {
     async function fetchData() {
       try {
         const [subjectRes, courseRes] = await Promise.all([
-          axios.get(`https://civilacademyapp.com/api/subjects`),
-          axios.get(`https://civilacademyapp.com/api/course`),
+          axios.get(`/api/subjects`),
+          axios.get(`/api/course`),
         ]);
         setSubjects(subjectRes.data);
         setCourses(courseRes.data);
@@ -47,7 +47,7 @@ const ManageSubjects = () => {
         try {
           // Fetch all courses for the subject ID
           const response = await axios.get(
-            `https://civilacademyapp.com/api/course/specific?subjectId=${editingSubject._id}`
+            `/api/course/specific?subjectId=${editingSubject._id}`
           );
           setSubjectCourses(response.data); // Set courses directly from API response
         } catch (error) {
@@ -73,19 +73,19 @@ const ManageSubjects = () => {
     try {
       if (editingSubject) {
         formData.append("id", editingSubject._id); // For editing
-        await axios.post(`https://civilacademyapp.com/api/subjects/edit`, formData, {
+        await axios.post(`/api/subjects/edit`, formData, {
           headers: { "Content-Type": "multipart/form-data" },
         });
         alert("Subject updated successfully!");
       } else {
-        await axios.post(`https://civilacademyapp.com/api/subjects`, formData, {
+        await axios.post(`/api/subjects`, formData, {
           headers: { "Content-Type": "multipart/form-data" },
         });
         alert("Subject added successfully!");
       }
 
       // Refresh subjects
-      const res = await axios.get(`https://civilacademyapp.com/api/subjects`);
+      const res = await axios.get(`/api/subjects`);
       setSubjects(res.data);
       resetForm();
     } catch (error) {
@@ -97,7 +97,7 @@ const ManageSubjects = () => {
   const handleDelete = async (subjectId: string) => {
     if (confirm("Are you sure you want to delete this subject?")) {
       try {
-        await axios.delete(`https://civilacademyapp.com/api/subjects/delete?id=${subjectId}`);
+        await axios.delete(`/api/subjects/delete?id=${subjectId}`);
         alert("Subject deleted successfully!");
         setSubjects((prevSubjects) => prevSubjects.filter((subject) => subject._id !== subjectId));
       } catch (error) {

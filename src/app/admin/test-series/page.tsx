@@ -15,7 +15,7 @@ export default function AdminTestSeriesPage() {
   useEffect(() => {
     const fetchCourses = async () => {
       try {
-        const response = await axios.get(`https://civilacademyapp.com/api/course`);
+        const response = await axios.get(`/api/course`);
         setCourses(response.data);
       } catch (error) {
         console.error('Failed to fetch courses:', error);
@@ -29,7 +29,7 @@ export default function AdminTestSeriesPage() {
     const fetchSubjects = async () => {
       if (course) {
         try {
-          const response = await axios.get(`https://civilacademyapp.com/api/subjects?course=${course}`);
+          const response = await axios.get(`/api/subjects?course=${course}`);
           setSubjects(response.data);
         } catch (error) {
           console.error('Failed to fetch subjects:', error);
@@ -42,7 +42,7 @@ export default function AdminTestSeriesPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await axios.post(`https://civilacademyapp.com/api/test-series`, {
+      await axios.post(`/api/test-series`, {
         title,
         googleFormLink,
         course,

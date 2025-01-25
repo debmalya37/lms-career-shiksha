@@ -153,7 +153,7 @@ export default function SubjectPage({ params }: { params: { courseId: string; su
 
 // async function fetchCourses() {
 //   try {
-//     const response = await axios.get('https://civilacademyapp.com/api/course', {
+//     const response = await axios.get('/api/course', {
 //       validateStatus: function (status) {
 //         // Accept all status codes and handle them manually
 //         return status >= 200 && status < 300; 
@@ -180,7 +180,7 @@ export default function SubjectPage({ params }: { params: { courseId: string; su
 
 // async function fetchSubjects(courseId: string) {
 //   try {
-//     const response = await axios.get(`https://civilacademyapp.com/api/subjects?course=${courseId}`);
+//     const response = await axios.get(`/api/subjects?course=${courseId}`);
 //     return response.data;
 //   } catch (error) {
 //     console.error(`Error fetching subjects for course ${courseId}:`, error);

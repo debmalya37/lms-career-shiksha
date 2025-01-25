@@ -29,7 +29,7 @@ export default function CoursesPage() {
     async function fetchUserCourses() {
       try {
         // Fetch user profile
-        const profileRes = await axios.get(`https://civilacademyapp.com/api/profile`, { withCredentials: true });
+        const profileRes = await axios.get(`/api/profile`, { withCredentials: true });
         const profileData: UserProfile = profileRes.data;
         console.log("User Profile Data:", profileData);
 

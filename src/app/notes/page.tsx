@@ -36,7 +36,7 @@ export default function NotesPage() {
   useEffect(() => {
     async function fetchNotesForUser() {
       try {
-        const res = await fetch(`https://civilacademyapp.com/api/profile`, {
+        const res = await fetch(`/api/profile`, {
           method: "GET",
           credentials: "include",
         });
@@ -57,7 +57,7 @@ export default function NotesPage() {
 
             // Fetch notes filtered by subject IDs
             const notesRes = await fetch(
-              `https://civilacademyapp.com/api/notes/specific?subject=${subjectIds.join(",")}`
+              `/api/notes/specific?subject=${subjectIds.join(",")}`
             );
             const fetchedNotes = await notesRes.json();
 

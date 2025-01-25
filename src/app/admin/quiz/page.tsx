@@ -51,7 +51,7 @@ export default function AdminQuizPage() {
   // Fetch Courses
   const fetchCourses = useCallback(async () => {
     try {
-      const response = await axios.get(`https://civilacademyapp.com/api/course`);
+      const response = await axios.get(`api/course`);
       setCourses(response.data);
     } catch (error) {
       console.error("Error fetching courses:", error);
@@ -61,7 +61,7 @@ export default function AdminQuizPage() {
   // Fetch Quizzes
   const fetchQuizzes = useCallback(async () => {
     try {
-      const response = await axios.get(`https://civilacademyapp.com/api/quiz`);
+      const response = await axios.get(`/api/quiz`);
       setQuizzes(response.data);
     } catch (error) {
       console.error("Error fetching quizzes:", error);
@@ -129,7 +129,7 @@ export default function AdminQuizPage() {
       }
     });
 
-    const endpoint = selectedQuizId ? `https://civilacademyapp.com/api/quiz/edit` : `https://civilacademyapp.com/api/quiz`;
+    const endpoint = selectedQuizId ? `/api/quiz/edit` : `/api/quiz`;
     await axios.post(endpoint, formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
@@ -338,7 +338,7 @@ export default function AdminQuizPage() {
         <button
           onClick={async () => {
             if (confirm('Are you sure you want to delete this quiz?')) {
-              await axios.delete(`https://civilacademyapp.com/api/quiz/delete?quizId=${quiz._id}`);
+              await axios.delete(`/api/quiz/delete?quizId=${quiz._id}`);
               setQuizzes((prev) => prev.filter((q) => q._id !== quiz._id));
               alert('Quiz deleted successfully!');
             }

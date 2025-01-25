@@ -35,7 +35,7 @@ const ManageNotes = () => {
   useEffect(() => {
     const fetchSubjects = async () => {
       try {
-        const response = await axios.get(`https://civilacademyapp.com/api/subjects`);
+        const response = await axios.get(`/api/subjects`);
         setSubjects(response.data);
       } catch (error) {
         console.error('Error fetching subjects:', error);
@@ -49,7 +49,7 @@ const ManageNotes = () => {
     if (selectedSubject) {
       const fetchTopics = async () => {
         try {
-          const response = await axios.get(`https://civilacademyapp.com/api/topics?subject=${selectedSubject}`);
+          const response = await axios.get(`/api/topics?subject=${selectedSubject}`);
           setTopics(response.data);
         } catch (error) {
           console.error('Error fetching topics:', error);
@@ -63,7 +63,7 @@ const ManageNotes = () => {
   useEffect(() => {
     const fetchNotes = async () => {
       try {
-        const response = await axios.get(`https://civilacademyapp.com/api/notes`);
+        const response = await axios.get(`/api/notes`);
         setNotes(response.data);
       } catch (error) {
         console.error('Error fetching notes:', error);
@@ -81,11 +81,11 @@ const ManageNotes = () => {
     try {
       if (editingNote) {
         // Update note
-        await axios.post(`https://civilacademyapp.com/api/notes/edit`, { id: editingNote._id, ...noteData });
+        await axios.post(`/api/notes/edit`, { id: editingNote._id, ...noteData });
         alert('Note updated successfully!');
       } else {
         // Create new note
-        await axios.post(`https://civilacademyapp.com/api/notes`, noteData, {
+        await axios.post(`/api/notes`, noteData, {
           headers: { 'Content-Type': 'application/json' },
         });
         alert('Note uploaded successfully!');
@@ -98,7 +98,7 @@ const ManageNotes = () => {
       setSelectedTopic('');
       setEditingNote(null);
       setShowEditModal(false);
-      const response = await axios.get(`https://civilacademyapp.com/api/notes`);
+      const response = await axios.get(`/api/notes`);
       setNotes(response.data);
     } catch (error) {
       console.error(error);
@@ -120,7 +120,7 @@ const ManageNotes = () => {
   const handleDeleteClick = async (noteId: string) => {
     if (confirm('Are you sure you want to delete this note?')) {
       try {
-        await axios.delete(`https://civilacademyapp.com/api/notes/delete?id=${noteId}`);
+        await axios.delete(`/api/notes/delete?id=${noteId}`);
         alert('Note deleted successfully!');
         // Update the UI to remove the deleted note
         setNotes((prevNotes) => prevNotes.filter((note) => note._id !== noteId));

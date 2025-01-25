@@ -59,7 +59,7 @@ export default function LiveClassesPage() {
     const fetchLiveClasses = async () => {
       try {
         // Fetch user profile to get courses
-        const profileRes = await axios.get(`https://civilacademyapp.com/api/profile`, {
+        const profileRes = await axios.get(`/api/profile`, {
           withCredentials: true,
         });
         const profile = profileRes.data;
@@ -74,7 +74,7 @@ export default function LiveClassesPage() {
 
         // Fetch live classes for the user's courses
         const liveClassesRes = await axios.get(
-          `https://civilacademyapp.com/api/live-classes?courseIds=${courseIds.join(",")}`
+          `/api/live-classes?courseIds=${courseIds.join(",")}`
         );
         const liveClassesData = liveClassesRes.data;
 

@@ -26,7 +26,7 @@ const ManageTopics = () => {
   useEffect(() => {
     const fetchSubjects = async () => {
       try {
-        const res = await axios.get(`https://civilacademyapp.com/api/subjects`);
+        const res = await axios.get(`/api/subjects`);
         setSubjects(res.data);
       } catch (error) {
         console.error("Error fetching subjects:", error);
@@ -40,7 +40,7 @@ const ManageTopics = () => {
     const fetchTopics = async () => {
       if (selectedSubject) {
         try {
-          const res = await axios.get(`https://civilacademyapp.com/api/topics?subject=${selectedSubject}`);
+          const res = await axios.get(`/api/topics?subject=${selectedSubject}`);
           setTopics(res.data);
         } catch (error) {
           console.error("Error fetching topics:", error);
@@ -58,12 +58,12 @@ const ManageTopics = () => {
       if (editingTopic) {
         // Update existing topic
         const updatedTopicData = { id: editingTopic._id, name: topicName, subject: selectedSubject };
-        await axios.post(`https://civilacademyapp.com/api/topics/edit`, updatedTopicData);
+        await axios.post(`/api/topics/edit`, updatedTopicData);
         alert("Topic updated successfully!");
       } else {
         // Add new topic
         const newTopicData = { name: topicName, subject: selectedSubject };
-        const response = await axios.post(`https://civilacademyapp.com/api/topics`, newTopicData);
+        const response = await axios.post(`/api/topics`, newTopicData);
         const newTopic = response.data;
         setTopics((prevTopics) => [...prevTopics, newTopic]); // Update UI with new topic
         alert("Topic added successfully!");
@@ -72,7 +72,7 @@ const ManageTopics = () => {
       // Reset form and refresh topics
       setTopicName("");
       setEditingTopic(null);
-      const res = await axios.get(`https://civilacademyapp.com/api/topics?subject=${selectedSubject}`);
+      const res = await axios.get(`/api/topics?subject=${selectedSubject}`);
       setTopics(res.data);
     } catch (error) {
       console.error("Error adding/updating topic:", error);
@@ -90,7 +90,7 @@ const ManageTopics = () => {
   const handleDeleteClick = async (topicId: string) => {
     if (confirm("Are you sure you want to delete this topic?")) {
       try {
-        await axios.delete(`https://civilacademyapp.com/api/topics/delete?id=${topicId}`);
+        await axios.delete(`/api/topics/delete?id=${topicId}`);
         alert("Topic deleted successfully!");
         // Refresh the topic list
         setTopics((prevTopics) => prevTopics.filter((topic) => topic._id !== topicId));

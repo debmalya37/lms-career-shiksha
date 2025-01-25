@@ -50,7 +50,7 @@ const ManageTutorials = () => {
   useEffect(() => {
     const fetchCourses = async () => {
       try {
-        const response = await axios.get(`https://civilacademyapp.com/api/course`);
+        const response = await axios.get(`/api/course`);
         setCourses(response.data);
       } catch (error) {
         console.error("Error fetching courses:", error);
@@ -79,7 +79,7 @@ const ManageTutorials = () => {
     if (selectedSubject) {
       const fetchTopics = async () => {
         try {
-          const response = await axios.get(`https://civilacademyapp.com/api/topics?subject=${selectedSubject}`);
+          const response = await axios.get(`/api/topics?subject=${selectedSubject}`);
           setTopics(response.data);
         } catch (error) {
           console.error("Error fetching topics:", error);
@@ -93,7 +93,7 @@ const ManageTutorials = () => {
   useEffect(() => {
     const fetchTutorials = async () => {
       try {
-        const response = await axios.get(`https://civilacademyapp.com/api/tutorials`);
+        const response = await axios.get(`/api/tutorials`);
         setTutorials(response.data);
       } catch (error) {
         console.error("Error fetching tutorials:", error);
@@ -112,14 +112,14 @@ const ManageTutorials = () => {
       setCurrentTutorialId(tutorial._id);
   
       // Fetch topic details
-      const topicRes = await axios.get(`https://civilacademyapp.com/api/topics/specific?topic=${tutorial.topic}`);
+      const topicRes = await axios.get(`/api/topics/specific?topic=${tutorial.topic}`);
       const topic = topicRes.data[0]; // Ensure topic exists
       if (!topic) {
         throw new Error("Topic not found");
       }
   
       // Fetch subject details
-      const subjectRes = await axios.get(`https://civilacademyapp.com/api/subjects/specific?subject=${topic.subject}`);
+      const subjectRes = await axios.get(`/api/subjects/specific?subject=${topic.subject}`);
       const subject = subjectRes.data[0];
       if (!subject) {
         throw new Error("Subject not found");
@@ -127,7 +127,7 @@ const ManageTutorials = () => {
       setSelectedSubject(subject._id); // Prefill subject dropdown
   
       // Fetch course details
-      const courseRes = await axios.get(`https://civilacademyapp.com/api/course/specific?subjectId=${subject._id}`);
+      const courseRes = await axios.get(`/api/course/specific?subjectId=${subject._id}`);
       const course = courseRes.data[0]; // Assuming courses return as an array
       if (!course) {
         throw new Error("Course not found");
@@ -143,8 +143,8 @@ const ManageTutorials = () => {
     e.preventDefault();
     try {
       const apiEndpoint = isEditing
-        ? `https://civilacademyapp.com/api/tutorials/edit`
-        : `https://civilacademyapp.com/api/tutorials`;
+        ? `/api/tutorials/edit`
+        : `/api/tutorials`;
 
       const payload = {
         title,
@@ -158,7 +158,7 @@ const ManageTutorials = () => {
       await axios.post(apiEndpoint, payload);
 
       // Refresh tutorials list
-      const response = await axios.get(`https://civilacademyapp.com/api/tutorials`);
+      const response = await axios.get(`/api/tutorials`);
       setTutorials(response.data);
 
       // Reset form and state
@@ -186,7 +186,7 @@ const ManageTutorials = () => {
       return;
     }
     try {
-      const response = await axios.post(`https://civilacademyapp.com/api/subjects`, {
+      const response = await axios.post(`/api/subjects`, {
         name: newSubjectName,
         course: selectedCourse,
       });
@@ -205,7 +205,7 @@ const ManageTutorials = () => {
       return;
     }
     try {
-      const response = await axios.post(`https://civilacademyapp.com/api/topics`, {
+      const response = await axios.post(`/api/topics`, {
         name: newTopicName,
         subject: selectedSubject,
       });
@@ -222,10 +222,10 @@ const ManageTutorials = () => {
     if (!confirm("Are you sure you want to delete this tutorial?")) return;
 
     try {
-      await axios.delete(`https://civilacademyapp.com/api/tutorials/delete?id=${tutorialId}`);
+      await axios.delete(`/api/tutorials/delete?id=${tutorialId}`);
 
       // Refresh tutorials list
-      const response = await axios.get(`https://civilacademyapp.com/api/tutorials`);
+      const response = await axios.get(`/api/tutorials`);
       setTutorials(response.data);
 
       alert("Tutorial deleted successfully!");

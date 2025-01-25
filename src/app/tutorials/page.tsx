@@ -30,7 +30,7 @@ export default function TutorialsPage() {
   useEffect(() => {
     async function fetchProfileAndTutorials() {
       try {
-        const res = await fetch(`https://civilacademyapp.com/api/profile`, {
+        const res = await fetch(`/api/profile`, {
           method: "GET",
           credentials: "include",
         });
@@ -49,7 +49,7 @@ export default function TutorialsPage() {
           if (subjectIds.length > 0) {
             // Fetch tutorials using the subject IDs
             const tutorialRes = await fetch(
-              `https://civilacademyapp.com/api/tutorials/specific?subjectIds=${subjectIds.join(",")}`
+              `/api/tutorials/specific?subjectIds=${subjectIds.join(",")}`
             );
             const fetchedTutorials = await tutorialRes.json();
 
