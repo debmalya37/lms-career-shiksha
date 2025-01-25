@@ -30,9 +30,7 @@ const Navbar: React.FC = () => {
           <Link href="/notes" className="hover:text-yellow-400 transition-colors">
             Notes
           </Link>
-          <Link href="/test-series" className="hover:text-yellow-400 transition-colors">
-            Test Series
-          </Link>
+
           <Link href="/contact" className="hover:text-yellow-400 transition-colors">
             Contact
           </Link>
@@ -93,13 +91,7 @@ const Navbar: React.FC = () => {
           >
             Notes
           </Link>
-          <Link
-            href="/test-series"
-            className="text-white hover:text-yellow-400 transition-colors"
-            onClick={() => setIsOpen(false)}
-          >
-            Test Series
-          </Link>
+          
           {/* <Link
             href="/about"
             className="text-white hover:text-yellow-400 transition-colors"

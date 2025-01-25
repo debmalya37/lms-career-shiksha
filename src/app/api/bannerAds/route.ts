@@ -68,3 +68,38 @@ export async function GET() {
     return NextResponse.json({ error: 'Failed to fetch banner ads' }, { status: 500 });
   }
 }
+
+
+// DELETE: Remove a banner ad
+export async function DELETE(request: Request) {
+  try {
+    await connectMongo();
+
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id'); // Get the ID from query parameters
+
+    if (!id) {
+      return NextResponse.json({ error: 'ID is required' }, { status: 400 });
+    }
+
+    // Find the banner ad by ID
+    const bannerAd = await BannerAd.findById(id);
+    if (!bannerAd) {
+      return NextResponse.json({ error: 'Banner ad not found' }, { status: 404 });
+    }
+
+    // Delete the image from Cloudinary
+    const publicId = bannerAd.imageUrl.split('/').pop()?.split('.')[0];
+    if (publicId) {
+      await cloudinary.uploader.destroy(`bannerAds/${publicId}`);
+    }
+
+    // Remove the banner ad from the database
+    await BannerAd.findByIdAndDelete(id);
+
+    return NextResponse.json({ message: 'Banner ad deleted successfully!' });
+  } catch (error) {
+    console.error('DELETE /api/bannerAds Error:', error);
+    return NextResponse.json({ error: 'Failed to delete banner ad' }, { status: 500 });
+  }
+}

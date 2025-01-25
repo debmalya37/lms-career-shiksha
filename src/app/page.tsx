@@ -178,14 +178,16 @@ export default function Home() {
       <div className="container relative p-2 sm:p-4 ml-0 mr-0 pl-0 pr-0">
         {/* Hero Section */}
         {bannerAds.length > 0 && (
-          <div className="w-full h-64 bg-gray-200 overflow-hidden relative mb-6">
-            <img
-              src={bannerAds[currentAdIndex]?.imageUrl}
-              alt={`Banner Ad ${currentAdIndex + 1}`}
-              className="w-full h-full object-cover transition-opacity duration-500"
-            />
-          </div>
-        )}
+  <div className="w-full h-0 pb-[37.5%] bg-gray-200 overflow-hidden relative mb-6">
+    <img
+      src={bannerAds[currentAdIndex]?.imageUrl}
+      alt={`Banner Ad ${currentAdIndex + 1}`}
+      className="absolute top-0 left-0 w-full h-full object-cover transition-opacity duration-500"
+    />
+  </div>
+)}
+
+
 
       
         <div className="relative w-full flex justify-end mt-6">
@@ -224,11 +226,11 @@ export default function Home() {
                 </h2> */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4 mx-2 sm:mx-0">
                 {userCourses.length > 0 ? (
-  <div>
+  <div className="m-5">
   <h2 className="text-lg sm:text-2xl font-bold text-green-800 ml-2 sm:ml-5">
     Your Subscribed Courses:
   </h2>
-  <div className="grid grid-cols-1 sm:grid-cols-1 lg:grid-cols-1 gap-4 mt-4 mx-2 sm:mx-0">
+  <div className="grid grid-cols-1 m-3 sm:grid-cols-1 lg:grid-cols-1 gap-4 mt-4 mx-2 sm:mx-0">
     {userCourses.map((course: Course) => (
       <div
       key={course._id}
@@ -278,7 +280,7 @@ export default function Home() {
             )}
           </div>
 
-          <div className="mt-6">
+          <div className="mt-6 m-5">
   <h2 className="text-lg sm:text-2xl font-bold text-green-800 ml-2 sm:ml-5">
     Courses You Haven&apos;t Subscribed To:
   </h2>
@@ -324,7 +326,7 @@ export default function Home() {
   </div>
 </div>
         </div>
-        <Footer />
+        
       </div>
     </main>
   );

@@ -13,6 +13,7 @@ import {
 } from '@clerk/nextjs';
 import AuthProvider from "@/context/AuthProvider";
 import { startSubscriptionCron } from "../lib/subscriptionCron";
+import Footer from "@/components/Footer";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
@@ -35,6 +36,7 @@ export default function RootLayout({
         <Navbar />
         {children}
         <Toaster />
+        <Footer/>
       </body>
       </AuthProvider>
     </html>

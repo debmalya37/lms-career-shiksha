@@ -10,7 +10,7 @@ interface LiveClassesProps {
 export default function LiveClasses({ liveClasses }: LiveClassesProps) {
   return (
     <div className="mt-8 p-4 ml-0">
-      <h2 className="text-green-700 text-2xl font-bold mb-4 pl-5 pr-5">Live Classes</h2>
+      <h2 className="text-green-700 text-2xl font-bold mb-4 pl-5 pr-5 m-2">Live Classes</h2>
       {liveClasses.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {liveClasses.map((liveClass, index) => (
