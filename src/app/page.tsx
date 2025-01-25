@@ -93,7 +93,7 @@ export default function Home() {
     async function fetchData() {
       try {
         // Fetch user profile
-        const profileRes = await axios.get(`http://localhost:3000/api/profile`);
+        const profileRes = await axios.get(`/api/profile`);
         const profileData: UserProfile = profileRes.data;
         console.log("Profile Data:", profileData);
         
@@ -103,7 +103,7 @@ export default function Home() {
         }
         
         // Fetch all courses
-        const allCoursesRes = await axios.get(`http://localhost:3000/api/course`);
+        const allCoursesRes = await axios.get(`/api/course`);
         if (allCoursesRes.data) {
           setAllCourses(allCoursesRes.data);
         }
@@ -113,14 +113,14 @@ export default function Home() {
         setAdminNotifications(notificationsRes.data);
 
         // Fetch the latest tutorial
-        const tutorialRes = await axios.get(`http://localhost:3000/api/latestTutorial`);
+        const tutorialRes = await axios.get(`/api/latestTutorial`);
         if (tutorialRes.data) setLatestTutorial(tutorialRes.data);
   
         // Fetch the latest live classes for all user courses
       if (profileData.courses?.length) {
         const courseIds = profileData.courses.map((course) => course._id).join(",");
         const liveClassesRes = await axios.get(
-          `http://localhost:3000/api/live-classes?courseIds=${courseIds}`
+          `/api/live-classes?courseIds=${courseIds}`
         );
         if (liveClassesRes.data) {
           const transformedLiveClasses = liveClassesRes.data.map((liveClass: any) => ({
@@ -132,7 +132,7 @@ export default function Home() {
       }
   
         // Fetch the latest course
-        const courseRes = await axios.get(`http://localhost:3000/api/latestCourse`);
+        const courseRes = await axios.get(`/api/latestCourse`);
         if (courseRes.data) setLatestCourse(courseRes.data);
       } catch (error) {
         console.error('Error fetching data:', error);
