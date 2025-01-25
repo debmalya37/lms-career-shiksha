@@ -6,6 +6,7 @@ export interface ISubject extends Document {
   courses: mongoose.Schema.Types.ObjectId[]; // Array of courses this subject belongs to
   subjectImg?: string;
   createdAt: Date;
+  isHidden: boolean;
 
 }
 
@@ -14,6 +15,7 @@ const SubjectSchema: Schema<ISubject>  = new Schema({
   courses: [{ type: Schema.Types.ObjectId, ref: 'Course' }], // Array of course references
   subjectImg: { type: String },
   createdAt: { type: Date, default: Date.now },
+  isHidden: { type: Boolean, default: false },
 });
 
 const Subject = mongoose.models.Subject || mongoose.model<ISubject>('Subject', SubjectSchema);

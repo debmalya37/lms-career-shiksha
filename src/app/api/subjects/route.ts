@@ -34,6 +34,7 @@ export async function POST(request: Request) {
   const formData = await request.formData();
   const name = formData.get('name') as string;
   const courses = formData.getAll('courses') as string[]; // Array of course IDs
+  const isHidden = formData.get('isHidden') === 'true'; // Handle `isHidden` field as a boolean
   const subjectImgFile = formData.get('subjectImg') as File | null;
 
   if (!name || courses.length === 0) {
@@ -54,7 +55,7 @@ export async function POST(request: Request) {
     await connectMongo();
 
     // Create the new subject
-    const newSubject = new Subject({ name, courses, subjectImg: subjectImgUrl });
+    const newSubject = new Subject({ name, courses, subjectImg: subjectImgUrl, isHidden });
     await newSubject.save();
 
     // Update each course to include the new subject in its `subjects` array
@@ -70,14 +71,24 @@ export async function POST(request: Request) {
   }
 }
 
-
 export async function GET() {
   try {
     await connectMongo();
     const subjects = await Subject.find({}).lean();
-    return NextResponse.json(subjects);
+
+    // Add `isHidden` field to preexisting subjects if it doesn't exist
+    const updatedSubjects = await Promise.all(
+      subjects.map(async (subject) => {
+        if (typeof subject.isHidden === 'undefined') {
+          subject.isHidden = false;
+          await Subject.updateOne({ _id: subject._id }, { isHidden: false });
+        }
+        return subject;
+      })
+    );
+
+    return NextResponse.json(updatedSubjects);
   } catch (error) {
     return NextResponse.json({ error: 'Failed to fetch subjects' }, { status: 500 });
   }
 }
-

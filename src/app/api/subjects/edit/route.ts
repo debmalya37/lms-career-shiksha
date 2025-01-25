@@ -35,6 +35,7 @@ export async function POST(request: Request) {
   const id = formData.get('id') as string; // Subject ID
   const name = formData.get('name') as string;
   const courses = formData.getAll('courses') as string[]; // Array of course IDs
+  const isHidden = formData.get('isHidden') === 'true'; // Handle `isHidden` field as a boolean
   const subjectImgFile = formData.get('subjectImg') as File | null; // New image file (optional)
 
   if (!id || !name || courses.length === 0) {
@@ -61,9 +62,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Subject not found.' }, { status: 404 });
     }
 
+    // Add `isHidden` field if it doesn't exist
+    if (typeof subject.isHidden === 'undefined') {
+      subject.isHidden = false;
+    }
+
     // Update subject details
     subject.name = name;
     subject.courses = courses;
+    subject.isHidden = isHidden;
     if (subjectImgUrl) {
       subject.subjectImg = subjectImgUrl; // Update image URL only if a new image is provided
     }

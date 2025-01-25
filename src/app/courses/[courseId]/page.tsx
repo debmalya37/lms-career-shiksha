@@ -4,19 +4,41 @@ import Link from 'next/link';
 
 export const dynamic = 'force-dynamic';
 
+// Define the Subject type explicitly
+interface Subject {
+  _id: string;
+  name: string;
+  subjectImg?: string;
+  isHidden?: boolean;
+}
+
+// Extend the ICourse interface to include subjects as an array of Subject
+interface ICourseWithSubjects extends Omit<ICourse, 'subjects'> {
+  subjects: Subject[];
+}
+
 // Fetch course with populated subjects
-async function fetchSubjectsForCourse(courseId: string): Promise<ICourse | null> {
+async function fetchSubjectsForCourse(courseId: string): Promise<ICourseWithSubjects | null> {
   await connectMongo();
 
-  const course = await Course.findById(courseId)
-    .populate({ path: 'subjects', select: 'name subjectImg' }) // Include 'subjectImg' in the population
-    .lean();
+  // Fetch course and populate subjects
+  const course = (await Course.findById(courseId)
+    .populate({
+      path: 'subjects',
+      select: 'name subjectImg isHidden', // Ensure these fields are selected
+    })
+    .lean()) as ICourseWithSubjects | null;
 
   if (!course) {
     throw new Error('Course not found');
   }
 
-  return course as ICourse;
+  // Filter out hidden subjects
+  if (course.subjects) {
+    course.subjects = course.subjects.filter((subject) => !subject.isHidden);
+  }
+
+  return course;
 }
 
 export default async function CoursePage({ params }: { params: { courseId: string } }) {
@@ -36,7 +58,7 @@ export default async function CoursePage({ params }: { params: { courseId: strin
       {/* Subjects Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {subjects.length > 0 ? (
-          subjects.map((subject: any) => (
+          subjects.map((subject) => (
             <Link
               key={subject._id}
               href={`/courses/${params.courseId}/${subject._id}`}
