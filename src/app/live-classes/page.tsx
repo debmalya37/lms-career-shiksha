@@ -138,7 +138,7 @@ export default function LiveClassesPage() {
                     allowFullScreen
                   />
                 </div>
-                <div className="flex-none lg:w-[350px] lg:h-[500px]">
+                <div className="flex-none w-full lg:w-[350px] h-[350px] sm:h-[500px] md:h-[550px]">
                   <iframe
                     title={`${liveClass.title} - Live Chat`}
                     className="w-full h-full"
