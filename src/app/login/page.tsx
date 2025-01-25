@@ -33,7 +33,7 @@ const LoginPage = () => {
     const deviceIdentifier = getDeviceIdentifier();
 
     try {
-      const response = await fetch(`https://civilacademyapp.com/api/login`, {
+      const response = await fetch(`/api/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

@@ -21,7 +21,7 @@ export default function Signup() {
     setError(null);
 
     try {
-      const response = await fetch('https://civilacademyapp.com/api/signup', {
+      const response = await fetch('/api/signup', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -38,8 +38,8 @@ export default function Signup() {
         const data = await response.json();
         setError(data.error || 'Signup failed');
       }
-    } catch (error) {
-      setError('An unexpected error occurred');
+    } catch (error:any) {
+      setError(`${error.message} || unknown error occured`);
     }
   };
 

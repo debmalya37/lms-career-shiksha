@@ -20,7 +20,7 @@ export default function ProfilePage() {
   useEffect(() => {
     async function fetchProfile() {
       try {
-        const res = await fetch(`https://civilacademyapp.com/api/profile`, {
+        const res = await fetch(`/api/profile`, {
           method: "GET",
           credentials: "include", // Ensure cookies are sent
         });

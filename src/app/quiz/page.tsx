@@ -94,7 +94,7 @@ function QuizAppContent() {
   useEffect(() => {
     const fetchCourses = async () => {
       try {
-        const response = await fetch(`https://civilacademyapp.com/api/course`);
+        const response = await fetch(`/api/course`);
         const data: Course[] = await response.json();
         setCourses(data);
       } catch (error) {
@@ -108,7 +108,7 @@ function QuizAppContent() {
     if (selectedCourse) {
       const fetchSubjects = async () => {
         try {
-          const response = await fetch(`https://civilacademyapp.com/api/subjects?courseId=${selectedCourse}`);
+          const response = await fetch(`/api/subjects?courseId=${selectedCourse}`);
           const data: Subject[] = await response.json();
           setSubjects(data);
         } catch (error) {
@@ -124,7 +124,7 @@ function QuizAppContent() {
         setState((prevState) => ({ ...prevState, isLoading: true }));
         try {
           const response = await fetch(
-            `https://civilacademyapp.com/api/quiz?quizId=${quizId}&courseId=${selectedCourse}&subjectId=${selectedSubject}`
+            `/api/quiz?quizId=${quizId}&courseId=${selectedCourse}&subjectId=${selectedSubject}`
           );
           const quizData: QuizData = await response.json();
 
@@ -303,32 +303,39 @@ function QuizAppContent() {
           <p className="text-lg mb-2">Score: {state.score}</p>
           <p className="text-lg mb-2">Correct Answers: {state.correctCount}</p>
           <p className="text-lg mb-2">Incorrect Answers: {state.incorrectCount}</p>
-          {state.incorrectQuestions.length > 0 && (
-            <div className="mt-4">
-              <h3 className="text-lg font-semibold mb-2">Review Incorrect Answers:</h3>
-              <ul>
-                {state.incorrectQuestions.map((item, index) => (
-                  <li key={index} className="mb-2">
-                    <p className="text-sm">
-                      <strong>Q:</strong> {item.question}
+          <p className="text-lg mb-2">Skipped Questions: {state.skippedCount}</p>
+      
+          <div className="mt-4">
+            <h3 className="text-lg font-semibold mb-2">Review All Answers:</h3>
+            <ul>
+              {state.quizData?.questions.map((question, index) => {
+                const userAnswer = state.answers[index];
+                const correctAnswer = question.answers.find((ans) => ans.isCorrect)?.text || "N/A";
+                const isCorrect = userAnswer === correctAnswer;
+      
+                return (
+                  <li key={index} className="mb-4">
+                    <p className="text-sm mb-1">
+                      <strong>Q{index + 1}:</strong> {question.question}
                     </p>
-                    <p className="text-sm">
-                      <strong>Your Answer:</strong> {item.userAnswer}
+                    <p className={`text-sm mb-1 ${isCorrect ? "text-green-600" : "text-red-600"}`}>
+                      <strong>Your Answer:</strong> {userAnswer || "Skipped"}
                     </p>
-                    <p className="text-sm">
-                      <strong>Correct Answer:</strong> {item.correctAnswer}
+                    <p className="text-sm mb-1">
+                      <strong>Correct Answer:</strong> {correctAnswer}
                     </p>
                   </li>
-                ))}
-              </ul>
-            </div>
-          )}
-          <p className="text-lg mb-2">Skipped Questions: {state.skippedCount}</p>
+                );
+              })}
+            </ul>
+          </div>
+      
           <Button onClick={resetQuiz} className="w-full mt-4">
             Try Again
           </Button>
         </div>
-      ) : (
+      )
+       : (
         <div className="bg-card p-8 rounded-lg shadow-md w-full max-w-md">
           <h2 className="text-2xl font-bold mb-4">
             Question {state.currentQuestion + 1}/{state.quizData?.questions.length}

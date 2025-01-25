@@ -14,7 +14,7 @@ const AdminPanel = () => {
     const checkAdminStatus = async () => {
       try {
         // Fetch profile data from the API
-        const profileRes = await axios.get(`https://civilacademyapp.com/api/profile`);
+        const profileRes = await axios.get(`/api/profile`);
         const profileData = profileRes.data;
 
         console.log("Profile Data:", profileData); // Log the profile response
@@ -80,6 +80,9 @@ const AdminPanel = () => {
         </Link>
         <Link href="/admin/notifications" className="bg-red-600 text-white p-6 rounded-lg shadow-md text-center">
           <h2 className="text-xl font-semibold">Manage Notifications</h2>
+        </Link>
+        <Link href="/admin/bannerAds" className="bg-red-600 text-white p-6 rounded-lg shadow-md text-center">
+          <h2 className="text-xl font-semibold">Manage Ads Banner</h2>
         </Link>
       </div>
     </div>

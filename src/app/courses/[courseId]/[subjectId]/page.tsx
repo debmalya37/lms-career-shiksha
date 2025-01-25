@@ -39,9 +39,9 @@ export default function SubjectPage({ params }: { params: { courseId: string; su
       try {
         setLoading(true);
         const [topicsResponse, ebooksResponse, testSeriesResponse] = await Promise.all([
-          axios.get(`https://civilacademyapp.com/api/topics?subject=${subjectId}`),
-          axios.get(`https://civilacademyapp.com/api/ebook?subject=${subjectId}`),
-          axios.get(`https://civilacademyapp.com/api/quiz?courseId=${courseId}&subjectId=${subjectId}`)
+          axios.get(`/api/topics?subject=${subjectId}`),
+          axios.get(`/api/ebook?subject=${subjectId}`),
+          axios.get(`/api/quiz?courseId=${courseId}&subjectId=${subjectId}`)
         ]);
 
         setTopics(topicsResponse.data);

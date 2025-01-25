@@ -18,7 +18,10 @@ interface Course {
   createdAt: string;
   isHidden?: boolean;
 }
-
+interface BannerAd {
+  _id: string;
+  imageUrl: string;
+}
 interface UserProfile {
   name: string;
   email: string;
@@ -42,6 +45,8 @@ export default function Home() {
   const [latestCourse, setLatestCourse] = useState<any>(null);
   const [latestLiveClasses, setLatestLiveClasses] = useState<any[]>([]);
   const [adminNotifications, setAdminNotifications] = useState<AdminNotification[]>([]);
+  const [bannerAds, setBannerAds] = useState<BannerAd[]>([]);
+  const [currentAdIndex, setCurrentAdIndex] = useState(0);
 
   // Check for session token and redirect if missing
   useEffect(() => {
@@ -88,7 +93,7 @@ export default function Home() {
     async function fetchData() {
       try {
         // Fetch user profile
-        const profileRes = await axios.get(`https://civilacademyapp.com/api/profile`);
+        const profileRes = await axios.get(`http://localhost:3000/api/profile`);
         const profileData: UserProfile = profileRes.data;
         console.log("Profile Data:", profileData);
         
@@ -98,7 +103,7 @@ export default function Home() {
         }
         
         // Fetch all courses
-        const allCoursesRes = await axios.get(`https://civilacademyapp.com/api/course`);
+        const allCoursesRes = await axios.get(`http://localhost:3000/api/course`);
         if (allCoursesRes.data) {
           setAllCourses(allCoursesRes.data);
         }
@@ -108,14 +113,14 @@ export default function Home() {
         setAdminNotifications(notificationsRes.data);
 
         // Fetch the latest tutorial
-        const tutorialRes = await axios.get(`https://civilacademyapp.com/api/latestTutorial`);
+        const tutorialRes = await axios.get(`http://localhost:3000/api/latestTutorial`);
         if (tutorialRes.data) setLatestTutorial(tutorialRes.data);
   
         // Fetch the latest live classes for all user courses
       if (profileData.courses?.length) {
         const courseIds = profileData.courses.map((course) => course._id).join(",");
         const liveClassesRes = await axios.get(
-          `https://civilacademyapp.com/api/live-classes?courseIds=${courseIds}`
+          `http://localhost:3000/api/live-classes?courseIds=${courseIds}`
         );
         if (liveClassesRes.data) {
           const transformedLiveClasses = liveClassesRes.data.map((liveClass: any) => ({
@@ -127,7 +132,7 @@ export default function Home() {
       }
   
         // Fetch the latest course
-        const courseRes = await axios.get(`https://civilacademyapp.com/api/latestCourse`);
+        const courseRes = await axios.get(`http://localhost:3000/api/latestCourse`);
         if (courseRes.data) setLatestCourse(courseRes.data);
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -147,10 +152,42 @@ export default function Home() {
       setUnsubscribedCourses(filteredCourses);
     }
   }, [allCourses, userCourses]);
+  // Fetch banner ads
+  useEffect(() => {
+    async function fetchBannerAds() {
+      try {
+        const res = await axios.get('/api/bannerAds');
+        setBannerAds(res.data);
+      } catch (error) {
+        console.error('Error fetching banner ads:', error);
+      }
+    }
+    fetchBannerAds();
+  }, []);
+
+  // Auto-slide the ads
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentAdIndex((prevIndex) => (prevIndex + 1) % bannerAds.length);
+    }, 4000); // Slide every 1 second
+    return () => clearInterval(interval);
+  }, [bannerAds]);
 
   return (
     <main className="bg-yellow-100 min-h-screen">
       <div className="container relative p-2 sm:p-4 ml-0 mr-0 pl-0 pr-0">
+        {/* Hero Section */}
+        {bannerAds.length > 0 && (
+          <div className="w-full h-64 bg-gray-200 overflow-hidden relative mb-6">
+            <img
+              src={bannerAds[currentAdIndex]?.imageUrl}
+              alt={`Banner Ad ${currentAdIndex + 1}`}
+              className="w-full h-full object-cover transition-opacity duration-500"
+            />
+          </div>
+        )}
+
+      
         <div className="relative w-full flex justify-end mt-6">
           <div className="flex items-center space-x-4 absolute right-0">
             <BellIcon
@@ -160,9 +197,11 @@ export default function Home() {
             <Link href="/profile">
               <UserIcon className="h-8 w-8 text-blue-600 cursor-pointer" />
             </Link>
+            
+        
           </div>
         </div>
-
+          
         {isNotificationOpen && (
           <NotificationPopup
             close={() => setIsNotificationOpen(false)}
@@ -172,6 +211,7 @@ export default function Home() {
             adminNotifications={adminNotifications} // Pass admin notifications
           />
         )}
+        
 
         <LiveClasses liveClasses={latestLiveClasses} />
 
