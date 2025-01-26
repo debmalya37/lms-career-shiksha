@@ -74,6 +74,20 @@ const ManageLiveClasses = () => {
     }
   };
 
+  // Handle delete button click
+  const handleDelete = async (id: string) => {
+    if (confirm("Are you sure you want to delete this live class?")) {
+      try {
+        await axios.delete(`/api/live-classes?id=${id}`);
+        alert("Live class deleted successfully!");
+        setLiveClasses((prev) => prev.filter((liveClass) => liveClass._id !== id));
+      } catch (error) {
+        console.error("Error deleting live class:", error);
+        alert("Failed to delete live class.");
+      }
+    }
+  };
+
   // Handle checkbox toggle for course selection
   const toggleCourseSelection = (courseId: string) => {
     setSelectedCourses((prev) =>
@@ -148,11 +162,19 @@ const ManageLiveClasses = () => {
               <p className="text-sm text-gray-600">URL: {liveClass.url}</p>
               <p className="text-sm text-gray-600">
                 Courses:{" "}
-                {liveClass.courses
-                  .map((courseId) => courses.find((course) => course._id === courseId)?.title)
-                  .filter(Boolean)
-                  .join(", ")}
+                {Array.isArray(liveClass.courses) &&
+                  liveClass.courses
+                    .map((courseId) => courses.find((course) => course._id === courseId)?.title)
+                    .filter(Boolean)
+                    .join(", ")}
               </p>
+
+              <button
+                onClick={() => handleDelete(liveClass._id)}
+                className="bg-red-600 text-white py-1 px-3 rounded-md hover:bg-red-700 mt-2"
+              >
+                Delete
+              </button>
             </li>
           ))}
         </ul>

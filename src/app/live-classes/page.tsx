@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { z } from "zod";
+import DisableRightClickAndClipboard from "@/components/DisableRightClick";
 
 // Define a Zod schema for LiveClass
 const liveClassSchema = z.object({
@@ -22,43 +23,48 @@ interface LiveClass {
   course: { _id: string; title: string };
 }
 
-// Function to convert YouTube URLs to embed format
-const convertToEmbedUrl = (url: string): string => {
-  const embedUrlRegex = /^https:\/\/www\.youtube\.com\/embed\//;
+interface UserProfile {
+  email: string;
+  phoneNo: string;
+  courses: { _id: string }[];
+}
+
+// Function to convert YouTube URLs to nocookie embed format
+const convertToNoCookieEmbedUrl = (url: string): string => {
+  const embedUrlRegex = /^https:\/\/www\.youtube-nocookie\.com\/embed\//;
   const normalUrlRegex = /^https:\/\/www\.youtube\.com\/watch\?v=([a-zA-Z0-9_-]+)/;
   const liveUrlRegex = /^https:\/\/(?:www\.)?youtube\.com\/live\/([a-zA-Z0-9_-]+)/;
 
   if (embedUrlRegex.test(url)) {
-    // If already an embed URL, return as is
+    // If already a nocookie embed URL, return as is
     return url;
   }
 
   const normalMatch = url.match(normalUrlRegex);
   if (normalMatch) {
     const videoId = normalMatch[1];
-    return `https://www.youtube.com/embed/${videoId}`;
+    return `https://www.youtube-nocookie.com/embed/${videoId}`;
   }
 
   const liveMatch = url.match(liveUrlRegex);
   if (liveMatch) {
     const videoId = liveMatch[1];
-    return `https://www.youtube.com/embed/${videoId}`;
+    return `https://www.youtube-nocookie.com/embed/${videoId}`;
   }
 
   return url; // Return as is if it's not a recognizable YouTube URL
 };
 
-
-
 export default function LiveClassesPage() {
   const [liveClasses, setLiveClasses] = useState<LiveClass[]>([]);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
     const fetchLiveClasses = async () => {
       try {
-        // Fetch user profile to get courses
+        // Fetch user profile to get courses and user details
         const profileRes = await axios.get(`/api/profile`, {
           withCredentials: true,
         });
@@ -67,6 +73,12 @@ export default function LiveClassesPage() {
         if (profile.error || !profile.courses || profile.courses.length === 0) {
           throw new Error("User does not have any subscribed courses.");
         }
+
+        setUserProfile({
+          email: profile.email,
+          phoneNo: profile.phoneNo,
+          courses: profile.courses,
+        });
 
         // Get user course IDs
         const courseIds = profile.courses.map((course: { _id: string }) => course._id);
@@ -78,12 +90,12 @@ export default function LiveClassesPage() {
         );
         const liveClassesData = liveClassesRes.data;
 
-        // Validate and filter live classes using Zod, then convert URLs to embed format
+        // Validate and filter live classes using Zod, then convert URLs to nocookie embed format
         const filteredLiveClasses = liveClassesData
           .filter((liveClass: LiveClass) => liveClassSchema.safeParse(liveClass).success)
           .map((liveClass: LiveClass) => ({
             ...liveClass,
-            url: convertToEmbedUrl(liveClass.url),
+            url: convertToNoCookieEmbedUrl(liveClass.url),
           }));
 
         setLiveClasses(filteredLiveClasses);
@@ -113,10 +125,12 @@ export default function LiveClassesPage() {
       </div>
     );
   }
-
   return (
+    
     <div className="container mx-auto py-8 bg-yellow-100 pr-5 pl-5 h-[110vh] pb-2 mb-40">
+    <DisableRightClickAndClipboard/>
       <h1 className="text-3xl font-bold text-gray-800 mb-6">Live Classes</h1>
+      
       <div className="flex flex-col gap-8">
         {liveClasses.length === 0 && !loading && <p>No valid live classes found.</p>}
         {liveClasses.map((liveClass) => {
@@ -125,11 +139,17 @@ export default function LiveClassesPage() {
           const chatUrl = `https://www.youtube.com/live_chat?v=${videoId}&embed_domain=${window.location.hostname}`;
 
           return (
-            <div key={liveClass._id} className="bg-white rounded-lg shadow-md p-4 h-[110vh]" >
+            <div key={liveClass._id} className="bg-white rounded-lg shadow-md p-4 h-[110vh]">
               <h3 className="text-xl font-semibold mb-4">{liveClass.title}</h3>
               <p className="text-gray-600 mb-4">Course: {liveClass.course.title}</p>
               <div className="flex flex-col lg:flex-row gap-4">
                 <div className="flex-1">
+                {/* {userProfile && (
+                  <p className="text-gray-700 mb-4 floating-text">
+                    Email: {userProfile.email} <br />
+                    Phone: {userProfile.phoneNo}
+                  </p>
+                )} */}
                   <iframe
                     title={liveClass.title}
                     className="w-full h-[400px] md:h-[500px]"

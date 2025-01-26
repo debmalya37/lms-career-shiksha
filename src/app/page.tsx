@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import NotificationPopup from '@/components/NotificationPopup';
 import LiveClasses from '@/components/LiveClasses';
 import Footer from '@/components/Footer';
+import DisableRightClickAndClipboard from '@/components/DisableRightClick';
 
 // Define the structure of a course
 interface Course {
@@ -169,12 +170,13 @@ export default function Home() {
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentAdIndex((prevIndex) => (prevIndex + 1) % bannerAds.length);
-    }, 4000); // Slide every 1 second
+    }, 10000); // Slide every 1 second
     return () => clearInterval(interval);
   }, [bannerAds]);
 
   return (
     <main className="bg-yellow-100 min-h-screen">
+      <DisableRightClickAndClipboard/>
       <div className="container relative p-2 sm:p-4 ml-0 mr-0 pl-0 pr-0">
         {/* Hero Section */}
         {bannerAds.length > 0 && (
@@ -215,7 +217,7 @@ export default function Home() {
         )}
         
 
-        <LiveClasses liveClasses={latestLiveClasses} />
+        {/* <LiveClasses liveClasses={latestLiveClasses} /> */}
 
         <div className="container mx-auto mt-6">
           <div className="mt-6">

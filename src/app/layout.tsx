@@ -1,28 +1,26 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import Navbar from "@/components/Navbar"; // Import Navbar component
+import Navbar from "@/components/Navbar";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import '../lib/subscriptionCron';
-import {
-  ClerkProvider,
-  SignInButton,
-  SignedIn,
-  SignedOut,
-  UserButton
-} from '@clerk/nextjs';
+
 import AuthProvider from "@/context/AuthProvider";
 import { startSubscriptionCron } from "../lib/subscriptionCron";
 import Footer from "@/components/Footer";
+import DisableRightClick from "@/components/DisableRightClick"; // Import the client component
+
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "Civil Academy Learning Portal",
   description: "Learning Management System",
 };
-if (typeof window === 'undefined') {
+
+if (typeof window === "undefined") {
   startSubscriptionCron(); // Ensure this runs only on the server
 }
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -31,13 +29,13 @@ export default function RootLayout({
   return (
     <html lang="en">
       <AuthProvider>
-      <body className={inter.className}>
-        {/* Include Navbar */}
-        <Navbar />
-        {children}
-        <Toaster />
-        <Footer/>
-      </body>
+        <body className={inter.className}>
+          <Navbar />
+          {/* <DisableRightClick />  */}
+          {children}
+          <Toaster />
+          <Footer />
+        </body>
       </AuthProvider>
     </html>
   );

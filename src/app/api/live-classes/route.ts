@@ -35,31 +35,24 @@ export async function GET(request: Request) {
   try {
     await connectMongo();
 
-    // Validate courseIds
-    if (!courseIds || courseIds.length === 0) {
-      return NextResponse.json(
-        { error: "Invalid or missing courseIds" },
-        { status: 400 }
-      );
+    let query = {};
+
+    if (courseIds && courseIds.length > 0) {
+      // Validate courseIds
+      const isValidObjectId = (id: string) => /^[0-9a-fA-F]{24}$/.test(id);
+      if (!courseIds.every(isValidObjectId)) {
+        return NextResponse.json(
+          { error: "One or more courseIds are invalid" },
+          { status: 400 }
+        );
+      }
+
+      // If courseIds are provided, filter by them
+      query = { course: { $in: courseIds } };
     }
 
-    // Check that all provided IDs are valid MongoDB ObjectId strings
-    const isValidObjectId = (id: string) => /^[0-9a-fA-F]{24}$/.test(id);
-    if (!courseIds.every(isValidObjectId)) {
-      return NextResponse.json(
-        { error: "One or more courseIds are invalid" },
-        { status: 400 }
-      );
-    }
-
-    // Define the cutoff time for 24 hours ago
-    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-
-    // Fetch live classes under the given courseIds and created within the last 24 hours
-    const liveClasses = await LiveClass.find({
-      course: { $in: courseIds }, // Filter by course IDs
-      createdAt: { $gte: twentyFourHoursAgo }, // Filter for classes less than 24 hours old
-    })
+    // Fetch live classes based on the query
+    const liveClasses = await LiveClass.find(query)
       .sort({ createdAt: -1 }) // Sort by the latest ones
       .populate("course", "title") // Populate course title
       .lean();
@@ -74,3 +67,40 @@ export async function GET(request: Request) {
   }
 }
 
+
+
+// DELETE method to delete a live class by ID
+export async function DELETE(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const liveClassId = searchParams.get("id"); // Get live class ID from query parameters
+
+  try {
+    await connectMongo();
+
+    // Validate the provided ID
+    if (!liveClassId || !/^[0-9a-fA-F]{24}$/.test(liveClassId)) {
+      return NextResponse.json(
+        { error: "Invalid or missing live class ID" },
+        { status: 400 }
+      );
+    }
+
+    // Delete the live class
+    const result = await LiveClass.findByIdAndDelete(liveClassId);
+
+    if (!result) {
+      return NextResponse.json(
+        { error: "Live class not found" },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({ message: "Live class deleted successfully!" });
+  } catch (error) {
+    console.error("Error deleting live class:", error);
+    return NextResponse.json(
+      { error: "Failed to delete live class" },
+      { status: 500 }
+    );
+  }
+}

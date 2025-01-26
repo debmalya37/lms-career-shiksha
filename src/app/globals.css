@@ -47,3 +47,47 @@
   background-color: rgb(254 249 195 );
   height: 100%;
 }
+
+#email-phone-text {
+  opacity: 0;
+  transition: opacity 0.5s ease-in-out;
+}
+
+#email-phone-text.visible {
+  opacity: 1;
+}
+
+
+/* Add this to your global styles or in the component's style tag */
+
+/* Ensure the floating text stays visible and on top of everything */
+.floating-text {
+  position: fixed;
+  bottom: 140px; /* Set a top margin */
+  justify-content: center; /* Center it horizontally */
+  transform: translateX(-50%); /* Center it horizontally */
+  z-index: 10000; /* Ensure it stays on top */
+  font-size: 1.5rem;
+  color: rgb(154, 148, 148);
+  pointer-events: none; /* Don't block interactions */
+  animation: float 10s infinite linear;
+}
+
+@keyframes float {
+  0% {
+    transform: translate(0, 0);
+  }
+  25% {
+    transform: translate(300px, 100px);
+  }
+  50% {
+    transform: translate(-200px, -150px);
+  }
+  75% {
+    transform: translate(100px, -200px);
+  }
+  100% {
+    transform: translate(0, 0);
+  }
+}
+
