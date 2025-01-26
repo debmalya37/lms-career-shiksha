@@ -1,6 +1,7 @@
 "use client";
 
 import DisableRightClickAndClipboard from "@/components/DisableRightClick";
+import MobileClipboard from "@/components/mobileClipboard";
 import { useState, useEffect } from "react";
 
 interface Tutorial {
@@ -145,6 +146,7 @@ export default function TutorialsPage() {
   return (
     <div className="container mx-auto py-8 pl-5 pr-5 bg-yellow-100 w-[100vw] h-[100vh] tutorialP">
       <DisableRightClickAndClipboard/>
+      <MobileClipboard/>
       <h1 className="text-3xl font-bold text-gray-800 mb-6">Tutorials</h1>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

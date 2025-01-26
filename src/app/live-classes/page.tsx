@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { z } from "zod";
 import DisableRightClickAndClipboard from "@/components/DisableRightClick";
+import MobileClipboard from "@/components/mobileClipboard";
 
 // Define a Zod schema for LiveClass
 const liveClassSchema = z.object({
@@ -129,6 +130,7 @@ export default function LiveClassesPage() {
     
     <div className="container mx-auto py-8 bg-yellow-100 pr-5 pl-5 h-[110vh] pb-2 mb-40">
     <DisableRightClickAndClipboard/>
+    <MobileClipboard/>
       <h1 className="text-3xl font-bold text-gray-800 mb-6">Live Classes</h1>
       
       <div className="flex flex-col gap-8">

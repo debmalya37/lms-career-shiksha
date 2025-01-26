@@ -1,5 +1,6 @@
 // app/course/[courseId]/[subjectId]/[topicId]/[tutorialId]/page.tsx
 import DisableRightClickAndClipboard from '@/components/DisableRightClick';
+import MobileClipboard from '@/components/mobileClipboard';
 import connectMongo from '@/lib/db';
 import Tutorial, { ITutorial } from '@/models/tutorialModel'; // Ensure ITutorial is imported
 
@@ -42,6 +43,7 @@ export default async function TutorialPage({ params }: { params: { tutorialId: s
   return (
     <div className="min-h-screen bg-yellow-50 flex flex-col">
       <DisableRightClickAndClipboard/>
+      <MobileClipboard/>
       <div className="container mx-auto px-4 py-12">
         
         {/* Video Section */}
