@@ -2,7 +2,7 @@
 
 import React, { useEffect } from "react";
 
-const MobileClipboard = () => {
+export default function MobileClipboard  ()  {
   useEffect(() => {
     const clearClipboard = async () => {
       try {
@@ -21,5 +21,3 @@ const MobileClipboard = () => {
 
   return <div>Clipboard cleaner is running...</div>;
 };
-
-export default MobileClipboard;
