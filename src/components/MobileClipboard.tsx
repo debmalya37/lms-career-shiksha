@@ -2,7 +2,7 @@
 
 import React, { useEffect } from "react";
 
-export default function MobileClipboard  ()  {
+export default function MobileClipboardFunction  ()  {
   useEffect(() => {
     const clearClipboard = async () => {
       try {
