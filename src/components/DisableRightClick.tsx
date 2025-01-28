@@ -6,20 +6,17 @@ export default function DisableRightClickAndClipboard() {
   const [clipboardPermissionDenied, setClipboardPermissionDenied] = useState(false);
 
   useEffect(() => {
-    // Function to try clearing the clipboard and handle permission denial
-    const clearClipboard = async () => {
-      try {
-        // Attempt to write an empty string to the clipboard
-        await navigator.clipboard.writeText("");
-      } catch (err) {
-        // If an error occurs, set permission denied flag
-        console.error("Clipboard access denied", err);
-        setClipboardPermissionDenied(true);
-      }
-    };
-
-    // Set interval to clear clipboard every 1 second
-    const clipboardInterval = setInterval(clearClipboard, 1000);
+    // // Function to check clipboard permission
+    // const checkClipboardPermission = async () => {
+    //   try {
+    //     const permission = await navigator.permissions.query({ name: "clipboard-write" });
+    //     if (permission.state === "denied") {
+    //       setClipboardPermissionDenied(true);
+    //     }
+    //   } catch (err) {
+    //     console.error("Failed to check clipboard permission", err);
+    //   }
+    // };
 
     // Disable right-click
     const handleContextMenu = (e: MouseEvent) => {
@@ -45,93 +42,45 @@ export default function DisableRightClickAndClipboard() {
       }
     };
 
+    // // Function to clear the clipboard
+    // const clearClipboard = async () => {
+    //   try {
+    //     // Set the clipboard content to an empty string
+    //     await navigator.clipboard.writeText("");
+    //   } catch (err) {
+    //     console.error("Failed to clear clipboard", err);
+    //   }
+    // };
+
     // Add event listeners for disabling right-click and clipboard actions
     document.addEventListener("contextmenu", handleContextMenu);
     document.addEventListener("copy", handleCopy);
     document.addEventListener("cut", handleCut);
     document.addEventListener("keydown", handleKeyDown, true);
 
+    // // Clear clipboard every 1000 milliseconds (1 second)
+    // const intervalId = setInterval(clearClipboard, 100);
+
+    // Check clipboard permission on mount
+    // checkClipboardPermission();
+
     // Cleanup on unmount
     return () => {
-      clearInterval(clipboardInterval); // Clear the interval on unmount
       document.removeEventListener("contextmenu", handleContextMenu);
       document.removeEventListener("copy", handleCopy);
       document.removeEventListener("cut", handleCut);
       document.removeEventListener("keydown", handleKeyDown);
+      // clearInterval(intervalId); // Stop clearing the clipboard when the component is unmounted
     };
   }, []);
 
-  // Prevent clicks or taps outside of allowed areas
-  useEffect(() => {
-    if (clipboardPermissionDenied) {
-      const handleClick = (e: MouseEvent) => {
-        // Allow clicks on the URL box or the permission message
-        const allowedArea = e.target as HTMLElement;
-        if (
-          !allowedArea.closest("#url-box") &&
-          !allowedArea.closest("#permission-message")
-        ) {
-          e.preventDefault();
-          e.stopImmediatePropagation();
-          
-        }
-      };
-
-      document.addEventListener("click", handleClick, true); // Use capturing phase
-      
-      // Cleanup event listener
-      return () => {
-        document.removeEventListener("click", handleClick, true);
-        window.location.reload();
-      };
-    }
-    
-  }, [clipboardPermissionDenied]);
-
-  // Handle interaction with the permission message
-  const handlePermissionMessageClick = () => {
-    
-    // Refresh the page when the permission message is clicked
-    window.location.reload();
-  };
-
   return (
     <div>
-      {clipboardPermissionDenied && (
-        <div
-          id="permission-message"
-          onClick={handlePermissionMessageClick} // Add click handler for permission message
-          style={{
-            color: "red",
-            textAlign: "center",
-            marginTop: "20px",
-            position: "absolute",
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-            zIndex: 9999,
-            background: "rgba(255, 255, 255, 0.9)",
-            padding: "20px",
-            borderRadius: "8px",
-          }}
-        >
+      {/* {clipboardPermissionDenied && (
+        <div style={{ color: "red", textAlign: "center", marginTop: "20px" }}>
           Please grant clipboard access to proceed.
         </div>
-      )}
-
-      {/* URL box is hidden */}
-      <div
-        id="url-box"
-        style={{
-          position: "absolute",
-          top: "10px",
-          left: "10px",
-          zIndex: 9999,
-          display: "none", // Hides the URL box
-        }}
-      >
-        <input type="text" placeholder="Enter URL here" />
-      </div>
+      )} */}
     </div>
   );
 }

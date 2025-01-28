@@ -179,7 +179,7 @@ export default function Home() {
   return (
     <main className="bg-yellow-100 min-h-screen">
       <DisableRightClickAndClipboard/>
-      <MobileClipboardFunction/>
+      {/* <MobileClipboardFunction/> */}
       <div className="container relative p-2 sm:p-4 ml-0 mr-0 pl-0 pr-0">
         {/* Hero Section */}
         {bannerAds.length > 0 && (
