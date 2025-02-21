@@ -10,31 +10,31 @@ const AdminPanel = () => {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  useEffect(() => {
-    const checkAdminStatus = async () => {
-      try {
-        // Fetch profile data from the API
-        const profileRes = await axios.get(`/api/profile`);
-        const profileData = profileRes.data;
+  // useEffect(() => {
+  //   const checkAdminStatus = async () => {
+  //     try {
+  //       // Fetch profile data from the API
+  //       const profileRes = await axios.get(`/api/profile`);
+  //       const profileData = profileRes.data;
 
-        console.log("Profile Data:", profileData); // Log the profile response
+  //       console.log("Profile Data:", profileData); // Log the profile response
 
-        // Define allowed emails
-        const allowedEmails = ['debmalyasen37@gmail.com', 'civilacademy.in@gmail.com', 'civilacademy98@gmail.com', 'civil1@hotmail.com', 'civil2@hotmail.com', 'Tech@kryptaroid.com','civil3@hotmail.com','civil4@hotmail.com'];
+  //       // Define allowed emails
+  //       const allowedEmails = ['debmalyasen37@gmail.com', 'civilacademy.in@gmail.com', 'civilacademy98@gmail.com', 'civil1@hotmail.com', 'civil2@hotmail.com', 'Tech@kryptaroid.com','civil3@hotmail.com','civil4@hotmail.com'];
 
-        // Check if the profile email is in the allowed list
-        if (profileData?.email && allowedEmails.includes(profileData.email)) {
-          setIsAdmin(true);
-        }
-      } catch (error) {
-        console.error('Error fetching profile data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  //       // Check if the profile email is in the allowed list
+  //       if (profileData?.email && allowedEmails.includes(profileData.email)) {
+  //         setIsAdmin(true);
+  //       }
+  //     } catch (error) {
+  //       console.error('Error fetching profile data:', error);
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   };
 
-    checkAdminStatus();
-  }, []);
+  //   checkAdminStatus();
+  // }, []);
 
   if (loading) {
     return <div><ClipLoader /></div>;

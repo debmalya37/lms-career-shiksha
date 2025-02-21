@@ -2,8 +2,9 @@
 
 import DisableRightClickAndClipboard from "@/components/DisableRightClick";
 import MobileClipboardFunction from "@/components/MobileClipboard";
+import TutorialVideoPlayer from "@/components/TutorialVideoPlayer";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 interface Tutorial {
   _id: string;
@@ -24,6 +25,25 @@ interface Profile {
   name: string;
   courses: Course[];
   subscription: number;
+}
+// Add this type declaration at the top of your file
+
+declare global {
+  interface Window {
+    YT: typeof YT | undefined;
+    onYouTubeIframeAPIReady: () => void;
+  }
+}
+
+interface CustomPlayerVars extends YT.PlayerVars {
+  fs?: number;
+  iv_load_policy?: number;
+  playsinline?: number;
+}
+
+interface VideoPlayerProps {
+  url: string;
+  modalView?: boolean;
 }
 
 export default function TutorialsPage() {
@@ -111,6 +131,8 @@ export default function TutorialsPage() {
   // }, []);
 
 
+
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -151,67 +173,51 @@ export default function TutorialsPage() {
       <h1 className="text-3xl font-bold text-gray-800 mb-6">Tutorials</h1>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {tutorials?.map((video) => (
-          <div
-            key={video._id}
-            className="bg-white rounded-lg shadow-md p-4 text-black cursor-pointer"
-            onClick={() => setSelectedTutorial(video)} // Open modal with selected video
-          >
-            <h3 className="text-xl font-semibold mb-4">{video.title}</h3>
-            <div className="relative">
-              <iframe
-                title={video.title}
-                className="w-full h-48"
-                src={`${convertToNoCookieUrl(video.url)}?modestbranding=1&rel=0&controls=1`}
-                sandbox="allow-forms allow-scripts allow-pointer-lock allow-same-origin allow-top-navigation"
-                style={{ pointerEvents: "none" }} // Disable interactions with iframe
-                
-              />
-            </div>
-            <p className="text-gray-600">{video.description}</p>
-          </div>
-        ))}
+      {tutorials?.map((video) => (
+      <div
+        key={video._id}
+        className="bg-white rounded-lg shadow-md p-4 text-black cursor-pointer"
+        onClick={() => setSelectedTutorial(video)}
+      >
+        <h3 className="text-xl font-semibold mb-4">{video.title}</h3>
+        
+        
+        <p className="text-gray-600">{video.description}</p>
+      </div>
+    ))}
       </div>
 
       {/* Modal */}
-      {selectedTutorial && (
-        
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75">
-          <div className="bg-white rounded-lg shadow-lg p-6 w-[90vw] md:w-[80vw] lg:w-[60vw] h-[80vh]">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-2xl font-bold">{selectedTutorial.title}</h2>
-              
-              {/* Display the email and phone number */}
-              
-                
-              
-              <button
-                className="text-red-600 text-xl font-bold"
-                onClick={() => setSelectedTutorial(null)} // Close modal
-              >
-                ✕
-              </button>
-              
+      {/* Update the modal section in the return statement */}
+{selectedTutorial && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75">
+    <div className="bg-white rounded-lg shadow-lg p-6 w-[90vw] md:w-[80vw] lg:w-[60vw] h-[80vh] flex flex-col">
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-2xl font-bold">{selectedTutorial.title}</h2>
+        <button
+          className="text-red-600 text-xl font-bold"
+          onClick={() => setSelectedTutorial(null)}
+        >
+          ✕
+        </button>
+      </div>
+      
+      {/* Email overlay */}
+      <div className="absolute inset-0 z-10 pointer-events-none flex items-center justify-center">
+        <p className="text-white text-lg font-bold bg-black/50 p-2 rounded">
+          Email: {profileData.email}
+        </p>
+      </div>
 
-            </div>
-            <div className="relative">
-            {/* <p className=" floating-text">Email: {profileData.email}
-               <br /> Phone: {profileData.phoneNo}</p> */}
-              <iframe
-                title={selectedTutorial.title}
-                className="w-full h-48 lg:h-[70vh] rounded-lg"
-                src={`${convertToNoCookieUrl(selectedTutorial.url)}?modestbranding=1&rel=0&controls=1`}
-                sandbox="allow-forms allow-scripts allow-pointer-lock allow-same-origin allow-top-navigation"
-                // style={{ pointerEvents: "none" }} // Disable interactions with iframe
-                
-              />
-              
-              <div className="absolute top-0 left-0 w-full h-20 bg-transparent z-10 pointer-events-none cursor-not-allowed"></div>
-              <div className="absolute bottom-0 left-0 w-full h-20 bg-transparent z-10 pointer-events-none cursor-not-allowed"></div>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Video Player Container */}
+      <div className="relative flex-1">
+        <TutorialVideoPlayer url={selectedTutorial.url} />
+      </div>
+      
+      <p className="mt-4 text-gray-600">{selectedTutorial.description}</p>
+    </div>
+  </div>
+)}
     </div>
   );
 }

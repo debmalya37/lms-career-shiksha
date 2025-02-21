@@ -5,6 +5,7 @@ import axios from "axios";
 import { z } from "zod";
 import DisableRightClickAndClipboard from "@/components/DisableRightClick";
 import MobileClipboardFunction from "@/components/MobileClipboard";
+import LiveClassVideoPlayer from "@/components/LiveClassVideoPlayer";
 
 
 // Define a Zod schema for LiveClass
@@ -130,15 +131,12 @@ export default function LiveClassesPage() {
   return (
     
     <div className="container mx-auto py-8 bg-yellow-100 pr-5 pl-5 h-[110vh] pb-2 mb-40">
-    <DisableRightClickAndClipboard/>
-    {/* <MobileClipboardFunction/> */}
+      <DisableRightClickAndClipboard/>
       <h1 className="text-3xl font-bold text-gray-800 mb-6">Live Classes</h1>
       
       <div className="flex flex-col gap-8">
-        {liveClasses.length === 0 && !loading && <p>No valid live classes found.</p>}
         {liveClasses.map((liveClass) => {
-          // Extract video ID for chat URL
-          const videoId = liveClass.url.match(/\/embed\/([a-zA-Z0-9_-]+)/)?.[1];
+          const videoId = liveClass.url.match(/(?:embed\/|v=|live\/)([a-zA-Z0-9_-]+)/)?.[1];
           const chatUrl = `https://www.youtube.com/live_chat?v=${videoId}&embed_domain=${window.location.hostname}`;
 
           return (
@@ -147,19 +145,7 @@ export default function LiveClassesPage() {
               <p className="text-gray-600 mb-4">Course: {liveClass.course.title}</p>
               <div className="flex flex-col lg:flex-row gap-4">
                 <div className="flex-1">
-                {/* {userProfile && (
-                  <p className="text-gray-700 mb-4 floating-text">
-                    Email: {userProfile.email} <br />
-                    Phone: {userProfile.phoneNo}
-                  </p>
-                )} */}
-                  <iframe
-                    title={liveClass.title}
-                    className="w-full h-[400px] md:h-[500px]"
-                    src={liveClass.url}
-                    sandbox="allow-forms allow-scripts allow-pointer-lock allow-same-origin allow-top-navigation"
-                    allowFullScreen
-                  />
+                  <LiveClassVideoPlayer url={liveClass.url} />
                 </div>
                 <div className="flex-none w-full lg:w-[350px] h-[350px] sm:h-[500px] md:h-[550px]">
                   <iframe
