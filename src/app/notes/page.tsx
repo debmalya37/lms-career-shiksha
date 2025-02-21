@@ -88,7 +88,7 @@ export default function NotesPage() {
   }
 
   return (
-    <div className="container mx-auto py-8 h-[100vh] bg-yellow-100 pr-5 pl-5">
+    <div className="container mx-auto py-8 h-[100vh] bg-gradient-to-b from-gray-100 to-blue-100 pr-5 pl-5">
       <h1 className="text-3xl font-bold text-black mb-6">Notes</h1>
       <div className="bg-white rounded-lg shadow-md p-6 overflow-x-auto">
         <table className="min-w-full text-left table-auto text-black">

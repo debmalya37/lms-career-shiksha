@@ -116,7 +116,7 @@ export default function TutorialVideoPlayer({ url }: VideoPlayerProps) {
   if (!videoId) return <div className="text-red-500">Invalid video URL</div>;
 
   return (
-    <div className="relative w-full aspect-video bg-black group">
+    <div className="relative w-full aspect-video bg-black group ml-0 mr-0">
       {/* YouTube Player Container */}
       <div ref={containerRef} className="w-full h-full" />
 

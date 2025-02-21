@@ -130,7 +130,7 @@ export default function LiveClassesPage() {
   }
   return (
     
-    <div className="container mx-auto py-8 bg-yellow-100 pr-5 pl-5 h-[110vh] pb-2 mb-40">
+    <div className="container mx-auto py-8 bg-gradient-to-b from-gray-100 to-blue-100 pr-5 pl-5 h-[110vh] pb-2 mb-40">
       <DisableRightClickAndClipboard/>
       <h1 className="text-3xl font-bold text-gray-800 mb-6">Live Classes</h1>
       

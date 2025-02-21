@@ -130,7 +130,7 @@
 }
 
 .tutorialP{
-  background-color: rgb(254 249 195 );
+  background: linear-gradient(to bottom, #f7fafc, #ebf8ff);
   height: 100%;
 }
 

@@ -57,51 +57,123 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="container mx-auto p-8 bg-yellow-100 rounded-lg shadow-md max-w-md mt-8 text-black">
-      <h1 className="text-2xl font-bold text-blue-600 mb-4">Sign In</h1>
-      {errorMessage && <p className="text-red-600">{errorMessage}</p>}
-      <form onSubmit={handleSubmit}>
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Email
-          </label>
-          <input
-            title="email"
-            type="email"
-            className="border p-2 w-full rounded-md text-black"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-        </div>
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Password
-          </label>
-          <input
-            title="password"
-            type="password"
-            className="border p-2 w-full rounded-md text-black"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-        </div>
+    <div
+      className="
+        flex 
+        justify-center 
+        items-center 
+        min-h-screen 
+        bg-gradient-to-r 
+        from-[#bbd9eb] 
+        to-[#7667d5]
+        p-4
+      "
+    >
+      <form
+        onSubmit={handleSubmit}
+        className="
+          flex 
+          flex-col 
+          gap-3
+          bg-white
+          p-10
+          rounded-[25px]
+          transition-all
+          duration-300
+          shadow-[1px_2px_2px_rgba(0,0,0,0.4)]
+          hover:translate-x-[-8px]
+          hover:translate-y-[-8px]
+          hover:border
+          hover:border-[#171717]
+          hover:shadow-[10px_10px_0_#666666]
+          w-full
+          max-w-sm
+        "
+      >
+        <h1 className="text-black pb-8 text-center font-bold text-xl">Log In</h1>
+
+        {errorMessage && (
+          <p className="text-red-600 text-center">{errorMessage}</p>
+        )}
+
+        <label className="text-sm font-medium text-gray-700">Email</label>
+        <input
+          title="email"
+          type="email"
+          className="
+            rounded-[5px]
+            border 
+            border-[whitesmoke]
+            bg-[whitesmoke]
+            outline-none
+            p-[0.7em]
+            transition-all
+            duration-300
+            ease-in-out
+            hover:shadow-[6px_6px_0_#969696,_-3px_-3px_10px_#ffffff]
+            focus:bg-white
+            focus:shadow-[inset_2px_5px_10px_rgba(0,0,0,0.3)]
+          "
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+        />
+
+        <label className="text-sm font-medium text-gray-700">Password</label>
+        <input
+          title="password"
+          type="password"
+          className="
+            rounded-[5px]
+            border 
+            border-[whitesmoke]
+            bg-[whitesmoke]
+            outline-none
+            p-[0.7em]
+            transition-all
+            duration-300
+            ease-in-out
+            hover:shadow-[6px_6px_0_#969696,_-3px_-3px_10px_#ffffff]
+            focus:bg-white
+            focus:shadow-[inset_2px_5px_10px_rgba(0,0,0,0.3)]
+          "
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+        />
+
         <button
           type="submit"
-          className="bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700"
+          className="
+            mt-8
+            self-center
+            py-3 px-6
+            rounded-[10px]
+            text-black
+            transition-all
+            duration-300
+            ease-in-out
+            shadow-[1px_1px_1px_rgba(0,0,0,0.4)]
+            hover:shadow-[6px_6px_0_#969696,_-3px_-3px_10px_#ffffff]
+            hover:-translate-x-2
+            hover:-translate-y-2
+            active:shadow-none
+            active:translate-x-0
+            active:translate-y-0
+          "
         >
-          Sign In
+          Log In
         </button>
+
+        <div className="mt-4 text-center">
+          <p className="text-sm">
+            New user?{" "}
+            <a href="/signup" className="text-blue-500 hover:underline">
+              Register here
+            </a>
+          </p>
+        </div>
       </form>
-      <div className="mt-4 text-center">
-        <p>
-          New user?{" "}
-          <a href="/signup" className="text-blue-500 hover:underline">
-            Register here
-          </a>
-        </p>
-      </div>
     </div>
   );
 };

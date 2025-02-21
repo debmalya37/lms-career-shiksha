@@ -7,7 +7,7 @@ const Navbar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <header className="bg-gradient-to-r from-blue-500 to-blue-700 text-white shadow-lg sticky top-0 z-50">
+    <header className="bg-gradient-to-r from-gray-950 to-blue-700 text-white shadow-lg sticky top-0 z-50">
       {/* Main Navbar */}
       <nav className="container mx-auto flex justify-between items-center py-4 px-6">
         <h1 className="text-2xl font-bold tracking-wide hover:text-yellow-400 transition-colors">
@@ -46,7 +46,7 @@ const Navbar: React.FC = () => {
 
       {/* Mobile Navbar */}
       <div
-        className={`fixed inset-0 bg-blue-600 bg-opacity-95 transform ${
+        className={`fixed inset-0 bg-gray-950 bg-opacity-95 transform ${
           isOpen ? "translate-x-0" : "translate-x-full"
         } transition-transform duration-300 ease-in-out z-40 md:hidden`}
       >

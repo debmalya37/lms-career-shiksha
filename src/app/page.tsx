@@ -177,7 +177,7 @@ export default function Home() {
   }, [bannerAds]);
 
   return (
-    <main className="bg-yellow-100 min-h-screen">
+    <main className="bg-gradient-to-b from-gray-100 to-blue-100 min-h-screen">
       <DisableRightClickAndClipboard/>
       {/* <MobileClipboardFunction/> */}
       <div className="container relative p-2 sm:p-4 ml-0 mr-0 pl-0 pr-0">

@@ -167,8 +167,8 @@ export default function TutorialsPage() {
   };
 
   return (
-    <div className="container mx-auto py-8 pl-5 pr-5 bg-yellow-100 w-[100vw] h-[100vh] tutorialP">
-      <DisableRightClickAndClipboard/>
+    <div className="container mx-auto py-8 pl-5 pr-5 bg-gradient-to-b from-gray-100 to-blue-100 w-[100vw] h-[100vh] tutorialP">
+      {/* <DisableRightClickAndClipboard/> */}
       {/* <MobileClipboardFunction/> */}
       <h1 className="text-3xl font-bold text-gray-800 mb-6">Tutorials</h1>
       
@@ -191,7 +191,7 @@ export default function TutorialsPage() {
       {/* Update the modal section in the return statement */}
 {selectedTutorial && (
   <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75">
-    <div className="bg-white rounded-lg shadow-lg p-6 w-[90vw] md:w-[80vw] lg:w-[60vw] h-[80vh] flex flex-col">
+    <div className="bg-white rounded-lg p-1 shadow-lg w-[90vw] md:w-[80vw] lg:w-[60vw] h-[80vh] flex flex-col">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-2xl font-bold">{selectedTutorial.title}</h2>
         <button
@@ -202,16 +202,22 @@ export default function TutorialsPage() {
         </button>
       </div>
       
-      {/* Email overlay */}
+      {/* Email overlay
       <div className="absolute inset-0 z-10 pointer-events-none flex items-center justify-center">
         <p className="text-white text-lg font-bold bg-black/50 p-2 rounded">
           Email: {profileData.email}
         </p>
-      </div>
+      </div> */}
 
       {/* Video Player Container */}
-      <div className="relative flex-1">
+      <div className="relative flex-1 m-0 mr-0 ml-0">
+      <div className="absolute inset-0 z-10 pointer-events-none flex items-center justify-center bottom-64">
+        <p className="text-white text-lg font-bold bg-black/50 p-2 rounded opacity-25">
+          Email: {profileData.email}
+        </p>
+      </div>
         <TutorialVideoPlayer url={selectedTutorial.url} />
+         {/* Email overlay */}
       </div>
       
       <p className="mt-4 text-gray-600">{selectedTutorial.description}</p>
