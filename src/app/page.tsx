@@ -177,7 +177,7 @@ export default function Home() {
   }, [bannerAds]);
 
   return (
-    <main className="bg-gradient-to-b from-gray-100 to-blue-100 min-h-screen">
+    <main className="bg-gradient-to-b from-gray-950 to-blue-950 min-h-screen">
       <DisableRightClickAndClipboard/>
       {/* <MobileClipboardFunction/> */}
       <div className="container relative p-2 sm:p-4 ml-0 mr-0 pl-0 pr-0">
@@ -232,7 +232,7 @@ export default function Home() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4 mx-2 sm:mx-0">
                 {userCourses.length > 0 ? (
   <div className="m-5">
-  <h2 className="text-lg sm:text-2xl font-bold text-green-800 ml-2 sm:ml-5">
+  <h2 className="text-lg sm:text-2xl font-bold text-green-500 ml-2 sm:ml-5">
     Your Subscribed Courses:
   </h2>
   <div className="grid grid-cols-1 m-3 sm:grid-cols-1 lg:grid-cols-1 gap-4 mt-4 mx-2 sm:mx-0">
@@ -253,7 +253,7 @@ export default function Home() {
       )}
     
       {/* Course Details */}
-      <div className="p-4 flex flex-col flex-1 justify-between">
+      <div className="p-4 flex flex-col flex-1 justify-between ">
         <div>
           <h3 className="text-xl font-semibold mb-2 text-black truncate">{course.title}</h3>
           <p className="text-gray-700 mb-2 line-clamp-3">{course.description}</p>
@@ -286,7 +286,7 @@ export default function Home() {
           </div>
 
           <div className="mt-6 m-5">
-  <h2 className="text-lg sm:text-2xl font-bold text-green-800 ml-2 sm:ml-5">
+  <h2 className="text-lg sm:text-2xl font-bold text-green-600 ml-2 sm:ml-5">
     Courses You Haven&apos;t Subscribed To:
   </h2>
   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4 mx-2 sm:mx-0">

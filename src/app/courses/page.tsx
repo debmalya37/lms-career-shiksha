@@ -47,8 +47,8 @@ export default function CoursesPage() {
   }, []);
 
   return (
-    <div className="container mx-auto py-8 px-5 text-black min-h-screen">
-      <h1 className="text-3xl font-bold text-black mb-6">My Courses</h1>
+    <div className="container mx-auto py-8 px-5 text-white min-h-screen bg-slate-950">
+      <h1 className="text-3xl font-bold text-white mb-6 text-center">My Courses</h1>
 
       {isLoading ? (
         <p>Loading courses...</p>

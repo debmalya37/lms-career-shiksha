@@ -15,10 +15,10 @@ export default function Contact() {
   };
 
   return (
-    <main className="bg-gradient-to-b from-gray-100 to-blue-100 min-h-screen p-4 sm:p-8">
+    <main className="bg-gradient-to-b from-gray-950 to-blue-950 min-h-screen p-4 sm:p-8">
       <div className="container mx-auto max-w-md">
-        <h1 className="text-2xl sm:text-3xl font-bold text-center text-blue-600 mb-4 sm:mb-6">Contact Us</h1>
-        <p className="text-gray-700 text-center mb-4">If you have any questions, feel free to reach out!</p>
+        <h1 className="text-2xl sm:text-3xl font-bold text-center text-blue-200 mb-4 sm:mb-6">Contact Us</h1>
+        <p className="text-gray-200 text-center mb-4">If you have any questions, feel free to reach out!</p>
         
         <div className="text-grey-500 mt-1 mb-1 bg-blue-400 p-4 sm:p-6 w-full rounded-lg text-center">
           Meerut Centre - Civil Academy IAS/PCS, 2nd Flr, Star Plaza, Bachcha Park, Meerut Mob- 9927827825
@@ -81,7 +81,7 @@ export default function Contact() {
           </button>
         </form>
 
-        <p className="text-center text-gray-500 mt-4">We look forward to hearing from you!</p>
+        <p className="text-center text-gray-200 mt-4">We look forward to hearing from you!</p>
       </div>
     </main>
   );
