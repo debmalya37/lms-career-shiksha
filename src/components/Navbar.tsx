@@ -11,7 +11,7 @@ const Navbar: React.FC = () => {
       {/* Main Navbar */}
       <nav className="container mx-auto flex justify-between items-center py-4 px-6">
         <h1 className="text-2xl font-bold tracking-wide hover:text-yellow-400 transition-colors">
-          Civil Academy
+          <Link href="/">Civil Academy</Link>
         </h1>
         {/* Desktop Links */}
         <div className="hidden md:flex space-x-6 text-lg font-medium">

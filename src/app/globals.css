@@ -130,7 +130,7 @@
 }
 
 .tutorialP{
-  background: linear-gradient(to bottom, #f7fafc, #ebf8ff);
+  /* background: linear-gradient(to bottom, #f7fafc, #ebf8ff); */
   height: 100%;
 }
 

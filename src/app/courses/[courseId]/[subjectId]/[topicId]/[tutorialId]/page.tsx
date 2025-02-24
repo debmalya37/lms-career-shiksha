@@ -42,12 +42,12 @@ export default async function TutorialPage({ params }: { params: { tutorialId: s
     // Convert the tutorial URL to nocookie format
     const safeUrl = convertToNoCookieUrl(tutorial.url);
   return (
-    <div className="container mx-auto p-4">
+    <div className="container mx-auto p-3 bg-gradient-to-b from-gray-950 to-blue-950">
       <DisableRightClickAndClipboard/>
-    <h1 className="text-3xl font-bold mb-4">{tutorial.title}</h1>
+    <h1 className="text-3xl font-bold mb-4 text-white">{tutorial.title}</h1>
     <div className="max-w-4xl mx-auto">
       <TutorialVideoPlayer url={tutorial.url} />
-      <p className="mt-4 text-gray-600">{tutorial.description}</p>
+      <p className="mt-4 text-gray-200">{tutorial.description}</p>
     </div>
   </div>
   );

@@ -167,10 +167,10 @@ export default function TutorialsPage() {
   };
 
   return (
-    <div className="container mx-auto py-8 pl-5 pr-5 bg-gradient-to-b from-gray-100 to-blue-100 w-[100vw] h-[100vh] tutorialP">
+    <div className="container mx-auto py-8 pl-5 pr-5 bg-gradient-to-b from-gray-900 to-blue-800 w-[100vw] h-[100vh] tutorialP">
       {/* <DisableRightClickAndClipboard/> */}
       {/* <MobileClipboardFunction/> */}
-      <h1 className="text-3xl font-bold text-gray-800 mb-6">Tutorials</h1>
+      <h1 className="text-3xl font-bold text-gray-200 mb-6 text-center">Tutorials</h1>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {tutorials?.map((video) => (
@@ -191,9 +191,9 @@ export default function TutorialsPage() {
       {/* Update the modal section in the return statement */}
 {selectedTutorial && (
   <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75">
-    <div className="bg-white rounded-lg p-1 shadow-lg w-[90vw] md:w-[80vw] lg:w-[60vw] h-[80vh] flex flex-col">
+    <div className="bg-gradient-to-b from-gray-950 to-blue-950 rounded-lg p-1 shadow-lg w-[90vw] md:w-[80vw] lg:w-[60vw] h-[80vh] flex flex-col">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-2xl font-bold">{selectedTutorial.title}</h2>
+        <h2 className="text-2xl font-bold text-white text-center">{selectedTutorial.title}</h2>
         <button
           className="text-red-600 text-xl font-bold"
           onClick={() => setSelectedTutorial(null)}
@@ -220,7 +220,7 @@ export default function TutorialsPage() {
          {/* Email overlay */}
       </div>
       
-      <p className="mt-4 text-gray-600">{selectedTutorial.description}</p>
+      <p className="mt-4 text-gray-200">{selectedTutorial.description}</p>
     </div>
   </div>
 )}
