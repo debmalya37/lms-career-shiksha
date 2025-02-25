@@ -19,7 +19,7 @@ export default function ManageNotifications() {
   useEffect(() => {
     const fetchNotifications = async () => {
       try {
-        const response = await axios.get(`api/notifications`);
+        const response = await axios.get(`/api/notifications`);
         setNotifications(response.data);
       } catch (err) {
         console.error("Error fetching notifications:", err);

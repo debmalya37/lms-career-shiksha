@@ -19,7 +19,7 @@ export default function LiveClassVideoPlayer({ url }: { url: string }) {
   const videoId = getYouTubeId(url);
   const playerRef = useRef<YT.Player | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  
+  const outerContainerRef = useRef<HTMLDivElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [apiReady, setApiReady] = useState(false);
   
@@ -176,6 +176,20 @@ export default function LiveClassVideoPlayer({ url }: { url: string }) {
     playerRef.current?.seekTo(current + seconds, true);
   };
 
+  // Full screen toggle using the outer container
+  const handleFullScreen = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+    if (!outerContainerRef.current) return;
+    if (!document.fullscreenElement) {
+      outerContainerRef.current.requestFullscreen().catch((err) => {
+        console.error("Error attempting to enable full-screen mode:", err);
+      });
+    } else {
+      document.exitFullscreen();
+    }
+  };
+
+
   if (!videoId) return <div className="text-red-500">Invalid video URL</div>;
 
   return (
@@ -214,6 +228,26 @@ export default function LiveClassVideoPlayer({ url }: { url: string }) {
           </button>
           <button onClick={() => seek(10)} className="text-white hover:text-gray-300">
             10s ⏩
+          </button>
+          <button
+            onClick={handleFullScreen}
+            className="bg-gray-800 text-white p-2 md:p-3 rounded-full hover:bg-gray-700 transition-colors duration-200 flex items-center justify-center w-10 h-10 md:w-12 md:h-12"
+            title="Full Screen"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-6 w-6 md:h-8 md:w-8"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M8 3H5a2 2 0 00-2 2v3m0 8v3a2 2 0 002 2h3m8-16h3a2 2 0 012 2v3m0 8v3a2 2 0 01-2 2h-3"
+              />
+            </svg>
           </button>
           <div 
           ref={progressBarRef}

@@ -23,8 +23,11 @@ interface VideoPlayerProps {
 
 export default function TutorialVideoPlayer({ url }: VideoPlayerProps) {
   const videoId = getYouTubeId(url);
-  const playerRef = useRef<YT.Player | null>(null);
+  // Ref for the outer container to enable full screen
+  const outerContainerRef = useRef<HTMLDivElement>(null);
+  // Ref for the inner YouTube player container
   const containerRef = useRef<HTMLDivElement>(null);
+  // Ref for the progress bar container
   const progressBarRef = useRef<HTMLDivElement>(null);
   const animationRef = useRef<number>();
 
@@ -35,7 +38,7 @@ export default function TutorialVideoPlayer({ url }: VideoPlayerProps) {
   const [showControls, setShowControls] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
 
-  // YouTube ID extraction function
+  // Extract YouTube ID from URL
   function getYouTubeId(url: string): string | null {
     const regExp =
       /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
@@ -74,6 +77,9 @@ export default function TutorialVideoPlayer({ url }: VideoPlayerProps) {
     };
   }, [videoId]);
 
+  // We'll keep a ref to the player instance
+  const playerRef = useRef<YT.Player | null>(null);
+
   // Initialize player when API is ready
   useEffect(() => {
     if (!apiReady || !videoId || !containerRef.current) return;
@@ -84,7 +90,7 @@ export default function TutorialVideoPlayer({ url }: VideoPlayerProps) {
       modestbranding: 1,
       rel: 0,
       disablekb: 1,
-      fs: 0,
+      fs: 0, // We'll handle full screen separately
       iv_load_policy: 3,
       playsinline: 1,
     };
@@ -96,7 +102,7 @@ export default function TutorialVideoPlayer({ url }: VideoPlayerProps) {
       playerVars: playerVars,
       events: {
         onReady: (event) => {
-          const player = event.target as any; // Cast to any so getDuration is accessible
+          const player = event.target as any; // Casting so we can access getDuration()
           setDuration(player.getDuration());
         },
         onStateChange: (event) => {
@@ -111,10 +117,10 @@ export default function TutorialVideoPlayer({ url }: VideoPlayerProps) {
     });
   }, [apiReady, videoId]);
 
+  // Update progress bar continuously while the video plays
   const startProgressUpdate = () => {
     const updateProgress = () => {
       if (playerRef.current && playerRef.current.getCurrentTime) {
-        // Only update when not dragging (so dragging sets its own value)
         if (!isDragging) {
           setCurrentTime(playerRef.current.getCurrentTime());
         }
@@ -124,7 +130,7 @@ export default function TutorialVideoPlayer({ url }: VideoPlayerProps) {
     animationRef.current = requestAnimationFrame(updateProgress);
   };
 
-  // Helper to update seek based on clientX
+  // Update seek time based on mouse/touch position
   const updateSeekFromClientX = (clientX: number) => {
     if (!progressBarRef.current || !playerRef.current) return;
     const rect = progressBarRef.current.getBoundingClientRect();
@@ -134,7 +140,7 @@ export default function TutorialVideoPlayer({ url }: VideoPlayerProps) {
     setCurrentTime(seekTime);
   };
 
-  // Mouse events for dragging
+  // Mouse event handlers for dragging the progress bar
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
     e.stopPropagation();
     setIsDragging(true);
@@ -153,7 +159,7 @@ export default function TutorialVideoPlayer({ url }: VideoPlayerProps) {
     }
   };
 
-  // Touch events for dragging on mobile
+  // Touch event handlers for mobile dragging
   const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
     e.stopPropagation();
     setIsDragging(true);
@@ -170,6 +176,7 @@ export default function TutorialVideoPlayer({ url }: VideoPlayerProps) {
     setIsDragging(false);
   };
 
+  // Add global listeners for mouse move/up while dragging
   useEffect(() => {
     if (isDragging) {
       document.addEventListener("mousemove", handleMouseMove);
@@ -182,14 +189,16 @@ export default function TutorialVideoPlayer({ url }: VideoPlayerProps) {
       document.removeEventListener("mousemove", handleMouseMove);
       document.removeEventListener("mouseup", handleMouseUp);
     };
-  }, [handleMouseMove, handleMouseUp, isDragging]);
+  }, [isDragging]);
 
+  // Format seconds to MM:SS
   const formatTime = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = Math.floor(seconds % 60);
     return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
   };
 
+  // Play/pause toggle
   const handlePlayPause = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
     if (!playerRef.current) return;
@@ -200,13 +209,24 @@ export default function TutorialVideoPlayer({ url }: VideoPlayerProps) {
     }
   };
 
+  // Seek forward/backward
   const seek = (seconds: number, e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
     if (playerRef.current) {
-      playerRef.current.seekTo(
-        playerRef.current.getCurrentTime() + seconds,
-        true
-      );
+      playerRef.current.seekTo(playerRef.current.getCurrentTime() + seconds, true);
+    }
+  };
+
+  // Full screen toggle using the outer container
+  const handleFullScreen = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+    if (!outerContainerRef.current) return;
+    if (!document.fullscreenElement) {
+      outerContainerRef.current.requestFullscreen().catch((err) => {
+        console.error("Error attempting to enable full-screen mode:", err);
+      });
+    } else {
+      document.exitFullscreen();
     }
   };
 
@@ -215,30 +235,12 @@ export default function TutorialVideoPlayer({ url }: VideoPlayerProps) {
 
   return (
     <div
+      ref={outerContainerRef}
       className="relative w-full aspect-video bg-black group"
       onClick={() => setShowControls(!showControls)} // Toggle controls for mobile taps
     >
       {/* YouTube Player Container */}
       <div ref={containerRef} className="w-full h-full" />
-
-      {/* Progress Bar */}
-      {/* <div
-        ref={progressBarRef}
-        className={`absolute bottom-16 left-0 right-0 h-2 bg-gray-600 cursor-pointer transition-opacity duration-300 ${
-          showControls ? "opacity-100" : "opacity-0"
-        } group-hover:opacity-100`}
-        onMouseDown={handleMouseDown}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-      >
-        <div
-          className="absolute top-0 left-0 h-full bg-red-600 transition-all duration-100"
-          style={{ width: `${(currentTime / duration) * 100}%` }}
-        >
-          <div className="absolute right-0 -top-1 h-4 w-4 bg-red-600 rounded-full transform translate-x-1/2" />
-        </div>
-      </div> */}
 
       {/* Time Display */}
       <div
@@ -252,14 +254,12 @@ export default function TutorialVideoPlayer({ url }: VideoPlayerProps) {
 
       {/* Custom Controls Overlay */}
       <div
-        className={`absolute inset-0 flex items-center justify-center transition-opacity duration-300 ${
+        className={`absolute inset-0 flex flex-col justify-end items-center transition-opacity duration-300 ${
           showControls ? "opacity-100" : "opacity-0"
         } group-hover:opacity-100`}
         onClick={(e) => e.stopPropagation()}
       >
-
-        
-        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 flex items-center justify-center gap-4">
+        <div className="w-full bg-gradient-to-t from-black/80 to-transparent p-4 flex items-center justify-center gap-4">
           <button
             onClick={(e) => seek(-10, e)}
             className="text-white hover:text-gray-300 text-sm md:text-base"
@@ -309,23 +309,46 @@ export default function TutorialVideoPlayer({ url }: VideoPlayerProps) {
           >
             10s ⏩
           </button>
-          <div
-        ref={progressBarRef}
-        className={`absolute bottom-16 left-0 right-0 h-2 bg-gray-600 cursor-pointer transition-opacity duration-300 ${
-          showControls ? "opacity-100" : "opacity-0"
-        } group-hover:opacity-100`}
-        onMouseDown={handleMouseDown}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-      >
-        <div
-          className="absolute top-0 left-0 h-full bg-red-600 transition-all duration-100"
-          style={{ width: `${(currentTime / duration) * 100}%` }}
-        >
-          <div className="absolute right-0 -top-1 h-4 w-4 bg-red-600 rounded-full transform translate-x-1/2" />
+
+          <button
+            onClick={handleFullScreen}
+            className="bg-gray-800 text-white p-2 md:p-3 rounded-full hover:bg-gray-700 transition-colors duration-200 flex items-center justify-center w-10 h-10 md:w-12 md:h-12"
+            title="Full Screen"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-6 w-6 md:h-8 md:w-8"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M8 3H5a2 2 0 00-2 2v3m0 8v3a2 2 0 002 2h3m8-16h3a2 2 0 012 2v3m0 8v3a2 2 0 01-2 2h-3"
+              />
+            </svg>
+          </button>
         </div>
-      </div>
+
+        {/* Draggable Progress Bar */}
+        <div
+          ref={progressBarRef}
+          className={`relative w-full h-2 bg-gray-600 cursor-pointer transition-opacity duration-300 ${
+            showControls ? "opacity-100" : "opacity-0"
+          } group-hover:opacity-100 mt-2`}
+          onMouseDown={handleMouseDown}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+        >
+          <div
+            className="absolute top-0 left-0 h-full bg-red-600 pointer-events-none transition-all duration-100"
+            style={{ width: `${(currentTime / duration) * 100}%` }}
+          >
+            <div className="absolute right-0 -top-1 h-4 w-4 bg-red-600 rounded-full transform translate-x-1/2 pointer-events-none" />
+          </div>
         </div>
       </div>
     </div>
