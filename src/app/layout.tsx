@@ -13,7 +13,7 @@ import DisableRightClick from "@/components/DisableRightClick"; // Import the cl
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Civil Academy Learning Portal",
+  title: "Career Shiksha Learning Portal",
   description: "Learning Management System",
 };
 

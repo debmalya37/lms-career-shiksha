@@ -1,8 +1,10 @@
 "use client";
+
 import React, { useState } from "react";
 import { FiMenu, FiX } from "react-icons/fi";
 import Link from "next/link";
-
+import Image from "next/image";
+import Logo from "../../public/image/logo.jpeg"
 const Navbar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -10,9 +12,21 @@ const Navbar: React.FC = () => {
     <header className="bg-gradient-to-r from-gray-950 to-blue-700 text-white shadow-lg sticky top-0 z-50">
       {/* Main Navbar */}
       <nav className="container mx-auto flex justify-between items-center py-4 px-6">
-        <h1 className="text-2xl font-bold tracking-wide hover:text-yellow-400 transition-colors">
-          <Link href="/">Civil Academy</Link>
-        </h1>
+        <Link href="/" className="flex items-center space-x-2">
+          <Link href="/">
+            <Image
+              src={Logo} // Replace with your logo path
+              alt="Career Shiksha Logo"
+              width={40}
+              height={40}
+              className="rounded-full"
+            />
+          </Link>
+          {/* Show text on small screens and up */}
+          <span className="hidden sm:inline-block text-2xl font-bold tracking-wide hover:text-yellow-400 transition-colors">
+            Career Shiksha
+          </span>
+        </Link>
         {/* Desktop Links */}
         <div className="hidden md:flex space-x-6 text-lg font-medium">
           <Link href="/" className="hover:text-yellow-400 transition-colors">
@@ -30,7 +44,6 @@ const Navbar: React.FC = () => {
           <Link href="/notes" className="hover:text-yellow-400 transition-colors">
             Notes
           </Link>
-
           <Link href="/contact" className="hover:text-yellow-400 transition-colors">
             Contact
           </Link>
@@ -50,6 +63,7 @@ const Navbar: React.FC = () => {
           isOpen ? "translate-x-0" : "translate-x-full"
         } transition-transform duration-300 ease-in-out z-40 md:hidden`}
       >
+        
         <div className="md:hidden mt-4 ml-3">
           <button onClick={() => setIsOpen(!isOpen)} className="focus:outline-none">
             {isOpen ? <FiX className="h-6 w-6" /> : <FiMenu className="h-6 w-6" />}
@@ -91,14 +105,6 @@ const Navbar: React.FC = () => {
           >
             Notes
           </Link>
-          
-          {/* <Link
-            href="/about"
-            className="text-white hover:text-yellow-400 transition-colors"
-            onClick={() => setIsOpen(false)}
-          >
-            About Us
-          </Link> */}
           <Link
             href="/contact"
             className="text-white hover:text-yellow-400 transition-colors"

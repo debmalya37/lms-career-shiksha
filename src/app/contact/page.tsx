@@ -21,11 +21,11 @@ export default function Contact() {
         <p className="text-gray-200 text-center mb-4">If you have any questions, feel free to reach out!</p>
         
         <div className="text-grey-500 mt-1 mb-1 bg-blue-400 p-4 sm:p-6 w-full rounded-lg text-center">
-          Meerut Centre - Civil Academy IAS/PCS, 2nd Flr, Star Plaza, Bachcha Park, Meerut Mob- 9927827825
+          Meerut Centre - Career Shiksha IAS/PCS, 2nd Flr, Star Plaza, Bachcha Park, Meerut Mob- 9927827825
         </div>
         
         <div className="text-grey-500 mt-1 mb-1 bg-blue-400 p-4 sm:p-6 w-full rounded-lg text-center">
-          Dehradun Centre - Civil Academy IAS/PCS, GMS Road, above Kotak Mahindra Bank, near Ballupur, Dehradun Mob - 6398761583
+          Dehradun Centre - Career Shiksha IAS/PCS, GMS Road, above Kotak Mahindra Bank, near Ballupur, Dehradun Mob - 6398761583
         </div>
 
         <form onSubmit={handleSubmit} className="bg-green-100 p-4 sm:p-6 rounded-lg shadow-md">
