@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 const generateDeviceIdentifier = () => {
   return "device-" + Math.random().toString(36).substring(2, 15);
@@ -168,9 +169,9 @@ const LoginPage = () => {
         <div className="mt-4 text-center">
           <p className="text-sm">
             New user?{" "}
-            <a href="/signup" className="text-blue-500 hover:underline">
+            <Link href="/signup" className="text-blue-500 hover:underline">
               Register here
-            </a>
+            </Link>
           </p>
         </div>
       </form>

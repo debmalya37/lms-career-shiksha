@@ -103,14 +103,14 @@ export default function SubjectPage({ params }: { params: { courseId: string; su
                 <div className="p-4">
                   <h3 className="text-lg font-bold text-black mb-2">{ebook.title}</h3>
                   <p className="text-sm text-gray-500 mb-4">{ebook.subject.name}</p>
-                  <a
+                  <Link
                     href={ebook.url}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 w-full block text-center transition-colors"
                   >
                     View eBook
-                  </a>
+                  </Link>
                 </div>
               </div>
             ))

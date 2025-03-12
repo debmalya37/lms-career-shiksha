@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import Link from 'next/link';
 
 interface TestSeries {
   title: string;
@@ -43,14 +44,14 @@ export default function TestPage() {
           <p className="text-gray-600 mb-2">Course: {test.course?.title}</p>
           <p className="text-gray-600 mb-2">Subject: {test.subject?.name}</p>
           {test.googleFormLink && (
-            <a
+            <Link
               href={test.googleFormLink}
               target="_blank"
               rel="noopener noreferrer"
               className="text-blue-500 hover:underline"
             >
               Access Google Form
-            </a>
+            </Link>
           )}
         </div>
       ))}
