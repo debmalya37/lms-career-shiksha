@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import ClipLoader from "react-spinners/ClipLoader";
 
@@ -79,6 +80,7 @@ export default function ProfilePage() {
             value={profileData.email}
             readOnly
           />
+              
         </div>
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">Courses</label>
@@ -115,6 +117,10 @@ export default function ProfilePage() {
           <p className="text-sm">{progress.toFixed(2)}% Completed</p>
         </div>
       </form>
+      <div className="relative mt-8">
+      <Link href="/profile/delete" className=" text-red-100 bg-red-800 rounded-md p-3">Delete Account</Link>
+      </div>
     </div>
+    
   );
 }
