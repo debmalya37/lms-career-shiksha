@@ -34,81 +34,115 @@ export async function POST(request: Request) {
   try {
     await connectMongo();
     const formData = await request.formData();
-    const title = formData.get('title') as string;
-    const description = formData.get('description') as string;
-    const subjects = formData.getAll('subjects') as string[]; // Accept multiple subject IDs
-    const isHidden = formData.get('isHidden') === 'true';
-    const courseImgFile = formData.get('courseImg') as File | null;
 
-    if (!title || !description || subjects.length === 0) {
-      return NextResponse.json({ error: 'Title, description, and at least one subject are required' }, { status: 400 });
+    // Validate incoming data
+    const courseId = formData.get("id") as string;
+    const title = formData.get("title") as string;
+    const description = formData.get("description") as string;
+    // Use get() to retrieve the JSON string and then parse it.
+    const subjectsRaw = formData.get("subjects") as string;
+    const subjects = JSON.parse(subjectsRaw) as string[];
+    const isHidden = formData.get("isHidden") === "true";
+    const courseImgFile = formData.get("courseImg") as File | null;
+
+    if (!courseId && (!title || !description || subjects.length === 0)) {
+      console.error("Validation Error: Missing required fields.");
+      return NextResponse.json(
+        { error: "Course ID (if editing), title, description, and at least one subject are required." },
+        { status: 400 }
+      );
     }
 
-    let courseImgUrl = '';
+    // Log the incoming data for debugging
+    console.log("Incoming Data:", { courseId, title, description, subjects, isHidden });
+
+    // Handle image upload
+    let courseImgUrl = "";
     if (courseImgFile) {
       const buffer = await courseImgFile.arrayBuffer();
-      const bufferData = Buffer.from(buffer);
-      courseImgUrl = await uploadToCloudinary(bufferData);
+      courseImgUrl = await uploadToCloudinary(Buffer.from(buffer));
     }
 
-    // Create the new course
-    const newCourse = new Course({
+    // Ensure subjects are unique
+    const uniqueSubjects = Array.from(new Set(subjects));
+
+    // Prepare fields for update
+    const updatedFields: any = {
       title,
       description,
-      subjects,
       isHidden,
-      courseImg: courseImgUrl,
-    });
+      subjects: uniqueSubjects, // Overwrite subjects array with unique values
+    };
+    if (courseImgUrl) updatedFields.courseImg = courseImgUrl;
 
-    await newCourse.save();
+    if (courseId) {
+      // Editing an existing course
+      const updatedCourse = await Course.findByIdAndUpdate(
+        courseId,
+        updatedFields,
+        { new: true }
+      );
 
-    // Update subjects to reference this course
-    await Subject.updateMany(
-      { _id: { $in: subjects } },
-      { $addToSet: { courses: newCourse._id } } // Use `$addToSet` to avoid duplicates
-    );
+      if (!updatedCourse) {
+        console.error("Update Error: Course not found.");
+        return NextResponse.json({ error: "Course not found or update failed." }, { status: 404 });
+      }
 
-    return NextResponse.json({ message: 'Course added successfully!' });
+      return NextResponse.json({ message: "Course updated successfully!", course: updatedCourse });
+    } else {
+      // Creating a new course
+      const newCourse = new Course({
+        title,
+        description,
+        subjects: uniqueSubjects,
+        isHidden,
+        courseImg: courseImgUrl,
+      });
+
+      await newCourse.save();
+
+      // Update subjects to reference this course
+      await Subject.updateMany(
+        { _id: { $in: uniqueSubjects } },
+        { $addToSet: { courses: newCourse._id } }
+      );
+
+      return NextResponse.json({ message: "Course added successfully!" });
+    }
   } catch (error) {
     console.error("POST /api/course Error:", error);
-    return NextResponse.json({ error: 'Failed to add course' }, { status: 500 });
+    return NextResponse.json({ error: "Failed to add course" }, { status: 500 });
   }
 }
 
+export async function GET() {
+  try {
+    await connectMongo();
 
+    // Fetch courses without populating subjects
+    const courses = await Course.find().lean();
 
+    // Extract unique subject IDs from courses
+    const subjectIds: Types.ObjectId[] = courses.flatMap(course => course.subjects as Types.ObjectId[]);
 
+    // Fetch all subjects by IDs
+    const subjects = await Subject.find({ _id: { $in: subjectIds } }).lean<ISubject[]>();
 
+    // Map subjects by their ID for quick lookup
+    const subjectMap: Record<string, ISubject> = subjects.reduce((acc, subject) => {
+      acc[(subject._id as Types.ObjectId).toString()] = subject;
+      return acc;
+    }, {} as Record<string, ISubject>);
 
-  export async function GET() {
-    try {
-      await connectMongo();
-  
-      // Step 1: Fetch courses without populating subjects
-      const courses = await Course.find().lean();
-      
-      // Step 2: Extract unique subject IDs from courses
-      const subjectIds: Types.ObjectId[] = courses.flatMap(course => course.subjects as Types.ObjectId[]);
-  
-      // Step 3: Fetch all subjects by IDs
-      const subjects = await Subject.find({ _id: { $in: subjectIds } }).lean<ISubject[]>(); // Cast as ISubject[]
-  
-      // Step 4: Map subjects by their ID for quick lookup
-      const subjectMap: Record<string, ISubject> = subjects.reduce((acc, subject) => {
-        acc[(subject._id as Types.ObjectId).toString()] = subject; // Convert _id to string to avoid type issues
-        return acc;
-      }, {} as Record<string, ISubject>);
-  
-      // Step 5: Merge subjects with each course
-      const enrichedCourses = courses.map(course => ({
-        ...course,
-        subjects: (course.subjects as Types.ObjectId[]).map(subjectId => subjectMap[subjectId.toString()] || null).filter(Boolean),
-      }));
-  
-      return NextResponse.json(enrichedCourses);
-    } catch (error) {
-      console.error("GET /api/course Error:", error);
-      return NextResponse.json({ error: 'Failed to fetch courses' }, { status: 500 });
-    }
+    // Merge subjects with each course
+    const enrichedCourses = courses.map(course => ({
+      ...course,
+      subjects: (course.subjects as Types.ObjectId[]).map(subjectId => subjectMap[subjectId.toString()] || null).filter(Boolean),
+    }));
+
+    return NextResponse.json(enrichedCourses);
+  } catch (error) {
+    console.error("GET /api/course Error:", error);
+    return NextResponse.json({ error: "Failed to fetch courses" }, { status: 500 });
   }
-  
+}
