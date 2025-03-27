@@ -1,8 +1,9 @@
-"use client";
+'use client';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { CSVLink } from "react-csv"; // Import CSV download helper
+import { XCircleIcon } from 'lucide-react';
 
 interface User {
   _id: string;
@@ -40,7 +41,9 @@ const UserCreationPage = () => {
   const router = useRouter();
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState(''); // new search query state
 
+  // Check admin status
   useEffect(() => {
     const checkAdminStatus = async () => {
       try {
@@ -55,7 +58,7 @@ const UserCreationPage = () => {
 
         // Check if the profile email is in the allowed list
         if (profileData?.email && allowedEmails.includes(profileData.email)) {
-          console.log("admin access allowed")
+          console.log("admin access allowed");
           setIsAdmin(true);
         } else {
           router.push('/'); // Redirect to home if not authorized
@@ -69,7 +72,7 @@ const UserCreationPage = () => {
     };
 
     checkAdminStatus();
-  }, [router,isAdmin]);
+  }, [router, isAdmin]);
 
   useEffect(() => {
     const fetchCourses = async () => {
@@ -224,12 +227,34 @@ const UserCreationPage = () => {
     }));
   };
 
+  // NEW: Filter users based on search query
+
+  const filteredUsers = users.filter((user) => {
+    const query = searchQuery.toLowerCase();
+    return (
+      user.name.toLowerCase().includes(query) ||
+      user.email.toLowerCase().includes(query) ||
+      user.address.toLowerCase().includes(query) ||
+      user.password.toLowerCase().includes(query)
+    );
+  });
+
   return (
     <div className="container mx-auto p-8 bg-white rounded-lg shadow-md max-w-full mt-8 text-black">
       <h1 className="text-2xl font-bold text-blue-600 mb-4">User Creation</h1>
+      
+      {/* Search Box */}
+      <div className="mb-6">
+        <input
+          type="text"
+          placeholder="Search by name, email, address, password"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="border p-2 w-full rounded-md"
+        />
+      </div>
+
       <form onSubmit={handleSubmit}>
-        {/* Form fields remain unchanged */}
-        {/* Other form fields */}
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">Name</label>
           <input
@@ -358,7 +383,7 @@ const UserCreationPage = () => {
           </tr>
         </thead>
         <tbody>
-          {users.map((user: User) => (
+          {filteredUsers.map((user: User) => (
             <tr key={user._id}>
               <td className="border px-4 py-2">{user.name}</td>
               <td className="border px-4 py-2">{user.email}</td>
