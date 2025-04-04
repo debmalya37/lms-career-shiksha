@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 
 declare global {
   interface Window {
-    YT: typeof YT | undefined;
+    YT: any;
     onYouTubeIframeAPIReady: () => void;
   }
 }
@@ -82,12 +82,12 @@ export default function LiveClassVideoPlayer({ url }: { url: string }) {
       width: '100%',
       playerVars,
       events: {
-        onReady: (event) => {
+        onReady: (event:any) => {
           // Cast to any so we can access getDuration
           const player = event.target as any;
           setDuration(player.getDuration());
         },
-        onStateChange: (event) => {
+        onStateChange: (event:any) => {
           setIsPlaying(event.data === window.YT!.PlayerState.PLAYING);
           if (event.data === window.YT!.PlayerState.PLAYING) {
             startProgressUpdate();
