@@ -30,7 +30,7 @@ interface Profile {
 
 declare global {
   interface Window {
-    YT: typeof YT | undefined;
+    YT: any;
     onYouTubeIframeAPIReady: () => void;
   }
 }
