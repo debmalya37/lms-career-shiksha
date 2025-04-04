@@ -7,11 +7,7 @@ declare global {
     onYouTubeIframeAPIReady: () => void;
   }
 }
-interface CustomPlayerVars extends YT.PlayerVars {
-  fs?: number;
-  iv_load_policy?: number;
-  playsinline?: number;
-}
+
 interface TutorialVideoPlayerProps {
   url: string;
 }
@@ -36,42 +32,22 @@ export default function TutorialVideoPlayer({ url }: TutorialVideoPlayerProps) {
   const [showControls, setShowControls] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
 
-  // Extract YouTube ID from URL
-  // (Same as before)
-
-  // Initialize YouTube API
+  // Load YouTube Iframe API if not loaded
   useEffect(() => {
     if (!videoId) return;
-
-    const initializeAPI = () => {
-      if (!window.YT) {
-        window.onYouTubeIframeAPIReady = () => {
-          setApiReady(true);
-          if (window.YT) {
-            window.YT.ready(() => setApiReady(true));
-          }
-        };
-
-        const script = document.createElement("script");
-        script.src = "https://www.youtube.com/iframe_api";
-        document.body.appendChild(script);
-      } else {
+    if (!window.YT) {
+      window.onYouTubeIframeAPIReady = () => {
         setApiReady(true);
-        window.YT.ready(() => setApiReady(true));
-      }
-    };
-
-    initializeAPI();
-
-    return () => {
-      if (playerRef.current) {
-        playerRef.current.destroy();
-      }
-    };
+      };
+      const tag = document.createElement("script");
+      tag.src = "https://www.youtube.com/iframe_api";
+      document.body.appendChild(tag);
+    } else {
+      setApiReady(true);
+    }
   }, [videoId]);
 
-  // We'll keep a ref to the player instance
-  const playerRef = useRef<YT.Player | null>(null);
+  const playerRef = useRef<any>(null);
 
   // Initialize player when API is ready
   useEffect(() => {
@@ -94,11 +70,10 @@ export default function TutorialVideoPlayer({ url }: TutorialVideoPlayerProps) {
       width: "100%",
       playerVars: playerVars,
       events: {
-        onReady: (event: { target: any; }) => {
-          const player = event.target;
-          setDuration(player.getDuration());
+        onReady: (event: any) => {
+          setDuration(event.target.getDuration());
         },
-        onStateChange: (event: { data: any; }) => {
+        onStateChange: (event: any) => {
           setIsPlaying(event.data === window.YT.PlayerState.PLAYING);
           if (event.data === window.YT.PlayerState.PLAYING) {
             startProgressUpdate();
@@ -210,37 +185,38 @@ export default function TutorialVideoPlayer({ url }: TutorialVideoPlayerProps) {
     }
   };
 
-  // Full screen toggle using vendor prefixes for compatibility
+  // Full screen toggle using vendor-prefixed methods (cast to any)
   const handleFullScreen = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
     if (!outerContainerRef.current) return;
-    if (!document.fullscreenElement &&
+    if (
+      !document.fullscreenElement &&
       !(document as any).webkitFullscreenElement &&
       !(document as any).mozFullScreenElement &&
-      !(document as any).msFullscreenElement) {
-    if (outerContainerRef.current.requestFullscreen) {
-      outerContainerRef.current.requestFullscreen().catch((err) => {
-        console.error("Error attempting to enable full-screen mode:", err);
-      });
-    } else if ((outerContainerRef.current as any).webkitRequestFullscreen) {
-      (outerContainerRef.current as any).webkitRequestFullscreen();
-    } else if ((outerContainerRef.current as any).mozRequestFullScreen) {
-      (outerContainerRef.current as any).mozRequestFullScreen();
-    } else if ((outerContainerRef.current as any).msRequestFullscreen) {
-      (outerContainerRef.current as any).msRequestFullscreen();
+      !(document as any).msFullscreenElement
+    ) {
+      if (outerContainerRef.current.requestFullscreen) {
+        outerContainerRef.current.requestFullscreen().catch((err) =>
+          console.error("Error attempting to enable full-screen mode:", err)
+        );
+      } else if ((outerContainerRef.current as any).webkitRequestFullscreen) {
+        (outerContainerRef.current as any).webkitRequestFullscreen();
+      } else if ((outerContainerRef.current as any).mozRequestFullScreen) {
+        (outerContainerRef.current as any).mozRequestFullScreen();
+      } else if ((outerContainerRef.current as any).msRequestFullscreen) {
+        (outerContainerRef.current as any).msRequestFullscreen();
+      }
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      } else if ((document as any).webkitExitFullscreen) {
+        (document as any).webkitExitFullscreen();
+      } else if ((document as any).mozCancelFullScreen) {
+        (document as any).mozCancelFullScreen();
+      } else if ((document as any).msExitFullscreen) {
+        (document as any).msExitFullscreen();
+      }
     }
-  } else {
-    if (document.exitFullscreen) {
-      document.exitFullscreen();
-    } else if ((document as any).webkitExitFullscreen) {
-      (document as any).webkitExitFullscreen();
-    } else if ((document as any).mozCancelFullScreen) {
-      (document as any).mozCancelFullScreen();
-    } else if ((document as any).msExitFullscreen) {
-      (document as any).msExitFullscreen();
-    }
-  }
-  
   };
 
   if (!videoId)
@@ -250,12 +226,10 @@ export default function TutorialVideoPlayer({ url }: TutorialVideoPlayerProps) {
     <div
       ref={outerContainerRef}
       className="relative w-full aspect-video bg-black group"
-      onClick={() => setShowControls(!showControls)} // Toggle controls for mobile taps
+      onClick={() => setShowControls(!showControls)}
     >
-      {/* YouTube Player Container */}
       <div ref={containerRef} className="w-full h-full" />
 
-      {/* Time Display */}
       <div
         className={`absolute bottom-20 left-2 text-white text-sm transition-opacity duration-300 ${
           showControls ? "opacity-100" : "opacity-0"
@@ -265,7 +239,6 @@ export default function TutorialVideoPlayer({ url }: TutorialVideoPlayerProps) {
         {formatTime(currentTime)} / {formatTime(duration)}
       </div>
 
-      {/* Custom Controls Overlay */}
       <div
         className={`absolute inset-0 flex flex-col justify-end items-center transition-opacity duration-300 ${
           showControls ? "opacity-100" : "opacity-0"
@@ -345,7 +318,6 @@ export default function TutorialVideoPlayer({ url }: TutorialVideoPlayerProps) {
           </button>
         </div>
 
-        {/* Draggable Progress Bar */}
         <div
           ref={progressBarRef}
           className={`relative w-full h-2 bg-gray-600 cursor-pointer transition-opacity duration-300 ${
