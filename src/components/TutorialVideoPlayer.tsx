@@ -1,33 +1,31 @@
 "use client";
+import React, { useState, useEffect, useRef } from "react";
 
-import { useState, useEffect, useRef } from "react";
-
-// Extended type declarations for YouTube API
 declare global {
   interface Window {
-    YT: typeof YT | undefined;
+    YT: any;
     onYouTubeIframeAPIReady: () => void;
   }
 }
-
-// Extended PlayerVars interface to include missing properties
 interface CustomPlayerVars extends YT.PlayerVars {
   fs?: number;
   iv_load_policy?: number;
   playsinline?: number;
 }
-
-interface VideoPlayerProps {
+interface TutorialVideoPlayerProps {
   url: string;
 }
 
-export default function TutorialVideoPlayer({ url }: VideoPlayerProps) {
+function getYouTubeId(url: string): string | null {
+  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+  const match = url.match(regExp);
+  return match && match[2].length === 11 ? match[2] : null;
+}
+
+export default function TutorialVideoPlayer({ url }: TutorialVideoPlayerProps) {
   const videoId = getYouTubeId(url);
-  // Ref for the outer container to enable full screen
   const outerContainerRef = useRef<HTMLDivElement>(null);
-  // Ref for the inner YouTube player container
   const containerRef = useRef<HTMLDivElement>(null);
-  // Ref for the progress bar container
   const progressBarRef = useRef<HTMLDivElement>(null);
   const animationRef = useRef<number>();
 
@@ -39,12 +37,7 @@ export default function TutorialVideoPlayer({ url }: VideoPlayerProps) {
   const [isDragging, setIsDragging] = useState(false);
 
   // Extract YouTube ID from URL
-  function getYouTubeId(url: string): string | null {
-    const regExp =
-      /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-    const match = url.match(regExp);
-    return match && match[2].length === 11 ? match[2] : null;
-  }
+  // (Same as before)
 
   // Initialize YouTube API
   useEffect(() => {
@@ -84,7 +77,7 @@ export default function TutorialVideoPlayer({ url }: VideoPlayerProps) {
   useEffect(() => {
     if (!apiReady || !videoId || !containerRef.current) return;
 
-    const playerVars: CustomPlayerVars = {
+    const playerVars = {
       autoplay: 0,
       controls: 0,
       modestbranding: 1,
@@ -95,19 +88,19 @@ export default function TutorialVideoPlayer({ url }: VideoPlayerProps) {
       playsinline: 1,
     };
 
-    playerRef.current = new window.YT!.Player(containerRef.current, {
+    playerRef.current = new window.YT.Player(containerRef.current, {
       videoId: videoId,
       height: "100%",
       width: "100%",
       playerVars: playerVars,
       events: {
-        onReady: (event) => {
-          const player = event.target as any; // Casting so we can access getDuration()
+        onReady: (event: { target: any; }) => {
+          const player = event.target;
           setDuration(player.getDuration());
         },
-        onStateChange: (event) => {
-          setIsPlaying(event.data === window.YT!.PlayerState.PLAYING);
-          if (event.data === window.YT!.PlayerState.PLAYING) {
+        onStateChange: (event: { data: any; }) => {
+          setIsPlaying(event.data === window.YT.PlayerState.PLAYING);
+          if (event.data === window.YT.PlayerState.PLAYING) {
             startProgressUpdate();
           } else {
             cancelAnimationFrame(animationRef.current!);
@@ -176,7 +169,7 @@ export default function TutorialVideoPlayer({ url }: VideoPlayerProps) {
     setIsDragging(false);
   };
 
-  // Add global listeners for mouse move/up while dragging
+  // Global listeners for mouse move/up while dragging
   useEffect(() => {
     if (isDragging) {
       document.addEventListener("mousemove", handleMouseMove);
@@ -217,17 +210,37 @@ export default function TutorialVideoPlayer({ url }: VideoPlayerProps) {
     }
   };
 
-  // Full screen toggle using the outer container
+  // Full screen toggle using vendor prefixes for compatibility
   const handleFullScreen = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
     if (!outerContainerRef.current) return;
-    if (!document.fullscreenElement) {
+    if (!document.fullscreenElement &&
+      !(document as any).webkitFullscreenElement &&
+      !(document as any).mozFullScreenElement &&
+      !(document as any).msFullscreenElement) {
+    if (outerContainerRef.current.requestFullscreen) {
       outerContainerRef.current.requestFullscreen().catch((err) => {
         console.error("Error attempting to enable full-screen mode:", err);
       });
-    } else {
-      document.exitFullscreen();
+    } else if ((outerContainerRef.current as any).webkitRequestFullscreen) {
+      (outerContainerRef.current as any).webkitRequestFullscreen();
+    } else if ((outerContainerRef.current as any).mozRequestFullScreen) {
+      (outerContainerRef.current as any).mozRequestFullScreen();
+    } else if ((outerContainerRef.current as any).msRequestFullscreen) {
+      (outerContainerRef.current as any).msRequestFullscreen();
     }
+  } else {
+    if (document.exitFullscreen) {
+      document.exitFullscreen();
+    } else if ((document as any).webkitExitFullscreen) {
+      (document as any).webkitExitFullscreen();
+    } else if ((document as any).mozCancelFullScreen) {
+      (document as any).mozCancelFullScreen();
+    } else if ((document as any).msExitFullscreen) {
+      (document as any).msExitFullscreen();
+    }
+  }
+  
   };
 
   if (!videoId)

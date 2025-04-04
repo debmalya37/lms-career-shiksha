@@ -1,120 +1,91 @@
 "use client";
 
 import React, { useState } from "react";
-import { FiMenu, FiX } from "react-icons/fi";
+import { FiMenu, FiX, FiHome, FiBookOpen, FiVideo, FiLayers, FiFileText, FiPhone } from "react-icons/fi";
 import Link from "next/link";
 import Image from "next/image";
-import Logo from "../../public/image/logo.jpeg"
+import Logo from "../../public/image/logo.jpeg";
+
 const Navbar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
 
-  return (
-    <header className="bg-gradient-to-r from-gray-950 to-blue-700 text-white shadow-lg sticky top-0 z-50">
-      {/* Main Navbar */}
-      <nav className="container mx-auto flex justify-between items-center py-4 px-6">
-        <Link href="/" className="flex items-center space-x-2">
-          <Link href="/">
-            <Image
-              src={Logo} // Replace with your logo path
-              alt="Career Shiksha Logo"
-              width={40}
-              height={40}
-              className="rounded-full"
-            />
-          </Link>
-          {/* Show text on small screens and up */}
-          <span className="hidden sm:inline-block text-2xl font-bold tracking-wide hover:text-yellow-400 transition-colors">
-            Career Shiksha
-          </span>
-        </Link>
-        {/* Desktop Links */}
-        <div className="hidden md:flex space-x-6 text-lg font-medium">
-          <Link href="/" className="hover:text-yellow-400 transition-colors">
-            Home
-          </Link>
-          <Link href="/tutorials" className="hover:text-yellow-400 transition-colors">
-            Tutorials
-          </Link>
-          <Link href="/live-classes" className="hover:text-yellow-400 transition-colors">
-            Live Classes
-          </Link>
-          <Link href="/courses" className="hover:text-yellow-400 transition-colors">
-            Courses
-          </Link>
-          <Link href="/notes" className="hover:text-yellow-400 transition-colors">
-            Notes
-          </Link>
-          <Link href="/contact" className="hover:text-yellow-400 transition-colors">
-            Contact
-          </Link>
-        </div>
-        {/* Hamburger Icon */}
-        <button
-          onClick={() => setIsOpen(!isOpen)}
-          className="md:hidden focus:outline-none text-white"
-        >
-          {isOpen ? <FiX className="h-8 w-8" /> : <FiMenu className="h-8 w-8" />}
-        </button>
-      </nav>
+  const toggleNavbar = () => {
+    setIsOpen((prev) => !prev);
+  };
 
-      {/* Mobile Navbar */}
+  return (
+    <>
+      {/* Sidebar */}
       <div
-        className={`fixed inset-0 bg-gray-950 bg-opacity-95 transform ${
-          isOpen ? "translate-x-0" : "translate-x-full"
-        } transition-transform duration-300 ease-in-out z-40 md:hidden`}
+        className={`fixed top-0 left-0 h-full bg-gray-900 text-white w-64 p-5 z-50 transform ${
+          isOpen ? "translate-x-0" : "-translate-x-64"
+        } transition-transform duration-300 ease-in-out`}
       >
-        
-        <div className="md:hidden mt-4 ml-3">
-          <button onClick={() => setIsOpen(!isOpen)} className="focus:outline-none">
-            {isOpen ? <FiX className="h-6 w-6" /> : <FiMenu className="h-6 w-6" />}
+        {/* Logo and Close Button */}
+        <div className="flex items-center justify-between mb-6">
+          <Link href="/" className="flex items-center space-x-3">
+            <Image src={Logo} alt="Career Shiksha Logo" width={40} height={40} className="rounded-full" />
+            <span className="text-xl font-bold tracking-wide">Career Shiksha</span>
+          </Link>
+          <button title="close" onClick={toggleNavbar} className="text-blue focus:outline-none">
+            <FiX className="h-6 w-6" />
           </button>
         </div>
-        <div className="flex flex-col items-center justify-center h-full space-y-8 text-lg font-semibold">
-          <Link
-            href="/"
-            className="text-white hover:text-yellow-400 transition-colors"
-            onClick={() => setIsOpen(false)}
-          >
-            Home
+
+        {/* Navigation Links */}
+        <nav className="space-y-4">
+          <Link href="/" className="flex items-center space-x-3 p-2 rounded hover:bg-blue-700">
+            <FiHome className="h-5 w-5" />
+            <span>Home</span>
           </Link>
-          <Link
-            href="/tutorials"
-            className="text-white hover:text-yellow-400 transition-colors"
-            onClick={() => setIsOpen(false)}
-          >
-            Tutorials
+          <Link href="/tutorials" className="flex items-center space-x-3 p-2 rounded hover:bg-blue-700">
+            <FiBookOpen className="h-5 w-5" />
+            <span>Tutorials</span>
           </Link>
-          <Link
-            href="/live-classes"
-            className="text-white hover:text-yellow-400 transition-colors"
-            onClick={() => setIsOpen(false)}
-          >
-            Live Classes
+          <Link href="/live-classes" className="flex items-center space-x-3 p-2 rounded hover:bg-blue-700">
+            <FiVideo className="h-5 w-5" />
+            <span>Live Classes</span>
           </Link>
-          <Link
-            href="/courses"
-            className="text-white hover:text-yellow-400 transition-colors"
-            onClick={() => setIsOpen(false)}
-          >
-            Courses
+          <Link href="/courses" className="flex items-center space-x-3 p-2 rounded hover:bg-blue-700">
+            <FiLayers className="h-5 w-5" />
+            <span>Courses</span>
           </Link>
-          <Link
-            href="/notes"
-            className="text-white hover:text-yellow-400 transition-colors"
-            onClick={() => setIsOpen(false)}
-          >
-            Notes
+          <Link href="/notes" className="flex items-center space-x-3 p-2 rounded hover:bg-blue-700">
+            <FiFileText className="h-5 w-5" />
+            <span>Notes</span>
           </Link>
-          <Link
-            href="/contact"
-            className="text-white hover:text-yellow-400 transition-colors"
-            onClick={() => setIsOpen(false)}
-          >
-            Contact
+          <Link href="/contact" className="flex items-center space-x-3 p-2 rounded hover:bg-blue-700">
+            <FiPhone className="h-5 w-5" />
+            <span>Contact</span>
           </Link>
-        </div>
+        </nav>
       </div>
-    </header>
+
+      {/* Toggle Button */}
+      {!isOpen && (
+        <button
+        title="menu"
+        onClick={toggleNavbar}
+        className="fixed top-11 left-5 bg-gray-900 text-white p-2 rounded z-[51] focus:outline-none"
+      >
+         <FiMenu className="h-6 w-6" />
+      </button>
+      )}
+      {/* <button
+        onClick={toggleNavbar}
+        className="fixed top-5 left-5 bg-gray-900 text-white p-2 rounded z-[51] focus:outline-none"
+      >
+        {isOpen ? <FiX className="h-0 w-0 md:hidden" /> : <FiMenu className="h-6 w-6" />}
+      </button> */}
+
+      {/* Overlay when sidebar is open */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-40"
+          onClick={toggleNavbar}
+        />
+      )}
+    </>
   );
 };
 
