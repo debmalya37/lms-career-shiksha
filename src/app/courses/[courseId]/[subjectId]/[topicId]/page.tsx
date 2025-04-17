@@ -1,4 +1,3 @@
-// app/course/[courseId]/[subjectId]/[topicId]/page.tsx
 import connectMongo from '@/lib/db';
 import Tutorial from '@/models/tutorialModel';
 import Link from 'next/link';
@@ -8,26 +7,51 @@ export const dynamic = 'force-dynamic';
 // Function to fetch tutorials for a given topic
 async function fetchTutorialsForTopic(topicId: string) {
   await connectMongo();
-  const tutorials = await Tutorial.find({ topic: topicId }).select('title').lean();
-  return tutorials;
+  return await Tutorial.find({ topic: topicId }).select('title').lean();
 }
 
 export default async function TopicPage({ params }: { params: { courseId: string; subjectId: string; topicId: string } }) {
   const tutorials = await fetchTutorialsForTopic(params.topicId);
 
   return (
-    <div className="container mx-auto py-8 min-h-screen bg-white text-black rounded-lg shadow-md">
-      <h1 className="text-3xl font-bold text-blue-700 mb-6">Tutorials in Topic</h1>
-      
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-        {tutorials.map((tutorial: any) => (
-          <div key={tutorial._id} className="bg-white border border-gray-200 rounded-lg shadow-md p-4 hover:shadow-lg transition-shadow">
-            <h2 className="text-xl font-semibold text-black mb-2">{tutorial.title}</h2>
-            <Link href={`/courses/${params.courseId}/${params.subjectId}/${params.topicId}/${tutorial._id}`}>
-              <span className="text-blue-500 hover:underline">View Tutorial</span>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-6">
+      {/* Main Heading */}
+      <h1 className="text-4xl font-extrabold text-center text-gray-900 dark:text-white mb-8">
+        📖 Explore Tutorials
+      </h1>
+
+      {/* Tutorials Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
+        {tutorials.length > 0 ? (
+          tutorials.map((tutorial: any, index: number) => (
+            <Link
+              key={tutorial._id}
+              href={`/courses/${params.courseId}/${params.subjectId}/${params.topicId}/${tutorial._id}`}
+              className={`relative block p-5 rounded-xl shadow-md transform transition-all duration-300 hover:scale-105 hover:shadow-lg group ${
+                index % 2 === 0 ? 'bg-pink-300' : 'bg-blue-900 text-white'
+              }`}
+            >
+              {/* Floating Glass Effect */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-50 group-hover:opacity-70 transition-opacity rounded-xl" />
+
+              {/* Tutorial Title */}
+              <h2 className="relative text-lg font-semibold text-center">
+                {tutorial.title}
+              </h2>
+
+              {/* View Tutorial Button */}
+              <div className="relative mt-3 text-center">
+                <span className="inline-block bg-white dark:bg-gray-700 text-gray-900 dark:text-white py-1.5 px-4 rounded-full text-sm font-medium tracking-wide transition-all duration-300 hover:bg-gray-200 dark:hover:bg-gray-600">
+                  View Tutorial →
+                </span>
+              </div>
             </Link>
+          ))
+        ) : (
+          <div className="col-span-full text-center text-gray-600 dark:text-gray-400 text-lg">
+            No tutorials available for this topic.
           </div>
-        ))}
+        )}
       </div>
     </div>
   );
@@ -36,28 +60,27 @@ export default async function TopicPage({ params }: { params: { courseId: string
 // Function for fetching topics by courseId and subjectId
 async function fetchTopics(courseId: string, subjectId: string) {
   await connectMongo();
-  const topics = await Tutorial.find({ course: courseId, subject: subjectId }).distinct('topic').lean();
-  return topics;
+  return await Tutorial.find({ course: courseId, subject: subjectId }).distinct('topic').lean();
 }
 
 // Static params generation function
 export async function generateStaticParams() {
   await connectMongo(); // Ensure connection to MongoDB
 
-  const courses = await Tutorial.find({}).distinct('course').lean(); // Adjust fetching courses as necessary
-  const params: { courseId: any; subjectId: any; topicId: any; }[] = [];
+  const courses = await Tutorial.find({}).distinct('course').lean();
+  const params: { courseId: any; subjectId: any; topicId: any }[] = [];
 
   for (const course of courses) {
-    const subjects = await Tutorial.find({ course }).distinct('subject').lean(); // Fetch distinct subjects for each course
+    const subjects = await Tutorial.find({ course }).distinct('subject').lean();
 
     for (const subject of subjects) {
-      const topics = await fetchTopics(course, subject); // Pass both courseId and subjectId
+      const topics = await fetchTopics(course, subject);
 
-      topics.forEach(topic => {
+      topics.forEach((topic) => {
         params.push({
           courseId: course,
           subjectId: subject,
-          topicId: topic, // Assuming topic is an object with an _id property, otherwise adjust accordingly
+          topicId: topic,
         });
       });
     }

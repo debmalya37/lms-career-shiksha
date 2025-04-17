@@ -6,9 +6,25 @@ export default function Footer() {
         <div className="mb-6">
           <h3 className="text-xl sm:text-2xl font-bold mb-2">About Career Shiksha</h3>
           <p className="text-sm md:text-base text-gray-300 mx-auto max-w-2xl leading-relaxed">
-          Career Shiksha is dedicated to providing quality education and training. 
+            Career Shiksha is dedicated to providing quality education and training. 
             We offer a range of courses designed to help students excel in their careers.
           </p>
+
+          {/* Google Play Store Badge */}
+          <div className="mt-4">
+            <a
+              href="https://play.google.com/store/apps/details?id=YOUR_APP_ID_HERE"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Get it on Google Play"
+            >
+              <img
+                src="https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg"
+                alt="Get it on Google Play"
+                className="mx-auto w-40 sm:w-48 hover:opacity-90 transition-opacity"
+              />
+            </a>
+          </div>
         </div>
 
         {/* Divider */}

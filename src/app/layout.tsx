@@ -31,7 +31,7 @@ export default function RootLayout({
       <AuthProvider>
         <body className={`${inter.className} bg-gradient-to-b from-gray-100 to-blue-100`} >
           <Navbar />
-          <DisableRightClick />
+          {/* <DisableRightClick /> */}
           {children}
           <Toaster />
           <Footer />

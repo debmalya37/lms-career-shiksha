@@ -1,9 +1,9 @@
 // app/course/[courseId]/[subjectId]/page.tsx
 "use client";
-import { useEffect, useState } from 'react';
-import Link from 'next/link';
-import axios from 'axios';
-import ClipLoader from 'react-spinners/ClipLoader';
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import axios from "axios";
+import ClipLoader from "react-spinners/ClipLoader";
 
 type Topic = {
   _id: string;
@@ -33,7 +33,6 @@ export default function SubjectPage({ params }: { params: { courseId: string; su
   const [testSeries, setTestSeries] = useState<Quiz[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Fetch data using useEffect for client-side updates
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -55,96 +54,94 @@ export default function SubjectPage({ params }: { params: { courseId: string; su
     };
 
     fetchData();
-  }, [courseId, subjectId]); // Dependencies ensure it re-fetches when courseId or subjectId changes
+  }, [courseId, subjectId]);
 
   if (loading) {
-    return <p><ClipLoader /></p>;
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <ClipLoader size={50} color="#2563eb" />
+      </div>
+    );
   }
 
   return (
-    <div className="container mx-auto py-8 px-4 bg-white min-h-screen rounded-lg shadow-md">
-      <h1 className="text-3xl font-bold text-blue-700 mb-6">Topics, eBooks, and Test Series</h1>
+    <div className="container mx-auto py-10 px-5 bg-gradient-to-b from-blue-50 to-white min-h-screen rounded-lg shadow-md">
+      <h1 className="text-4xl font-extrabold text-blue-700 mb-8 text-center">Explore Subject Content</h1>
 
       {/* Topics Section */}
-      <div className="mb-8">
-        <h2 className="text-2xl font-semibold text-green-700 mb-4">Topics</h2>
+      <div className="mb-12 bg-blue-950 bg-opacity-15 rounded-lg p-6 shadow-lg">
+        <h2 className="text-3xl font-semibold text-blue-950 mb-6 text-center">Topics</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {topics.length > 0 ? (
             topics.map((topic) => (
-              <div key={topic._id} className="bg-white border rounded-lg shadow-lg p-4">
-                <h3 className="text-lg font-bold text-black mb-2">{topic.name}</h3>
+              <div key={topic._id} className="bg-blue-900 bg-opacity-30 backdrop-blur-md shadow-lg rounded-xl p-6 hover:scale-105 transition-transform duration-300">
+                <h3 className="text-xl font-bold text-gray-800 mb-2">{topic.name}</h3>
                 <Link href={`/courses/${courseId}/${subjectId}/${topic._id}`}>
-                  <button className="bg-blue-500 text-white px-4 py-2 mt-2 rounded-md hover:bg-blue-600 w-full transition-colors">
+                  <button className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-5 py-2 rounded-md hover:shadow-lg w-full transition-all">
                     View Topic
                   </button>
                 </Link>
               </div>
             ))
           ) : (
-            <p className="text-gray-500">No topics found for this subject.</p>
+            <p className="text-gray-500 text-center">No topics found for this subject.</p>
           )}
         </div>
       </div>
 
       {/* eBooks Section */}
-      <div className="mb-8">
-        <h2 className="text-2xl font-semibold text-green-700 mb-4">eBooks</h2>
+      <div className="mb-12">
+        <h2 className="text-3xl font-semibold text-blue-950 mb-6 text-center">eBooks</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {ebooks.length > 0 ? (
             ebooks.map((ebook) => (
-              <div key={ebook._id} className="bg-white border rounded-lg shadow-lg overflow-hidden">
+              <div key={ebook._id} className="bg-blue-950 bg-opacity-100 backdrop-blur-md shadow-lg rounded-xl overflow-hidden">
                 {ebook.ebookImg && (
-                  <img
-                    src={ebook.ebookImg}
-                    alt={ebook.title}
-                    className="w-full h-48 object-cover object-center"
-                  />
+                  <img src={ebook.ebookImg} alt={ebook.title} className="w-full h-48 object-contain  object-center  " />
                 )}
-                <div className="p-4">
-                  <h3 className="text-lg font-bold text-black mb-2">{ebook.title}</h3>
-                  <p className="text-sm text-gray-500 mb-4">{ebook.subject.name}</p>
-                  <Link
-                    href={ebook.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 w-full block text-center transition-colors"
-                  >
-                    View eBook
+                <div className="p-6">
+                  <h3 className="text-xl font-bold text-gray-100 mb-2">{ebook.title}</h3>
+                  <p className="text-sm text-gray-100 mb-4">{ebook.subject.name}</p>
+                  <Link href={ebook.url} target="_blank" rel="noopener noreferrer">
+                    <button className="bg-gradient-to-r from-purple-500 to-pink-600 text-white px-5 py-2 rounded-md hover:shadow-lg w-full transition-all">
+                      View eBook
+                    </button>
                   </Link>
                 </div>
               </div>
             ))
           ) : (
-            <p className="text-gray-500">No eBooks found for this subject.</p>
+            <p className="text-gray-500 text-center">No eBooks found for this subject.</p>
           )}
         </div>
       </div>
 
       {/* Test Series Section */}
-      <div className="mb-8">
-        <h2 className="text-2xl font-semibold text-green-700 mb-4">Test Series</h2>
+      <div className="mb-12">
+        <h2 className="text-3xl font-semibold text-blue-950 mb-6 text-center">Test Series</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {testSeries.length > 0 ? (
             testSeries.map((quiz) => (
-              <div key={quiz._id} className="bg-white border rounded-lg shadow-lg p-4">
-                <h3 className="text-lg font-bold text-black mb-2">{quiz.title}</h3>
-                <p className="text-gray-500 mb-2">Total Time: {quiz.totalTime} minutes</p>
-                <p className="text-gray-500 mb-2">Negative Marking: {quiz.negativeMarking}</p>
+              <div key={quiz._id} className="bg-pink-800 bg-opacity-15 backdrop-blur-md shadow-lg rounded-xl p-6 hover:scale-105 transition-transform duration-300">
+                <h3 className="text-xl font-bold text-gray-800 mb-2">{quiz.title}</h3>
+                <p className="text-gray-600 mb-2">⏳ Total Time: {quiz.totalTime} minutes</p>
+                <p className="text-gray-600 mb-4">❌ Negative Marking: {quiz.negativeMarking}</p>
                 <Link href={`/quiz?quizId=${quiz._id}&courseId=${courseId}&subjectId=${subjectId}`}>
-                  <button className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 w-full transition-colors">
-                    Go to Test
+                  <button className="bg-gradient-to-r from-green-500 to-teal-600 text-white px-5 py-2 rounded-md hover:shadow-lg w-full transition-all">
+                    Start Test
                   </button>
                 </Link>
               </div>
             ))
           ) : (
-            <p className="text-gray-500">No Test Series found for this subject.</p>
+            <p className="text-gray-500 text-center">No Test Series found for this subject.</p>
           )}
         </div>
       </div>
     </div>
   );
 }
+
 
 
 // app/course/[courseId]/[subjectId]/page.tsx

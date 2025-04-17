@@ -46,7 +46,7 @@ export default function Home() {
   const [adminNotifications, setAdminNotifications] = useState<AdminNotification[]>([]);
   const [bannerAds, setBannerAds] = useState<BannerAd[]>([]);
   const [currentAdIndex, setCurrentAdIndex] = useState(0);
-
+  const [isLoading, setIsLoading] = useState(true); // Track loading state
   // Check for session token and redirect if missing
   useEffect(() => {
     async function checkSession() {
@@ -83,29 +83,29 @@ export default function Home() {
     return url;
   };
 
-  // Fetch user profile, courses, notifications, etc.
   useEffect(() => {
     async function fetchData() {
       try {
         const profileRes = await axios.get(`/api/profile`);
         const profileData: UserProfile = profileRes.data;
         console.log("Profile Data:", profileData);
-
+  
         if (profileData?.courses?.length) {
           setUserCourses(profileData.courses);
         }
-
+  
         const allCoursesRes = await axios.get(`/api/course`);
         if (allCoursesRes.data) {
           setAllCourses(allCoursesRes.data);
+          setIsLoading(false);
         }
-
+  
         const notificationsRes = await axios.get(`/api/notifications`);
         setAdminNotifications(notificationsRes.data);
-
+  
         const tutorialRes = await axios.get(`/api/latestTutorial`);
         if (tutorialRes.data) setLatestTutorial(tutorialRes.data);
-
+  
         if (profileData.courses?.length) {
           const courseIds = profileData.courses.map((course) => course._id).join(",");
           const liveClassesRes = await axios.get(`/api/live-classes?courseIds=${courseIds}`);
@@ -117,15 +117,21 @@ export default function Home() {
             setLatestLiveClasses(transformedLiveClasses);
           }
         }
-
+  
         const courseRes = await axios.get(`/api/latestCourse`);
         if (courseRes.data) setLatestCourse(courseRes.data);
+  
+        // ✅ Mark as loaded
+        setIsLoading(false);
+  
       } catch (error) {
         console.error("Error fetching data:", error);
+        setIsLoading(false); // Even if there's an error, stop loading
       }
     }
     fetchData();
   }, []);
+  
 
   // Filter unsubscribed courses
   useEffect(() => {
@@ -157,50 +163,66 @@ export default function Home() {
     return () => clearInterval(interval);
   }, [bannerAds]);
 
-  // Reusable Course Card
-  const CourseCard = ({
-    course,
-    buttonLabel,
-    buttonLink,
-  }: {
-    course: Course;
-    buttonLabel: string;
-    buttonLink: string;
-  }) => {
-    return (
-      <div className="flex items-center bg-blue-900 rounded-lg shadow-lg overflow-hidden w-full max-w-3xl h-auto p-4 hover:shadow-xl transition-shadow">
-        {/* Left side: Image */}
-        <div className="w-24 h-24 bg-blue-900 flex items-center justify-center rounded-md overflow-hidden flex-shrink-0">
-          {course.courseImg ? (
+  // Inside your Home component
+// Reusable Course Card
+const CourseCard = ({
+  course,
+  buttonLabel,
+  buttonLink,
+}: {
+  course: Course | null;
+  // Use null for loading state
+  buttonLabel: string;
+  buttonLink: string;
+}) => {
+  return (
+    <div className="w-64 h-72 bg-blue-950 rounded shadow hover:shadow-md transition-shadow flex flex-col overflow-hidden">
+        {/* Course Image */}
+        <div className="h-32 w-full bg-gray-700 flex items-center justify-center overflow-hidden rounded-md">
+          {course ? (
             <img
-              src={course.courseImg}
-              alt={`${course.title} Thumbnail`}
-              className="object-cover w-full h-full"
+              src={course.courseImg || "/placeholder.jpg"}
+              alt={course.title}
+              className="object-cover w-full h-full p-2 rounded-md transition-transform duration-300 transform hover:scale-105 rounded-xl"
             />
           ) : (
-            <span className="text-gray-500">No Image</span>
+            <div className="w-full h-full bg-gray-500 animate-pulse"></div>
           )}
         </div>
-        {/* Center: Title + Description */}
-        <div className="flex-1 px-4 rounded-md shadow-sm">
-          <h3 className="text-lg font-semibold text-gray-100">{course.title}</h3>
-          <p className="text-sm text-gray-200 line-clamp-2">{course.description}</p>
-        </div>
-        {/* Right side: Button */}
-        <div>
-          <Link href={buttonLink}>
-            <button className="bg-blue-200 text-blue-950 px-4 py-2 rounded-full hover:bg-blue-950 hover:text-blue-100 transition-colors">
-              {buttonLabel}
-            </button>
-          </Link>
+
+        {/* Course Info */}
+        <div className="flex-1 flex flex-col p-3">
+          {/* Course Title */}
+          <h3 className="text-lg font-bold text-gray-100 mb-1">
+            {course ? course.title : <div className="w-3/4 h-5 bg-gray-500 animate-pulse rounded"></div>}
+          </h3>
+
+          {/* Description */}
+          <div className="text-sm text-gray-200 flex-1">
+            {course ? course.description.slice(0, 50) + "..." : <div className="w-full h-4 bg-gray-500 animate-pulse rounded"></div>}
+          </div>
+
+          {/* Button */}
+          <div className="flex justify-end mt-2">
+            {course ? (
+              <Link href={buttonLink}>
+                <button className="text-sm text-blue-100 hover:underline">
+                  {buttonLabel}
+                </button>
+              </Link>
+            ) : (
+              <div className="w-16 h-5 bg-gray-500 animate-pulse rounded"></div>
+            )}
+          </div>
         </div>
       </div>
-    );
-  };
+  );
+};
+
 
   return (
-    <main className="bg-[#0B0220] min-h-screen text-white">
-      <DisableRightClickAndClipboard />
+    <main className="bg-slate-300 min-h-screen text-black">
+      {/* <DisableRightClickAndClipboard /> */}
       {/* <MobileClipboardFunction /> */}
 
       <div className="container mx-auto p-4 rounded-md">
@@ -240,52 +262,45 @@ export default function Home() {
 
         {/* Main Body */}
         <div className="p-4 flex-1 overflow-auto">
-          {/* Subscribed Courses */}
+           {/* Subscribed Courses */}
         <div className="mt-8">
-          {userCourses.length > 0 ? (
-            <div className="mb-8">
-              <h2 className="text-lg sm:text-2xl font-bold text-green-700 mb-4">
-                Your Subscribed Courses
-              </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {userCourses.map((course: Course) => (
+          <h2 className="text-lg sm:text-2xl font-bold text-blue-950 mb-4">
+            Your Subscribed Courses
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            {isLoading
+              ? Array.from({ length: 5 }).map((_, index) => (
+                  <CourseCard key={index} course={null} buttonLabel="" buttonLink="" />
+                ))
+              : userCourses.map((course) => (
                   <CourseCard
                     key={course._id}
                     course={course}
                     buttonLabel="View"
-                    buttonLink={`/courses/${course._id}`}
+                    buttonLink={`/course/${course._id}`}
                   />
                 ))}
-              </div>
-            </div>
-          ) : (
-            <p className="text-gray-300 text-sm sm:text-base">
-              You have no active subscriptions.
-            </p>
-          )}
+          </div>
         </div>
-
         {/* Unsubscribed Courses */}
         <div className="mt-6">
-          <h2 className="text-lg sm:text-2xl font-bold text-green-700 mb-4">
+          <h2 className="text-lg sm:text-2xl font-bold text-blue-950 mb-4">
             Courses You Haven&apos;t Subscribed To
           </h2>
-          {unsubscribedCourses.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {unsubscribedCourses.map((course: Course) => (
-                <CourseCard
-                  key={course._id}
-                  course={course}
-                  buttonLabel="Contact Us"
-                  buttonLink={`/contact`}
-                />
-              ))}
-            </div>
-          ) : (
-            <p className="text-gray-300 text-sm sm:text-base">
-              Looks like you&apos;ve subscribed to all available courses!
-            </p>
-          )}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            {isLoading
+              ? Array.from({ length: 5 }).map((_, index) => (
+                  <CourseCard key={index} course={null} buttonLabel="" buttonLink="" />
+                ))
+              : unsubscribedCourses.map((course) => (
+                  <CourseCard
+                    key={course._id}
+                    course={course}
+                    buttonLabel="Go to Course"
+                    buttonLink={`/course/${course._id}`}
+                  />
+                ))}
+          </div>
         </div>
         </div>
       </div>
