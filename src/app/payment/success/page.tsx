@@ -1,4 +1,12 @@
+// app/payment/success/page.tsx
+
+// Disable static prerendering—always render on the client
+export const dynamic = 'force-dynamic';
+export const fetchCache = 'force-no-store';
+export const revalidate = 0;
+
 "use client";
+
 import { useSearchParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -25,24 +33,27 @@ export default function PaymentSuccessPage() {
 
     async function verifyPayment() {
       try {
-        const res = await fetch(`/api/status?id=${encodeURIComponent(transactionId || "")}`, {
-          cache: "no-store",
-        });
-        
+        // force no caching so we always check fresh status
+        const res = await fetch(
+          `/api/status?id=${encodeURIComponent(transactionId || '')}`,
+          { cache: "no-store" }
+        );
         if (!res.ok) {
           throw new Error(`HTTP ${res.status}`);
         }
         const json: StatusResponse = await res.json();
 
         if (json.success && json.data?.courseId) {
-          // Redirect to the actual course page
+          // spin off to the real course page
           router.replace(`/courses/${json.data.courseId}`);
         } else {
           setMessage(`Payment ${json.code}: ${json.message}`);
         }
       } catch (err: any) {
         console.error("Payment verification error:", err);
-        setMessage("There was an error verifying your payment. Please contact support.");
+        setMessage(
+          "There was an error verifying your payment. Please contact support."
+        );
       }
     }
 
@@ -50,8 +61,8 @@ export default function PaymentSuccessPage() {
   }, [transactionId, router]);
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-green-50 to-green-100">
-      <div className="bg-white p-8 rounded-lg shadow-lg text-center">
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-green-50 to-green-100 p-4">
+      <div className="bg-white p-8 rounded-lg shadow-lg text-center max-w-sm w-full">
         <h1 className="text-2xl font-bold text-green-800 mb-4">Payment Status</h1>
         <p className="text-gray-700">{message}</p>
       </div>
