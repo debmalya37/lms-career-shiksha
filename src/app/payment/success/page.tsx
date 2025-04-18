@@ -1,5 +1,7 @@
 // app/payment/success/page.tsx
 "use client";
+export const dynamic = 'force-dynamic';
+export const fetchCache = 'force-no-store';
 
 import { useSearchParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
