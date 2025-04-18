@@ -14,10 +14,15 @@ import {
 } from '@heroicons/react/24/outline'
 import Link from 'next/link'
 
-interface StatusResponse {
-  status: string
-  transactionId?: string
-  courseId?: string
+/** Match the JSON shape your /api/status now returns */
+interface PhonePeStatusResponse {
+  success: boolean
+  code:    string
+  message: string
+  data?: {
+    transactionId: string
+    courseId?:     string
+  }
 }
 
 interface Course {
@@ -27,15 +32,15 @@ interface Course {
 
 export default function StatusClient() {
   const { id: transactionId } = useParams() as { id: string }
-  const searchParams = useSearchParams()
-  const courseIdFromUrl = searchParams.get('courseId')
-  const router = useRouter()
+  const searchParams       = useSearchParams()
+  const courseIdFromUrl    = searchParams.get('courseId')  // fallback
+  const router             = useRouter()
 
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [status, setStatus] = useState<string | null>(null)
-  const [transactionIdState, setTransactionIdState] = useState<string | null>(null)
-  const [courseId, setCourseId] = useState<string | null>(courseIdFromUrl)
+  const [loading,   setLoading]   = useState(true)
+  const [error,     setError]     = useState<string | null>(null)
+  const [status,    setStatus]    = useState<string | null>(null)
+  const [txId,      setTxId]      = useState<string | null>(null)
+  const [courseId,  setCourseId]  = useState<string | null>(courseIdFromUrl)
   const [courseTitle, setCourseTitle] = useState<string | null>(null)
 
   const fetchStatus = useCallback(async () => {
@@ -44,21 +49,31 @@ export default function StatusClient() {
     setLoading(true)
     setError(null)
     setStatus(null)
-    setTransactionIdState(null)
+    setTxId(null)
     setCourseTitle(null)
 
     try {
-      const { data } = await axios.post<StatusResponse>('/api/status', {
-        id: transactionId,
-      })
-      setStatus(data.status)
-      setTransactionIdState(data.transactionId ?? null)
-      const cid = data.courseId ?? courseIdFromUrl
+      // 1) POST both id & courseId to your status endpoint
+      const { data } = await axios.post<PhonePeStatusResponse>(
+        '/api/status',
+        { id: transactionId, courseId: courseIdFromUrl },
+        { headers: { 'Content-Type': 'application/json' } }
+      )
+
+      if (!data.success) {
+        throw new Error(`${data.code}: ${data.message}`)
+      }
+
+      // 2) Pull transactionId & courseId from the API response
+      setStatus(data.code)
+      setTxId(data.data!.transactionId)
+      const cid = data.data!.courseId ?? courseIdFromUrl
       setCourseId(cid)
 
-      toast.success(`Transaction ${data.status}`)
+      toast.success(`Transaction ${data.code}`)
 
-      if (data.status === 'PAYMENT_SUCCESS' && cid) {
+      // 3) If successful & we have a courseId, fetch course metadata
+      if (data.code === 'PAYMENT_SUCCESS' && cid) {
         const courseRes = await axios.get<{ course: Course }>(
           `/api/course/${cid}`
         )
@@ -68,7 +83,7 @@ export default function StatusClient() {
       const msg =
         err instanceof AxiosError
           ? err.response?.data?.message || err.message
-          : 'Something went wrong. Please contact support.'
+          : (err as Error).message
       setError(msg)
       toast.error(msg)
     } finally {
@@ -82,12 +97,12 @@ export default function StatusClient() {
 
   const isSuccess = status === 'PAYMENT_SUCCESS'
 
-  // Programmatic PDF download
+  // download invoice via blob
   const downloadInvoice = async () => {
-    if (!transactionIdState || !courseId) return
+    if (!txId || !courseId) return
     try {
       const res = await fetch(
-        `/api/invoice/${transactionIdState}/${courseId}`,
+        `/api/invoice/${txId}/${courseId}`,
         { headers: { Accept: 'application/pdf' } }
       )
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
@@ -95,7 +110,7 @@ export default function StatusClient() {
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `invoice_${transactionIdState}.pdf`
+      a.download = `invoice_${txId}.pdf`
       document.body.appendChild(a)
       a.click()
       a.remove()
@@ -151,10 +166,8 @@ export default function StatusClient() {
 
               <div className="space-y-2">
                 <div className="flex justify-between">
-                  <span className="font-medium text-gray-700">
-                    Transaction ID:
-                  </span>
-                  <span className="text-gray-900">{transactionIdState}</span>
+                  <span className="font-medium text-gray-700">Txn ID:</span>
+                  <span className="text-gray-900">{txId}</span>
                 </div>
                 {courseTitle && (
                   <div className="flex justify-between">
@@ -173,7 +186,7 @@ export default function StatusClient() {
                     Go to Course
                   </button>
                 )}
-                {isSuccess && transactionIdState && courseId && (
+                {isSuccess && txId && courseId && (
                   <button
                     onClick={downloadInvoice}
                     className="flex-1 inline-flex justify-center items-center px-4 py-2 bg-gray-100 text-gray-800 rounded-md hover:bg-gray-200 transition"
