@@ -52,9 +52,9 @@ export async function POST(req: NextRequest) {
     merchantId:            MERCHANT_ID,
     merchantTransactionId: transactionId,
     amount:                Math.round(amount * 100),
-    redirectUrl:           `http://localhost:3000/status/${transactionId}?courseId=${courseId}`,
+    redirectUrl:           `https://civilacademyapp.com/status/${transactionId}?courseId=${courseId}`,
     redirectMode:          "POST",
-    callbackUrl:           `http://localhost:3000/api/status?id=${transactionId}&courseId=${courseId}`,
+    callbackUrl:           `https://civilacademyapp.com/api/status?id=${transactionId}&courseId=${courseId}`,
     mobileNumber:           userDoc.phoneNo || "",
     paymentInstrument:     { type: "PAY_PAGE" },
   };
