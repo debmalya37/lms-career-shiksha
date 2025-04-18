@@ -1,74 +1,101 @@
 // app/api/status/route.ts
-import { NextRequest, NextResponse } from "next/server";
-import sha256 from "crypto-js/sha256";
-import axios from "axios";
+import { NextRequest, NextResponse } from 'next/server';
+import crypto from 'crypto';
+import axios from 'axios';
 
-interface StatusRequest {
-  id: string;
+interface PhonePeStatusResponse {
+  success: boolean;
+  code:    string;
+  message: string;
+  data?: {
+    transactionId: string;
+    courseId?:     string;
+  };
 }
 
-interface StatusResponse {
-  status: string;
-  transactionId?: string | null;
-}
-
-export async function POST(req: NextRequest): Promise<NextResponse<StatusResponse>> {
+export async function POST(req: NextRequest): Promise<NextResponse<PhonePeStatusResponse>> {
+  // 1) Parse JSON body
+  let body: any;
   try {
-    const { id } = (await req.json()) as StatusRequest;
-    if (!id) {
-      return NextResponse.json(
-        { status: "FAIL", transactionId: null },
-        { status: 400 }
-      );
-    }
+    body = await req.json();
+  } catch (e) {
+    return NextResponse.json({
+      success: false,
+      code:    'BAD_JSON',
+      message: 'Cannot parse request body as JSON',
+    }, { status: 400 });
+  }
 
-    const merchantId = process.env.PHONEPE_MERCHANT_ID!;
-    const saltKey    = process.env.PHONEPE_SALT_KEY!;
-    const saltIndex  = process.env.PHONEPE_SALT_INDEX!; // e.g. "1"
-    const useSandbox = process.env.NODE_ENV !== "production";
+  const id       = body.id as string | undefined;
+  const courseId = body.courseId as string | undefined;
 
-    // Build path and checksum
-    const path = `/pg/v1/status/${merchantId}/${id}`;
-    const toSign = path + saltKey;
-    const hash = sha256(toSign).toString();
-    const checksum = `${hash}###${saltIndex}`;
+  if (!id) {
+    return NextResponse.json({
+      success: false,
+      code:    'MISSING_ID',
+      message: 'Missing transaction id in request body',
+    }, { status: 400 });
+  }
 
-    // Choose correct host
-    const baseUrl = useSandbox
-      ? "https://api-preprod.phonepe.com/apis/pg-sandbox"
-      : "https://api.phonepe.com/apis/hermes";
+  // 2) Load & validate env vars
+  const merchantId = process.env.PHONEPE_MERCHANT_ID;
+  const saltKey    = process.env.PHONEPE_SALT_KEY;
+  const saltIndex  = process.env.PHONEPE_SALT_INDEX;
+  if (!merchantId || !saltKey || !saltIndex) {
+    console.error('❌ Missing PhonePe env vars:', { merchantId, saltKey, saltIndex });
+    return NextResponse.json({
+      success: false,
+      code:    'CONFIG_ERROR',
+      message: 'PhonePe configuration is incomplete on the server',
+    }, { status: 500 });
+  }
 
-    // Call PhonePe status API
+  // 3) Build path & signature
+  const path    = `/pg/v1/status/${merchantId}/${id}`;
+  const toSign  = path + saltKey;
+  const hash    = crypto.createHash('sha256').update(toSign).digest('hex');
+  const checksum = `${hash}###${saltIndex}`;
+
+  // 4) Pick the right base URL
+  const baseUrl = process.env.NODE_ENV === 'production'
+    ? 'https://api-preprod.phonepe.com/apis/pg-sandbox'
+    : 'https://api-preprod.phonepe.com/apis/pg-sandbox';
+
+  // 5) Call PhonePe
+  try {
     const resp = await axios.get(`${baseUrl}${path}`, {
       headers: {
-        accept:        "application/json",
-        "Content-Type": "application/json",
-        "X-VERIFY":     checksum,
-        "X-MERCHANT-ID": merchantId,
+        'Content-Type':   'application/json',
+        accept:           'application/json',
+        'X-VERIFY':       checksum,
+        'X-MERCHANT-ID':  merchantId,
       },
+      timeout: 10000,
     });
 
-    // If payment success, return the transactionId
-    if (resp.data.success && resp.data.code === "PAYMENT_SUCCESS") {
-      return NextResponse.json(
-        {
-          status: resp.data.code,
-          transactionId: resp.data.data.transactionId,
+    if (resp.data.success) {
+      return NextResponse.json({
+        success: true,
+        code:    resp.data.code,
+        message: resp.data.message,
+        data: {
+          transactionId: id,
+          courseId,
         },
-        { status: 200 }
-      );
+      });
+    } else {
+      return NextResponse.json({
+        success: false,
+        code:    resp.data.code,
+        message: resp.data.message,
+      });
     }
-
-    // Otherwise, treat as failure
-    return NextResponse.json(
-      { status: "FAIL", transactionId: null },
-      { status: 200 }
-    );
   } catch (err: any) {
-    console.error("Error in payment status check:", err.response?.data || err.message);
-    return NextResponse.json(
-      { status: "SERVER ERROR", transactionId: null },
-      { status: 500 }
-    );
+    console.error('❌ PhonePe status API error:', err.response?.data || err.message);
+    return NextResponse.json({
+      success: false,
+      code:    err.response?.data?.code || 'PHONEPE_ERROR',
+      message: err.response?.data?.message || err.message,
+    }, { status: 502 });
   }
 }
