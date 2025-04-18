@@ -1,10 +1,4 @@
 // app/payment/success/page.tsx
-
-// Disable static prerendering—always render on the client
-export const dynamic = 'force-dynamic';
-export const fetchCache = 'force-no-store';
-export const revalidate = 0;
-
 "use client";
 
 import { useSearchParams, useRouter } from "next/navigation";
@@ -33,9 +27,8 @@ export default function PaymentSuccessPage() {
 
     async function verifyPayment() {
       try {
-        // force no caching so we always check fresh status
         const res = await fetch(
-          `/api/status?id=${encodeURIComponent(transactionId || '')}`,
+          `/api/status?id=${encodeURIComponent(transactionId || "")}`,
           { cache: "no-store" }
         );
         if (!res.ok) {
@@ -44,7 +37,6 @@ export default function PaymentSuccessPage() {
         const json: StatusResponse = await res.json();
 
         if (json.success && json.data?.courseId) {
-          // spin off to the real course page
           router.replace(`/courses/${json.data.courseId}`);
         } else {
           setMessage(`Payment ${json.code}: ${json.message}`);
