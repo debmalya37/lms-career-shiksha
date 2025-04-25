@@ -1,97 +1,120 @@
 "use client";
-import { useState, useEffect } from 'react';
-import axios from 'axios';
-import Link from 'next/link';
 
-// Define the structure of a course
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import Link from "next/link";
+import { motion } from "framer-motion";
+import {
+  CalendarDaysIcon,
+  BookOpenIcon,
+} from "@heroicons/react/24/outline";
+
 interface Course {
   _id: string;
   title: string;
   description: string;
-  subjects: { name: string }[] | string[]; // Handle both populated and non-populated subjects
+  instructor?: string;
   courseImg?: string;
   createdAt: string;
-  isHidden?: boolean;
+  subjects: { name: string }[];  // assume populated
 }
 
 interface UserProfile {
-  name: string;
-  email: string;
-  subscription: number;
-  courses: Course[]; // Array of user courses
+  courses: Course[];
 }
 
-export default function CoursesPage() {
-  const [userCourses, setUserCourses] = useState<Course[]>([]); // Store all user courses
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+export default function MyCoursesPage() {
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchUserCourses() {
       try {
-        // Fetch user profile
-        const profileRes = await axios.get(`/api/profile`, { withCredentials: true });
-        const profileData: UserProfile = profileRes.data;
-        console.log("User Profile Data:", profileData);
-
-        // Set user courses
-        if (profileData?.courses?.length) {
-          setUserCourses(profileData.courses); // Assign courses from API
-        }
-      } catch (error) {
-        console.error('Error fetching user courses:', error);
+        const profileRes = await axios.get<UserProfile>("/api/profile", { withCredentials: true });
+        setCourses(profileRes.data.courses || []);
+      } catch (err) {
+        console.error("Error fetching user courses:", err);
       } finally {
-        setIsLoading(false);
+        setLoading(false);
       }
     }
     fetchUserCourses();
   }, []);
 
-  return (
-    <div className="container mx-auto py-8 px-5 text-white min-h-screen bg-slate-950">
-      <h1 className="text-3xl font-bold text-white mb-6 text-center">My Courses</h1>
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-gray-50">
+        <svg className="animate-spin h-12 w-12 text-blue-600" viewBox="0 0 24 24">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+        </svg>
+      </div>
+    );
+  }
 
-      {isLoading ? (
-        <p>Loading courses...</p>
-      ) : userCourses.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {userCourses.map((course: Course) => (
-            <div
-            key={course._id}
-            className="bg-white rounded-lg shadow-lg overflow-hidden w-full max-w-sm h-96 flex flex-col"
-          >
-            {/* Course Image */}
-            {course.courseImg && (
-              <div className="h-48 w-full overflow-hidden">
-                <img
-                  src={course.courseImg}
-                  alt={`${course.title} Thumbnail`}
-                  className="w-full h-full object-cover object-center"
-                />
-              </div>
-            )}
-          
-            {/* Course Details */}
-            <div className="p-4 flex flex-col flex-1 justify-between">
-              <div>
-                <h3 className="text-xl font-semibold mb-2 text-black truncate">{course.title}</h3>
-                <p className="text-gray-700 mb-2 line-clamp-3">{course.description}</p>
-                <p className="text-gray-500 mb-2 text-sm">
-                  Created on: {new Date(course.createdAt).toLocaleDateString()}
-                </p>
-              </div>
-          
-              <Link href={`/courses/${course._id}`}>
-                <button className="w-full bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition-colors">
-                  View
-                </button>
-              </Link>
-            </div>
+  return (
+    <div className="min-h-screen bg-gray-700 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto">
+        <h1 className="text-3xl font-extrabold text-gray-50 mb-8 text-center">My Courses</h1>
+
+        {courses.length === 0 ? (
+          <p className="text-center text-gray-500 py-20">
+            You are not enrolled in any courses yet.
+          </p>
+        ) : (
+          <div className="grid gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {courses.map(course => (
+              <motion.div
+                key={course._id}
+                className="group bg-white rounded-xl overflow-hidden shadow-lg border border-transparent hover:border-gradient-to-br hover:from-blue-300 hover:to-purple-300 transition-all duration-300 flex flex-col"
+                whileHover={{ scale: 1.03 }}
+              >
+                {/* Thumbnail */}
+                <div className="relative w-full aspect-[16/9] overflow-hidden">
+                  {course.courseImg ? (
+                    <img
+                      src={course.courseImg}
+                      alt={course.title}
+                      className="object-cover w-full h-full"
+                    />
+                  ) : (
+                    <div className="bg-gray-200 w-full h-full flex items-center justify-center">
+                      <span className="text-gray-500">No Image</span>
+                    </div>
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                  <h2 className="absolute bottom-2 left-2 text-white text-lg font-semibold drop-shadow-md line-clamp-1">
+                    {course.title}
+                  </h2>
+                </div>
+
+                {/* Body */}
+                <div className="p-4 flex-1 flex flex-col">
+                  <p className="text-sm text-gray-600 flex-1 line-clamp-3">{course.description}</p>
+
+                  {/* Info badges */}
+                  <div className="mt-4 flex items-center space-x-4 text-gray-500 text-xs">
+                    <span className="flex items-center space-x-1">
+                      <BookOpenIcon className="w-4 h-4" />
+                      <span>{course.subjects.length} Subjects</span>
+                    </span>
+                    <span className="flex items-center space-x-1">
+                      <CalendarDaysIcon className="w-4 h-4" />
+                      <span>{new Date(course.createdAt).toLocaleDateString()}</span>
+                    </span>
+                  </div>
+
+                  <Link href={`/courses/${course._id}`}>
+                    <span className="mt-4 inline-block text-center bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors">
+                      View Course
+                    </span>
+                  </Link>
+                </div>
+              </motion.div>
+            ))}
           </div>
-          ))}
-        </div>
-      ) : (
-        <p>No courses found for your profile.</p>
-      )}
+        )}
+      </div>
     </div>
   );
 }

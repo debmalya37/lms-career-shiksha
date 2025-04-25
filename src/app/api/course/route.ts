@@ -39,6 +39,8 @@ export async function POST(request: Request) {
     const courseId = formData.get("id") as string;
     const title = formData.get("title") as string;
     const description = formData.get("description") as string;
+    const price         = parseFloat(formData.get('price') as string) || 0;
+    const isFree        = formData.get('isFree') === 'true';
     // Use get() to retrieve the JSON string and then parse it.
     const subjectsRaw = formData.get("subjects") as string;
     const subjects = JSON.parse(subjectsRaw) as string[];
@@ -54,7 +56,8 @@ export async function POST(request: Request) {
     }
 
     // Log the incoming data for debugging
-    console.log("Incoming Data:", { courseId, title, description, subjects, isHidden });
+    console.log("Incoming Data:", { courseId, title, description, subjects, isHidden, price,
+      isFree, courseImgFile });
 
     // Handle image upload
     let courseImgUrl = "";
@@ -71,6 +74,8 @@ export async function POST(request: Request) {
       title,
       description,
       isHidden,
+      price,
+      isFree,
       subjects: uniqueSubjects, // Overwrite subjects array with unique values
     };
     if (courseImgUrl) updatedFields.courseImg = courseImgUrl;
@@ -96,6 +101,8 @@ export async function POST(request: Request) {
         description,
         subjects: uniqueSubjects,
         isHidden,
+        price,
+        isFree,
         courseImg: courseImgUrl,
       });
 

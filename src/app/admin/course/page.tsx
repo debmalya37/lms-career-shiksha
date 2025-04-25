@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 import { XCircleIcon } from "lucide-react";
 
@@ -19,258 +19,190 @@ interface Course {
   description: string;
   courseImg: string;
   subjects: Subject[];
-  isHidden: boolean; // New field
+  isHidden: boolean;
+  /** New fields: */
+  price: number;
+  isFree: boolean;
 }
 
 const ManageCourses = () => {
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [subject, setSubject] = useState("");
-  const [subjects, setSubjects] = useState<Subject[]>([]);
-  const [topic, setTopic] = useState("");
-  const [topics, setTopics] = useState<Topic[]>([]);
-  const [newSubjectName, setNewSubjectName] = useState("");
-  const [newTopicName, setNewTopicName] = useState("");
-  const [courseImg, setCourseImg] = useState<File | null>(null);
-  const [courses, setCourses] = useState<Course[]>([]);
+  const [title, setTitle]               = useState("");
+  const [description, setDescription]   = useState("");
+  const [subject, setSubject]           = useState("");
+  const [subjects, setSubjects]         = useState<Subject[]>([]);
+  const [topic, setTopic]               = useState("");
+  const [topics, setTopics]             = useState<Topic[]>([]);
+  const [courseImg, setCourseImg]       = useState<File | null>(null);
+
+  const [courses, setCourses]           = useState<Course[]>([]);
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
-  const [isHidden, setIsHidden] = useState(false); // State for isHidden
 
-  // Function to fetch all courses
-  const fetchCourses = async () => {
+  const [isHidden, setIsHidden]         = useState(false);
+  /** New state for price/isFree */
+  const [price, setPrice]               = useState(0);
+  const [isFree, setIsFree]             = useState(false);
+
+  // Fetch all courses
+  const fetchCourses = useCallback(async () => {
     try {
-      const res = await axios.get(`/api/course`);
+      const res = await axios.get<Course[]>("/api/course");
       setCourses(res.data);
-    } catch (error) {
-      console.error("Error fetching courses:", error);
+    } catch (err) {
+      console.error("Error fetching courses:", err);
     }
-  };
-
-  // Fetch subjects from the API
-  useEffect(() => {
-    const fetchSubjects = async () => {
-      try {
-        const res = await axios.get(`/api/subjects`);
-        setSubjects(res.data);
-      } catch (error) {
-        console.error("Error fetching subjects:", error);
-      }
-    };
-    fetchSubjects();
   }, []);
-
-  // Fetch topics when a subject is selected
-  useEffect(() => {
-    if (subject) {
-      const fetchTopics = async () => {
-        try {
-          const res = await axios.get(`/api/topics?subject=${subject}`);
-          setTopics(res.data);
-        } catch (error) {
-          console.error("Error fetching topics:", error);
-        }
-      };
-      fetchTopics();
-    }
-  }, [subject]);
-
-  // Fetch all courses initially
   useEffect(() => {
     fetchCourses();
+  }, [fetchCourses]);
+
+  // Fetch subjects
+  useEffect(() => {
+    axios.get<Subject[]>("/api/subjects")
+      .then(res => setSubjects(res.data))
+      .catch(err => console.error("Error fetching subjects:", err));
   }, []);
 
-  // Handle form submission for adding or editing a course
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-  
-    const formData = new FormData();
-    formData.append("title", title);
-    formData.append("description", description);
-  
-    // Combine subjects into one array and append as JSON string
-    const subjectsArray = [
-      ...(editingCourse?.subjects.map((subj) => subj._id) || []),
-      ...(subject ? [subject] : []),
-    ];
-    formData.append("subjects", JSON.stringify(subjectsArray));
-  
-    formData.append("isHidden", String(isHidden));
-  
-    if (courseImg) {
-      formData.append("courseImg", courseImg);
-    }
-  
-    try {
-      if (editingCourse) {
-        // Edit existing course
-        formData.append("id", editingCourse._id);
-        await axios.post(`/api/course/edit`, formData, {
-          headers: { "Content-Type": "multipart/form-data" },
-        });
-        alert("Course updated successfully!");
-      } else {
-        // Add a new course
-        await axios.post(`/api/course`, formData, {
-          headers: { "Content-Type": "multipart/form-data" },
-        });
-        alert("Course added successfully!");
-      }
-  
-      // Fetch updated courses after adding/editing
-      fetchCourses();
-      resetForm();
-    } catch (error) {
-      console.error("Error in handleSubmit:", error);
-      alert("Error adding/updating course.");
-    }
-  };
-  
-  
-  
-  
-  
+  // Fetch topics when subject changes
+  useEffect(() => {
+    if (!subject) return;
+    axios.get<Topic[]>(`/api/topics?subject=${subject}`)
+      .then(res => setTopics(res.data))
+      .catch(err => console.error("Error fetching topics:", err));
+  }, [subject]);
 
-  // Handle adding a new subject
-const handleAddSubject = async () => {
-  if (!newSubjectName) {
-    alert("Please enter a subject name.");
-    return;
-  }
-
-  if (!editingCourse) {
-    alert("Please select a course before adding a subject.");
-    return;
-  }
-
-  try {
-    const formData = new FormData();
-    formData.append("name", newSubjectName);
-    formData.append("courses", editingCourse._id); // Link to the selected course
-    if (courseImg) {
-      formData.append("subjectImg", courseImg); // Optionally include an image
-    }
-
-    await axios.post(`/api/subjects`, formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
-
-    // Fetch the updated subjects and update the state
-    const updatedSubjects = await axios.get(`/api/subjects`);
-    setSubjects(updatedSubjects.data);
-
-    setNewSubjectName(""); // Clear the input field
-    alert("New subject added successfully!");
-  } catch (error) {
-    console.error("Error adding subject:", error);
-    alert("Failed to add subject.");
-  }
-};
-
-
-
-  // Handle adding a new topic
-  const handleAddTopic = async () => {
-    if (!newTopicName || !subject) {
-      alert("Please select a subject and enter a topic name.");
-      return;
-    }
-
-    try {
-      const response = await axios.post(`/api/topics`, { name: newTopicName, subject });
-      setTopics((prevTopics) => [...prevTopics, response.data]);
-      setNewTopicName("");
-      alert("New topic added successfully!");
-    } catch (error) {
-      console.error("Error adding topic:", error);
-      alert("Failed to add topic.");
-    }
-  };
-
-  // Remove a subject from the course
-  const handleRemoveSubject = (subjectId: string) => {
-    if (!editingCourse) return;
-  
-    const updatedSubjects = editingCourse.subjects.filter((subj) => subj._id !== subjectId);
-    setEditingCourse({ ...editingCourse, subjects: updatedSubjects });
-  };
-  
-
-  // Open the edit form with pre-filled values
-  const handleEditClick = (course: Course) => {
-    setEditingCourse(course);
-    setTitle(course.title);
-    setDescription(course.description);
-    setSubject(course.subjects?.[0]?._id || "");
-    setIsHidden(course.isHidden); // Set the isHidden value
-    setCourseImg(null); // Reset file input
-  };
-  // Handle deleting a course
-  const handleDelete = async (courseId: string) => {
-    if (confirm("Are you sure you want to delete this course?")) {
-      try {
-        await axios.delete(`/api/course/delete?id=${courseId}`);
-        alert("Course deleted successfully!");
-        // Remove the deleted course from the state
-        setCourses((prevCourses) => prevCourses.filter((course) => course._id !== courseId));
-      } catch (error) {
-        console.error("Error deleting course:", error);
-        alert("Failed to delete course.");
-      }
-    }
-  };
-
-
-  // Reset the form to initial state
+  // Reset form
   const resetForm = () => {
     setTitle("");
     setDescription("");
     setSubject("");
     setTopic("");
-    setIsHidden(false); // Reset isHidden
     setCourseImg(null);
+    setIsHidden(false);
+    setPrice(0);
+    setIsFree(false);
     setEditingCourse(null);
+  };
+
+  // Pre-fill form when editing
+  const handleEditClick = (c: Course) => {
+    setEditingCourse(c);
+    setTitle(c.title);
+    setDescription(c.description);
+    setSubject(c.subjects[0]?._id || "");
+    setIsHidden(c.isHidden);
+    setPrice(c.price);
+    setIsFree(c.isFree);
+    setCourseImg(null);
+  };
+
+  // Submit handler
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const formData = new FormData();
+    if (editingCourse) {
+      formData.append("id", editingCourse._id);
+    }
+    formData.append("title", title);
+    formData.append("description", description);
+    formData.append("subjects", JSON.stringify([
+      ...(editingCourse?.subjects.map(s => s._id) || []),
+      ...(subject ? [subject] : [])
+    ]));
+    formData.append("isHidden", String(isHidden));
+    /** Append new fields: */
+    formData.append("isFree", String(isFree));
+    formData.append("price", String(price));
+
+    if (courseImg) {
+      formData.append("courseImg", courseImg);
+    }
+
+    try {
+      await axios.post("/api/course", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      alert(editingCourse ? "Course updated!" : "Course created!");
+      resetForm();
+      fetchCourses();
+    } catch (err) {
+      console.error("Error adding/updating course:", err);
+      alert("Failed to save course.");
+    }
+  };
+
+   // Remove a subject from the course
+   const handleRemoveSubject = (subjectId: string) => {
+    if (!editingCourse) return;
+  
+    const updatedSubjects = editingCourse.subjects.filter((subj) => subj._id !== subjectId);
+    setEditingCourse({ ...editingCourse, subjects: updatedSubjects });
+  };
+
+  // Delete handler
+  
+  const handleDelete = async (courseId: string) => {
+    if (!confirm("Delete this course?")) return;
+    try {
+      await axios.delete(`/api/course/delete?id=${courseId}`);
+      alert("Deleted!");
+      setCourses(courses.filter(c => c._id !== courseId));
+    } catch (err) {
+      console.error("Error deleting course:", err);
+      alert("Could not delete.");
+    }
   };
 
   return (
     <div className="p-8 bg-white rounded-lg shadow-md max-w-4xl mx-auto mt-8 text-black">
-      <h1 className="text-2xl font-bold mb-4">{editingCourse ? "Edit Course" : "Add Course"}</h1>
+      <h1 className="text-2xl font-bold mb-4">
+        {editingCourse ? "Edit Course" : "Add Course"}
+      </h1>
 
       <form onSubmit={handleSubmit}>
+        {/* Title */}
         <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-2">Course Title</label>
+          <label className="block text-sm font-medium mb-1">Course Title</label>
           <input
-          title="title"
+          title="Enter course title"
+            placeholder="Enter course title"
             type="text"
-            className="border p-2 w-full rounded-md"
+            className="border p-2 w-full rounded"
             value={title}
-            onChange={(e) => setTitle(e.target.value)}
+            onChange={e => setTitle(e.target.value)}
             required
           />
         </div>
 
+        {/* Description */}
         <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+          <label className="block text-sm font-medium mb-1">Description</label>
           <textarea
-          title="desc"
-            className="border p-2 w-full rounded-md"
+            className="border p-2 w-full rounded"
             value={description}
-            onChange={(e) => setDescription(e.target.value)}
+            onChange={e => setDescription(e.target.value)}
+            placeholder="Enter course description"
             required
           />
         </div>
 
+        {/* Thumbnail */}
         <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-2">Course Thumbnail</label>
+          <label className="block text-sm font-medium mb-1">Course Thumbnail</label>
           <input
-          title="file"
             type="file"
             accept="image/*"
-            onChange={(e) => setCourseImg(e.target.files?.[0] || null)}
+            onChange={e => setCourseImg(e.target.files?.[0] || null)}
+            placeholder="Upload course thumbnail"
+            title="Upload course thumbnail"
           />
           {editingCourse && editingCourse.courseImg && (
-            <p className="text-sm text-gray-600 mt-2">Current Image: {editingCourse.courseImg}</p>
+            <p className="text-sm text-gray-600 mt-1">
+              Current: {editingCourse.courseImg}
+            </p>
           )}
         </div>
+
+        {/* Subject select */}
         {editingCourse && (
           <div className="mb-4">
             <h2 className="text-lg font-medium mb-2">Subjects in this Course</h2>
@@ -292,129 +224,141 @@ const handleAddSubject = async () => {
           </div>
         )}
         <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-2">Subject</label>
+          {/* <label className="block text-sm font-medium mb-1">Subject</label> */}
+          <label htmlFor="subject-select" className="block text-sm font-medium mb-1">Subject</label>
           <select
-          title="subject"
-            className="border p-2 w-full rounded-md"
+            id="subject-select"
+            className="border p-2 w-full rounded"
             value={subject}
-            onChange={(e) => setSubject(e.target.value)}
+            onChange={e => setSubject(e.target.value)}
             required
           >
             <option value="">Select a subject</option>
-            {subjects.map((subj) => (
-              <option key={subj._id} value={subj._id}>
-                {subj.name}
-              </option>
+            {subjects.map(s => (
+              <option key={s._id} value={s._id}>{s.name}</option>
             ))}
           </select>
-          {/* <input
-            type="text"
-            className="border p-2 w-full rounded-md mt-2"
-            placeholder="Enter new subject name"
-            value={newSubjectName}
-            onChange={(e) => setNewSubjectName(e.target.value)}
-          /> */}
-          {/* <button
-            type="button"
-            onClick={handleAddSubject}
-            className="mt-2 bg-green-500 text-white py-2 px-4 rounded-md hover:bg-green-600"
-          >
-            Add New Subject
-          </button> */}
         </div>
 
+        {/* Topic select */}
         {subject && (
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Topic</label>
+            {/* <label className="block text-sm font-medium mb-1">Topic</label> */}
+            <label htmlFor="topic-select" className="block text-sm font-medium mb-1">Topic</label>
             <select
-            title="topic"
-              className="border p-2 w-full rounded-md"
+              id="topic-select"
+              className="border p-2 w-full rounded"
               value={topic}
-              onChange={(e) => setTopic(e.target.value)}
+              onChange={e => setTopic(e.target.value)}
             >
               <option value="">Select a topic</option>
-              {topics.map((top) => (
-                <option key={top._id} value={top._id}>
-                  {top.name}
-                </option>
+              {topics.map(t => (
+                <option key={t._id} value={t._id}>{t.name}</option>
               ))}
             </select>
-            {/* <input
-              type="text"
-              className="border p-2 w-full rounded-md mt-2"
-              placeholder="Enter new topic name"
-              value={newTopicName}
-              onChange={(e) => setNewTopicName(e.target.value)}
-            />
-            <button
-              type="button"
-              onClick={handleAddTopic}
-              className="mt-2 bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600"
-            >
-              Add New Topic
-            </button> */}
           </div>
         )}
 
-        {/* Checkbox for isHidden */}
+        {/* isHidden */}
         <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-2">Hide this Course</label>
+          <label className="inline-flex items-center">
+            <input
+              type="checkbox"
+              checked={isHidden}
+              onChange={e => setIsHidden(e.target.checked)}
+              className="mr-2"
+            />
+            Hide this course
+          </label>
+        </div>
+
+        {/* isFree */}
+        <div className="mb-4">
+          <label className="inline-flex items-center">
+            <input
+              type="checkbox"
+              checked={isFree}
+              onChange={e => setIsFree(e.target.checked)}
+              className="mr-2"
+            />
+            Mark as Free
+          </label>
+        </div>
+
+        {/* Price (disabled if isFree) */}
+        <div className="mb-4">
+          <label className="block text-sm font-medium mb-1">Price (₹)</label>
           <input
-          title="isHidden"
-            type="checkbox"
-            checked={isHidden}
-            onChange={(e) => setIsHidden(e.target.checked)}
+            type="number"
+            className="border p-2 w-full rounded"
+            value={price}
+            onChange={e => setPrice(Number(e.target.value))}
+            min={0}
+            disabled={isFree}
+            required={!isFree}
+            title="Enter the course price"
+            placeholder="Enter price in ₹"
           />
         </div>
 
-        <button type="submit" className="bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700">
+        {/* Submit / Cancel */}
+        <button
+          type="submit"
+          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 mr-4"
+        >
           {editingCourse ? "Update Course" : "Add Course"}
         </button>
         {editingCourse && (
           <button
             type="button"
             onClick={resetForm}
-            className="bg-gray-600 text-white py-2 px-4 rounded-md hover:bg-gray-700 ml-4"
+            className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
           >
             Cancel Edit
           </button>
         )}
       </form>
 
-      {/* List of Courses */}
-      <div className="mt-8">
-        <h2 className="text-xl font-semibold mb-4">Existing Courses</h2>
-        <ul className="space-y-4">
-          {courses.map((course) => (
-            <li key={course._id} className="p-4 bg-gray-100 rounded-md shadow flex justify-between items-center">
-              <div>
-                <h3 className="font-bold">{course.title}</h3>
-                <p className="text-sm text-gray-600">{course.description}</p>
-                {course.courseImg && (
-                  <img src={course.courseImg} alt="Course Thumbnail" className="w-20 h-20 mt-2 rounded-md" />
-                )}
-                <p className="text-sm text-gray-600">
-                  Hidden: {course.isHidden ? "Yes" : "No"}
+      {/* Existing Courses */}
+      <h2 className="mt-8 text-xl font-semibold">Existing Courses</h2>
+      <ul className="space-y-4 mt-4">
+        {courses.map(c => (
+          <li
+            key={c._id}
+            className="p-4 bg-gray-100 rounded flex justify-between items-center"
+          >
+            <div>
+              <h3 className="font-bold">{c.title}</h3>
+              <p className="text-sm text-gray-600">{c.description}</p>
+              <p className="text-sm">
+                  {c.isFree
+                    ? "Free"
+                    : c.price != null
+                      ? `₹${c.price.toFixed(0)}`
+                      : "N/A"}
                 </p>
-              </div>
 
-
+              <p className="text-sm text-gray-600">
+                Hidden: {c.isHidden ? "Yes" : "No"}
+              </p>
+            </div>
+            <div className="space-x-2">
               <button
-                onClick={() => handleEditClick(course)}
-                className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600"
+                onClick={() => handleEditClick(c)}
+                className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600"
               >
                 Edit
               </button>
               <button
-                  onClick={() => handleDelete(course._id)}
-                  className="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600"
-                >
-                  Delete
-                </button>
-            </li>
-          ))}
-        </ul>
-      </div>
+                onClick={() => handleDelete(c._id)}
+                className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
+              >
+                Delete
+              </button>
+            </div>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 };

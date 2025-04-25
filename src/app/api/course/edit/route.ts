@@ -40,6 +40,8 @@ export async function POST(request: Request) {
     const subjects = JSON.parse(formData.get("subjects") as string || "[]");
     const courseImgFile = formData.get("courseImg") as File | null;
     const isHidden = formData.get("isHidden") === "true";
+    const price         = parseFloat(formData.get('price') as string) || 0;
+    const isFree        = formData.get('isFree') === 'true';
 
     if (!courseId || !title || !description) {
       console.error("Validation Error: Missing required fields.");
@@ -50,7 +52,8 @@ export async function POST(request: Request) {
     }
 
     // Log the incoming data for debugging
-    console.log("Incoming Data:", { courseId, title, description, subjects, isHidden });
+    console.log("Incoming Data:", { courseId, title, description, subjects, isHidden,price,
+      isFree, courseImgFile });
 
     // Handle image upload
     let courseImgUrl = "";
@@ -67,6 +70,8 @@ export async function POST(request: Request) {
       title,
       description,
       isHidden,
+      price,
+      isFree,
       subjects: uniqueSubjects, // Overwrite subjects array with unique values
     };
     if (courseImgUrl) updatedFields.courseImg = courseImgUrl;
