@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-
+import Sidebar from "@/components/AdminSideBar";
 interface BannerAd {
   _id: string;
   imageUrl: string;
@@ -61,6 +61,7 @@ export default function AdminBannerAdUpload() {
   };
 
   return (
+    
     <div className="p-4">
       <h1 className="text-xl font-bold mb-4">Manage Banner Ads</h1>
 
@@ -100,5 +101,6 @@ export default function AdminBannerAdUpload() {
         ))}
       </ul>
     </div>
+    
   );
 }

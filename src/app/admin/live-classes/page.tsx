@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import axios from "axios";
+import Sidebar from "@/components/AdminSideBar";
 
 interface Course {
   _id: string;
@@ -98,6 +99,7 @@ const ManageLiveClasses = () => {
   };
 
   return (
+    
     <div className="p-8 bg-white rounded-lg shadow-md max-w-xl mx-auto mt-8">
       <h1 className="text-2xl font-bold mb-4">Add Live Class Stream</h1>
       <form onSubmit={handleSubmit}>
@@ -180,6 +182,7 @@ const ManageLiveClasses = () => {
         </ul>
       </div>
     </div>
+   
   );
 };
 

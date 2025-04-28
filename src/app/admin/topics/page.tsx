@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import axios from "axios";
+import Sidebar from "@/components/AdminSideBar";
 
 // Define the Topic type
 interface Topic {
@@ -108,6 +109,7 @@ const ManageTopics = () => {
   };
 
   return (
+    
     <div className="p-8 bg-white rounded-lg shadow-md max-w-xl mx-auto mt-8 text-black">
       <h1 className="text-2xl font-bold mb-4">{editingTopic ? "Edit Topic" : "Add New Topic"}</h1>
 
@@ -193,6 +195,7 @@ const ManageTopics = () => {
         )}
       </form>
     </div>
+    
   );
 };
 

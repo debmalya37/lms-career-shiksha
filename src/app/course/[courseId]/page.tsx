@@ -5,6 +5,9 @@ import React, { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import axios from "axios";
 import Link from "next/link";
+import ReactPlayer from 'react-player';
+import { PlayIcon } from '@heroicons/react/24/solid';
+
 import { motion } from "framer-motion";
 import {
   CheckCircleIcon,
@@ -12,6 +15,7 @@ import {
   CurrencyRupeeIcon,
   UserGroupIcon,
 } from "@heroicons/react/24/solid";
+import IntroVideoPlayer from "@/components/IntroVideoPlayer";
 
 interface Subject {
   _id: string;
@@ -27,6 +31,7 @@ interface Course {
   createdAt: string;
   price: number;
   isFree: boolean;
+  introVideo?: string;
   discountedPrice: number; // New field
 }
 
@@ -66,6 +71,8 @@ export default function CourseDetailsPage() {
   const [promoCode, setPromoCode] = useState("");
 const [promoMsg, setPromoMsg] = useState<string|null>(null);
 const [finalPrice, setFinalPrice] = useState<number>(0);
+const [showIntro, setShowIntro] = useState(false);
+
 
 
 
@@ -86,6 +93,13 @@ const [finalPrice, setFinalPrice] = useState<number>(0);
     if (courseId) fetchCourse();
   }, [courseId]);
 
+  function toYouTubeEmbed(url: string) {
+    const m = url.match(
+      /(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/))([A-Za-z0-9_-]{11})/
+    );
+    return m ? `https://www.youtube.com/embed/${m[1]}?controls=0&modestbranding=1&rel=0` : url;
+  }
+  
   useEffect(() => {
     async function fetchProfile() {
       try {
@@ -219,6 +233,17 @@ const handlePurchase = useCallback(async () => {
       <div className="container mx-auto px-4 md:px-16 py-12 grid gap-8 md:grid-cols-3">
         {/* Left column */}
         <div className="md:col-span-2 space-y-8">
+
+          {/* Intro Video Section */}
+          <section className="pr-4">
+            <h2 className="text-xl font-semibold mb-2">Course Introduction</h2>
+            {course.introVideo ? (
+              <IntroVideoPlayer url={course.introVideo} />
+            ) : (
+              <p className="text-gray-500">No intro video available.</p>
+            )}
+          </section>
+
           {/* Overview */}
           <section>
             <h2 className="text-xl font-semibold mb-2">What you’ll learn</h2>
@@ -234,25 +259,34 @@ const handlePurchase = useCallback(async () => {
               ))}
             </ul>
           </section>
+          
+
           {/* Description */}
           <section>
             <h2 className="text-xl font-semibold mb-2">Course Description</h2>
             <p className="text-gray-700 leading-relaxed">{course.description}</p>
           </section>
+          
         </div>
 
         {/* Right sidebar */}
         <aside className="space-y-6">
-          <div className="p-6 bg-white rounded-lg shadow">
+          <div className="p-6 bg-white rounded-lg shadow border-2 border-blue-950">
           
-              <img
-                src={course.courseImg || "/default-course.png"}
-                alt="Preview thumbnail"
-                className="w-full h-40 object-cover"
-              />
+              {/* Intro‐video / Thumbnail */}
+              {/* Intro‐video / Thumbnail */}
+<div className="relative w-full h-40 bg-gray-200 rounded-lg overflow-hidden">
+  <img
+    src={course.courseImg || "/default-course.png"}
+    alt="Course thumbnail"
+    className="w-full h-40 object-cover rounded-lg"
+  />
+</div>
+
+
               
             {/* Price / Free Section */}
-<div className="flex flex-col space-y-4 p-4 border-2 border-blue-600 rounded-lg shadow-lg relative bg-gradient-to-tr from-blue-50 via-white to-blue-100">
+<div className="flex flex-col mt-3 space-y-4 p-4 border-2 border-blue-600 rounded-lg shadow-lg relative bg-gradient-to-tr from-blue-50 via-white to-blue-100">
 
 {/* Offer Badge */}
 {!course.isFree && course.price > course.discountedPrice && (
@@ -270,9 +304,10 @@ const handlePurchase = useCallback(async () => {
 
 {/* Final / Discounted Price */}
 <div className="flex items-center space-x-2">
-  <span className="text-4xl font-extrabold text-green-600">
-    ₹{(finalPrice ?? course.discountedPrice).toFixed(2)}
-  </span>
+    <span className="text-4xl font-extrabold text-green-600">
+      ₹{Number(finalPrice || course?.discountedPrice || 0).toFixed(2)}
+    </span>
+
   {!course.isFree && (
     <span className="text-sm font-semibold bg-green-100 text-green-700 px-2 py-1 rounded-full">
       Limited Time Deal
@@ -337,7 +372,7 @@ const handlePurchase = useCallback(async () => {
                 </motion.button>
               </Link>
           </div>
-          <div className="p-6 bg-white rounded-lg shadow text-gray-700 space-y-2">
+          {/* <div className="p-6 bg-white rounded-lg shadow text-gray-700 space-y-2">
             <h3 className="font-semibold">Course Details</h3>
             <p>
               <span className="font-medium">Duration:</span> Self‑paced
@@ -347,9 +382,9 @@ const handlePurchase = useCallback(async () => {
               {course.subjects.length}
             </p>
             <p>
-              {/* <span className="font-medium">Level:</span> Beginner */}
+               <span className="font-medium">Level:</span> Beginner 
             </p>
-          </div>
+          </div> */}
         </aside>
       </div>
     </motion.main>

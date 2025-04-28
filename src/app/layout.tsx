@@ -6,7 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import '../lib/subscriptionCron';
 
 import AuthProvider from "@/context/AuthProvider";
-import { startSubscriptionCron } from "../lib/subscriptionCron";
+// import { startSubscriptionCron } from "../lib/subscriptionCron";
 import Footer from "@/components/Footer";
 import DisableRightClick from "@/components/DisableRightClick"; // Import the client component
 
@@ -17,9 +17,9 @@ export const metadata: Metadata = {
   description: "Learning Management System",
 };
 
-if (typeof window === "undefined") {
-  startSubscriptionCron(); // Ensure this runs only on the server
-}
+// if (typeof window === "undefined") {
+//   startSubscriptionCron(); // Ensure this runs only on the server
+// }
 
 export default function RootLayout({
   children,

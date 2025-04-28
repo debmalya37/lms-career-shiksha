@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import axios from "axios";
+import Sidebar from "@/components/AdminSideBar";
 
 // Define the Course, Subject, Topic, and Tutorial types
 interface Course {
@@ -235,6 +236,7 @@ const ManageTutorials = () => {
     }
   };
   return (
+    
     <div className="p-8 bg-white rounded-lg shadow-md max-w-3xl mx-auto mt-8 text-black">
       <h1 className="text-2xl font-bold mb-4">{isEditing ? "Edit Tutorial Video" : "Add Tutorial Video"}</h1>
       <form onSubmit={handleAddTutorial}>
@@ -382,6 +384,7 @@ const ManageTutorials = () => {
         ))}
       </ul>
     </div>
+    
   );
 };
 

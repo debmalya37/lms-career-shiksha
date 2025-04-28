@@ -16,9 +16,10 @@ export async function POST(request: Request) {
 
     // Fetch the demo course ID
     const demoCourse = await Course.findOne({ title: "Free Demo Course" }).lean<ICourse>();
+    const gkCourse = await Course.findOne({ title: "Free GK Course" }).lean<ICourse>();
 
-    if (!demoCourse) {
-      return NextResponse.json({ error: 'Demo course not found' }, { status: 404 });
+    if (!demoCourse || !gkCourse) {
+      return NextResponse.json({ error: "One or more free courses not found" }, { status: 404 });
     }
 
     // Create the new user and assign the demo course
@@ -29,7 +30,7 @@ export async function POST(request: Request) {
       phoneNo, // Add phoneNo
       address, // Add address
       subscription: 10, // Default subscription duration
-      course: [demoCourse._id], // Assign the demo course ID
+      course: [demoCourse._id, gkCourse._id], // Assign the demo course ID
       sessionToken: null,
       deviceIdentifier: null,
     });

@@ -81,8 +81,11 @@ const AdminPanel = () => {
         <Link href="/admin/notifications" className="bg-red-600 text-white p-6 rounded-lg shadow-md text-center">
           <h2 className="text-xl font-semibold">Manage Notifications</h2>
         </Link>
-        <Link href="/admin/bannerAds" className="bg-red-600 text-white p-6 rounded-lg shadow-md text-center">
+        <Link href="/admin/bannerAds" className="bg-blue-950 text-white p-6 rounded-lg shadow-md text-center">
           <h2 className="text-xl font-semibold">Manage Ads Banner</h2>
+        </Link>
+        <Link href="/admin/promocodes" className="bg-blue-950 text-white p-6 rounded-lg shadow-md text-center">
+          <h2 className="text-xl font-semibold">Manage Promocodes</h2>
         </Link>
       </div>
     </div>

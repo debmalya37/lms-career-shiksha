@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import axios from "axios";
+import Sidebar from "@/components/AdminSideBar";
 
 interface Course {
   _id: string;
@@ -145,6 +146,7 @@ export default function AdminQuizPage() {
   };
 
   return (
+    
     <div className="min-h-screen bg-gray-100 flex flex-col items-center py-10 px-5">
       <div className="max-w-4xl w-full bg-white p-8 rounded-lg shadow-lg mb-8">
         <h2 className="text-3xl font-semibold text-gray-800 mb-6 text-center">
@@ -354,5 +356,6 @@ export default function AdminQuizPage() {
 
       </div>
     </div>
+    
   );
 }

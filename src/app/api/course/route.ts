@@ -35,17 +35,18 @@ export async function POST(request: Request) {
     await connectMongo();
     const formData = await request.formData();
 
-    // Validate incoming data
-    const courseId = formData.get("id") as string;
-    const title = formData.get("title") as string;
-    const description = formData.get("description") as string;
-    const price         = parseFloat(formData.get('price') as string) || 0;
-    const isFree        = formData.get('isFree') === 'true';
-    // Use get() to retrieve the JSON string and then parse it.
-    const subjectsRaw = formData.get("subjects") as string;
-    const subjects = JSON.parse(subjectsRaw) as string[];
-    const isHidden = formData.get("isHidden") === "true";
-    const courseImgFile = formData.get("courseImg") as File | null;
+    const courseId        = formData.get("id") as string;
+    const title           = formData.get("title") as string;
+    const description     = formData.get("description") as string;
+    const price           = parseFloat(formData.get("price") as string) || 0;
+    const isFree          = formData.get("isFree") === "true";
+    const discountedPrice = parseFloat(formData.get("discountedPrice") as string) || 0;  // <-- new
+    const subjectsRaw     = formData.get("subjects") as string;
+    const subjects        = JSON.parse(subjectsRaw) as string[];
+    const isHidden        = formData.get("isHidden") === "true";
+    const courseImgFile   = formData.get("courseImg") as File | null;
+    const introVideo = formData.get("introVideo") as string || "";
+
 
     if (!courseId && (!title || !description || subjects.length === 0)) {
       console.error("Validation Error: Missing required fields.");
@@ -66,36 +67,28 @@ export async function POST(request: Request) {
       courseImgUrl = await uploadToCloudinary(Buffer.from(buffer));
     }
 
-    // Ensure subjects are unique
     const uniqueSubjects = Array.from(new Set(subjects));
 
-    // Prepare fields for update
     const updatedFields: any = {
       title,
       description,
       isHidden,
       price,
       isFree,
-      subjects: uniqueSubjects, // Overwrite subjects array with unique values
+      discountedPrice,
+      introVideo, // <-- NEW
+      subjects: uniqueSubjects,
     };
+    
     if (courseImgUrl) updatedFields.courseImg = courseImgUrl;
 
     if (courseId) {
-      // Editing an existing course
-      const updatedCourse = await Course.findByIdAndUpdate(
-        courseId,
-        updatedFields,
-        { new: true }
-      );
-
+      const updatedCourse = await Course.findByIdAndUpdate(courseId, updatedFields, { new: true });
       if (!updatedCourse) {
-        console.error("Update Error: Course not found.");
         return NextResponse.json({ error: "Course not found or update failed." }, { status: 404 });
       }
-
       return NextResponse.json({ message: "Course updated successfully!", course: updatedCourse });
     } else {
-      // Creating a new course
       const newCourse = new Course({
         title,
         description,
@@ -103,17 +96,16 @@ export async function POST(request: Request) {
         isHidden,
         price,
         isFree,
+        discountedPrice,
+        introVideo, // <-- NEW
         courseImg: courseImgUrl,
       });
-
+      
       await newCourse.save();
-
-      // Update subjects to reference this course
       await Subject.updateMany(
         { _id: { $in: uniqueSubjects } },
         { $addToSet: { courses: newCourse._id } }
       );
-
       return NextResponse.json({ message: "Course added successfully!" });
     }
   } catch (error) {

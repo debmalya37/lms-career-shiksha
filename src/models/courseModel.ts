@@ -9,20 +9,23 @@ export interface ICourse extends Document {
   courseImg: string;
   createdAt: Date;
   isHidden: boolean;
-  /** New fields: */
   price: number;
   isFree: boolean;
+  discountedPrice: number;    // <-- new
+  introVideo: string;
 }
 
 const CourseSchema = new Schema({
-  title:       { type: String,  required: true, unique: true },
-  description: { type: String,  required: true },
-  subjects:    [{ type: Schema.Types.ObjectId, ref: 'Subject' }],
-  courseImg:   { type: String },
-  createdAt:   { type: Date,    default: Date.now },
-  isHidden:    { type: Boolean, default: false },
-  price:       { type: Number,  required: true, default: 0 },
-  isFree:      { type: Boolean, required: true, default: false },
+  title:            { type: String,  required: true, unique: true },
+  description:      { type: String,  required: true },
+  subjects:         [{ type: Schema.Types.ObjectId, ref: 'Subject' }],
+  courseImg:        { type: String },
+  createdAt:        { type: Date,    default: Date.now },
+  isHidden:         { type: Boolean, default: false },
+  price:            { type: Number,  required: true, default: 0 },
+  isFree:           { type: Boolean, required: true, default: false },
+  discountedPrice:  { type: Number,  required: true, default: 0 },   // <-- new
+  introVideo:       { type: String, default: "" },
 });
 
 const Course = mongoose.models.Course || mongoose.model<ICourse>('Course', CourseSchema);

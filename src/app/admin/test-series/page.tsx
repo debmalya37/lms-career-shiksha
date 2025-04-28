@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import Sidebar from '@/components/AdminSideBar';
 
 export default function AdminTestSeriesPage() {
   const [title, setTitle] = useState('');
@@ -60,6 +61,7 @@ export default function AdminTestSeriesPage() {
   };
 
   return (
+   
     <div className="p-8 bg-white rounded-lg shadow-md max-w-xl mx-auto mt-8">
       <h1 className="text-2xl font-bold mb-4">Add Test Series</h1>
       <form onSubmit={handleSubmit}>
@@ -127,5 +129,6 @@ export default function AdminTestSeriesPage() {
         </button>
       </form>
     </div>
+    
   );
 }

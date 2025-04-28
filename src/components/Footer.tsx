@@ -30,7 +30,7 @@ export default function Footer() {
         </div>
         {/* Policy Links */}
         <div className="flex justify-center space-x-6 mb-4">
-          <Link href="/terms-and-conditions">
+          <Link href="/terms&conditions">
             <span className="text-gray-400 hover:text-white text-sm transition">
               Terms &amp; Conditions
             </span>

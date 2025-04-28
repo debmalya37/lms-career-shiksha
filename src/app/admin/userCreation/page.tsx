@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { CSVLink } from "react-csv"; // Import CSV download helper
 import { XCircleIcon } from 'lucide-react';
+import Sidebar from '@/components/AdminSideBar';
 
 interface User {
   _id: string;
@@ -240,6 +241,8 @@ const UserCreationPage = () => {
   });
 
   return (
+    
+   
     <div className="container mx-auto p-8 bg-white rounded-lg shadow-md max-w-full mt-8 text-black">
       <h1 className="text-2xl font-bold text-blue-600 mb-4">User Creation</h1>
       
@@ -422,6 +425,7 @@ const UserCreationPage = () => {
       </table>
       
     </div>
+   
   );
 };
 
