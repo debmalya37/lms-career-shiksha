@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export default function Footer() {
   return (
     <footer className="bg-gray-950 text-white py-8">
@@ -13,7 +15,7 @@ export default function Footer() {
           {/* Google Play Store Badge */}
           <div className="mt-4">
             <a
-              href="https://play.google.com/store/apps/details?id=YOUR_APP_ID_HERE"
+              href="https://play.google.com/store/apps/details?id=co.median.android.bzxonr&pcampaignid=web_share"
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Get it on Google Play"
@@ -25,6 +27,19 @@ export default function Footer() {
               />
             </a>
           </div>
+        </div>
+        {/* Policy Links */}
+        <div className="flex justify-center space-x-6 mb-4">
+          <Link href="/terms-and-conditions">
+            <span className="text-gray-400 hover:text-white text-sm transition">
+              Terms &amp; Conditions
+            </span>
+          </Link>
+          <Link href="/privacy-policy">
+            <span className="text-gray-400 hover:text-white text-sm transition">
+              Privacy Policy
+            </span>
+          </Link>
         </div>
 
         {/* Divider */}
