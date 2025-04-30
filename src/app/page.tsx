@@ -17,6 +17,7 @@ interface Course {
   subjects: { name: string }[] | string[];
   createdAt: string;
   isHidden?: boolean;
+  isFree?: boolean;
 }
 interface BannerAd {
   _id: string;
@@ -165,6 +166,7 @@ export default function Home() {
 
   // Inside your Home component
 // Reusable Course Card
+
 const CourseCard = ({
   course,
   buttonLabel,
@@ -175,6 +177,8 @@ const CourseCard = ({
   buttonLabel: string;
   buttonLink: string;
 }) => {
+
+    const isFree = !!course?.isFree;
   return (
     <div className="w-64 h-72 bg-blue-950 rounded shadow hover:shadow-md transition-shadow flex flex-col overflow-hidden">
         {/* Course Image */}
@@ -201,18 +205,37 @@ const CourseCard = ({
           <div className="text-sm text-gray-200 flex-1">
             {course ? course.description.slice(0, 50) + "..." : <div className="w-full h-4 bg-gray-500 animate-pulse rounded"></div>}
           </div>
+          {/* ← FREE sticker */}
+        {/* {isFree && (
+          <span className="text-xs font-semibold text-blue-700 bg-blue-100 border border-blue-300 px-2 py-0.5 rounded-md w-fit">
+            FREE
+          </span>
+        )} */}
 
           {/* Button */}
           <div className="flex justify-end mt-2">
-            {course ? (
-              <Link href={buttonLink}>
-                <button className="text-sm text-blue-100 hover:underline">
-                  {buttonLabel}
-                </button>
-              </Link>
-            ) : (
-              <div className="w-16 h-5 bg-gray-500 animate-pulse rounded"></div>
-            )}
+
+            {/* ← FREE sticker */}
+        {isFree && (
+          <span className="text-xs font-semibold text-blue-700 bg-blue-100 border border-blue-300 px-2 py-0.5 rounded-md w-fit mr-3">
+            FREE
+          </span>
+        )}
+          {course ? (
+          <Link href={buttonLink}>
+            <button className="text-sm text-blue-100 hover:underline">
+              {buttonLabel}
+            </button>
+          </Link>
+        ) : (
+          <div className="w-16 h-5 bg-gray-500 animate-pulse rounded" />
+        )}
+          {/* ← FREE sticker */}
+        {/* {isFree && (
+          <span className="text-xs font-semibold text-blue-700 bg-blue-100 border border-blue-300 px-2 py-0.5 rounded-md w-fit">
+            FREE
+          </span>
+        )} */}
           </div>
         </div>
       </div>

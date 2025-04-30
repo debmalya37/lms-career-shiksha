@@ -7,6 +7,7 @@ import axios from "axios";
 import Link from "next/link";
 import ReactPlayer from 'react-player';
 import { PlayIcon } from '@heroicons/react/24/solid';
+import { useRouter } from "next/navigation";
 
 import { motion } from "framer-motion";
 import {
@@ -73,7 +74,7 @@ const [promoMsg, setPromoMsg] = useState<string|null>(null);
 const [finalPrice, setFinalPrice] = useState<number>(0);
 const [showIntro, setShowIntro] = useState(false);
 
-
+const router = useRouter();
 
 
   // fetch course + profile
@@ -144,6 +145,25 @@ const applyPromo = async () => {
     setPromoMsg(err.response?.data?.error || "Invalid code");
   }
 };
+
+
+// enroll for free course
+const handleEnrollFree = useCallback(async () => {
+     if (!course) return;
+     setPayLoading(true);
+     try {
+       await axios.post("/api/enroll", { courseId: course._id });
+       setPurchased(true);
+       // navigate to course content
+       router.push(`/courses/${course._id}`);
+     } catch (err) {
+       console.error("Enroll error:", err);
+       alert("Could not enroll. Please try again.");
+     } finally {
+       setPayLoading(false);
+     }
+   }, [course, router]);
+
 
 // payment
 const handlePurchase = useCallback(async () => {
@@ -287,67 +307,76 @@ const handlePurchase = useCallback(async () => {
               
             {/* Price / Free Section */}
 <div className="flex flex-col mt-3 space-y-4 p-4 border-2 border-blue-600 rounded-lg shadow-lg relative bg-gradient-to-tr from-blue-50 via-white to-blue-100">
+  {course.isFree ? (
+    <div className="flex items-center space-x-2">
+      {/* Strike-through original price */}
+      <span className="text-gray-500 line-through text-lg">
+        ₹{course.price.toFixed(2)}
+      </span>
+      {/* FREE sticker */}
+      <span className="text-4xl font-extrabold text-white bg-green-600 px-3 py-1 rounded-full">
+        FREE
+      </span>
+    </div>
+  ) : (
+    <>
+      {/* Offer Badge */}
+      {course.price > course.discountedPrice && (
+        <div className="absolute top-0 left-0 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-br-lg">
+          🔥 {Math.round(((course.price - finalPrice) / course.price) * 100)}% OFF
+        </div>
+      )}
 
-{/* Offer Badge */}
-{!course.isFree && course.price > course.discountedPrice && (
-  <div className="absolute top-0 left-0 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-br-lg">
-    🔥 {Math.round(((course.price - finalPrice) / course.price) * 100)}% OFF
-  </div>
-)}
+      {/* Original Price */}
+      {course.price > course.discountedPrice && (
+        <span className="text-gray-500 line-through text-lg">
+          ₹{course.price.toFixed(2)}
+        </span>
+      )}
 
-{/* Original Price */}
-{!course.isFree && course.price > course.discountedPrice && (
-  <span className="text-gray-500 line-through text-lg mt-2">
-    ₹{course.price.toFixed(2)}
-  </span>
-)}
+      {/* Final / Discounted Price */}
+      <div className="flex items-center space-x-2">
+        <span className="text-4xl font-extrabold text-green-600">
+          ₹{(finalPrice ?? course.discountedPrice).toFixed(2)}
+        </span>
+        <span className="text-sm font-semibold bg-green-100 text-green-700 px-2 py-1 rounded-full">
+          Limited Time Deal
+        </span>
+      </div>
 
-{/* Final / Discounted Price */}
-<div className="flex items-center space-x-2">
-    <span className="text-4xl font-extrabold text-green-600">
-      ₹{Number(finalPrice || course?.discountedPrice || 0).toFixed(2)}
-    </span>
+      {/* Promo-code Input */}
+      <div className="flex space-x-2 mt-2">
+        <input
+          type="text"
+          placeholder="Enter Promo Code"
+          value={promoCode}
+          onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+          className="border-2 border-gray-300 focus:border-blue-500 p-2 rounded w-full transition"
+        />
+        <button
+          onClick={applyPromo}
+          className="bg-green-500 hover:bg-green-600 text-white font-semibold px-4 py-2 rounded transition"
+        >
+          Apply
+        </button>
+      </div>
 
-  {!course.isFree && (
-    <span className="text-sm font-semibold bg-green-100 text-green-700 px-2 py-1 rounded-full">
-      Limited Time Deal
-    </span>
+      {promoMsg && (
+        <p className="text-sm text-yellow-700 font-semibold mt-1">
+          {promoMsg}
+        </p>
+      )}
+    </>
   )}
 </div>
 
-{/* Promo-code Input */}
-{!course.isFree && (
-  <div className="flex space-x-2 mt-2">
-    <input
-      type="text"
-      placeholder="Enter Promo Code"
-      value={promoCode}
-      onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
-      className="border-2 border-gray-300 focus:border-blue-500 p-2 rounded w-full transition"
-    />
-    <button
-      onClick={applyPromo}
-      className="bg-green-500 hover:bg-green-600 text-white font-semibold px-4 py-2 rounded transition"
-    >
-      Apply
-    </button>
-  </div>
-)}
-
-{/* Promo Message */}
-{promoMsg && (
-  <p className="text-sm text-yellow-700 font-semibold mt-1">
-    {promoMsg}
-  </p>
-)}
-</div>
 
 
 
             {/* Purchase button */}
 
             <button
-              onClick={handlePurchase}
+              onClick={course?.isFree ? handleEnrollFree : handlePurchase}
               disabled={purchased || payLoading}
               className={`mt-4 w-full py-3 rounded-lg font-semibold transition ${
                 purchased
@@ -356,12 +385,12 @@ const handlePurchase = useCallback(async () => {
               } text-white`}
             >
               {purchased
-                ? "Enrolled"
-                : payLoading
-                ? "Processing..."
-                : course.isFree
-                ? "Enroll for free"
-                : "Buy now"}
+          ? "Go to course"
+          : payLoading
+          ? "Processing..."
+          : course.isFree
+          ? "Enroll for free"
+          : "Buy now"}
             </button>
             <Link href="/contact">
                 <motion.button
