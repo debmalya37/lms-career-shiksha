@@ -300,7 +300,7 @@ const CourseCard = ({
                     key={course._id}
                     course={course}
                     buttonLabel="View"
-                    buttonLink={`/course/${course._id}`}
+                    buttonLink={`/courses/${course._id}`}
                   />
                 ))}
           </div>
