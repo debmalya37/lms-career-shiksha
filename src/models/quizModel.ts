@@ -15,8 +15,8 @@ interface Question {
 
 interface QuizDocument extends Document {
   title: string;
-  course: mongoose.Types.ObjectId;
-  subject: mongoose.Types.ObjectId;
+  course: mongoose.Types.ObjectId[];
+  subject: mongoose.Types.ObjectId[];
   questions: Question[];
   negativeMarking: number;
   totalTime: number;
@@ -36,8 +36,8 @@ const QuestionSchema = new Schema({
 
 const QuizSchema = new Schema({
   title: { type: String, required: true },
-  course: { type: Schema.Types.ObjectId, ref: 'Course', required: true },
-  subject: { type: Schema.Types.ObjectId, ref: 'Subject', required: true },
+  course: [{ type: Schema.Types.ObjectId, ref: 'Course', required: true }],
+  subject: [{ type: Schema.Types.ObjectId, ref: 'Subject', required: true }],
   questions: [QuestionSchema],
   negativeMarking: { 
     type: Number, 

@@ -1,28 +1,23 @@
+// app/api/quiz/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import connectMongo from '@/lib/db';
 import Quiz from '@/models/quizModel';
 import { v2 as cloudinary } from 'cloudinary';
 import streamifier from 'streamifier';
 
-// Configure Cloudinary
+// Cloudinary setup (unchanged)
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
+  api_key:    process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-// Function to upload images to Cloudinary
+// helper to upload an image buffer
 async function uploadToCloudinary(buffer: Buffer): Promise<string> {
   return new Promise((resolve, reject) => {
     const uploadStream = cloudinary.uploader.upload_stream(
       { folder: 'quizzes' },
-      (error, result) => {
-        if (error) {
-          reject(error);
-        } else {
-          resolve(result?.secure_url || '');
-        }
-      }
+      (err, res) => (err ? reject(err) : resolve(res!.secure_url))
     );
     streamifier.createReadStream(buffer).pipe(uploadStream);
   });
@@ -31,82 +26,96 @@ async function uploadToCloudinary(buffer: Buffer): Promise<string> {
 export async function POST(request: Request) {
   try {
     await connectMongo();
-
     const formData = await request.formData();
-    const title = formData.get('title') as string;
-    const course = formData.get('course') as string;
-    const subject = formData.get('subject') as string;
+
+    const title           = formData.get('title') as string;
+    const courses         = formData.getAll('courses')  as string[];
+    const subjects        = formData.getAll('subjects') as string[];
     const negativeMarking = parseFloat(formData.get('negativeMarking') as string);
-    const totalTime = parseFloat(formData.get('totalTime') as string);
-    const questionsData = formData.getAll('questions') as string[]; // Parse JSON strings
-    const questionImages = formData.getAll('questionImages') as File[]; // Get files
+    const totalTime       = parseFloat(formData.get('totalTime') as string);
+    const questionsData   = formData.getAll('questions') as string[];
+    const questionImages  = formData.getAll('questionImages') as File[];
 
-    const questions = JSON.parse(questionsData[0]); // Assuming one JSON array string in the formData
+    // must have same # of courses as subjects
+    if (courses.length !== subjects.length) {
+      return NextResponse.json(
+        { error: 'courses[] and subjects[] length mismatch' },
+        { status: 400 }
+      );
+    }
 
-    // Upload images and attach URLs to the questions
+    // parse questions once
+    const questions: any[] = JSON.parse(questionsData[0] || '[]');
+
+    // upload any question images
     const questionsWithImages = await Promise.all(
-      questions.map(async (question: any, index: number) => {
-        if (questionImages[index]) {
-          const buffer = await questionImages[index].arrayBuffer();
-          const imageUrl = await uploadToCloudinary(Buffer.from(buffer));
-          return { ...question, image: imageUrl };
+      questions.map(async (q, idx) => {
+        if (questionImages[idx]) {
+          const buf = Buffer.from(await questionImages[idx].arrayBuffer());
+          const url = await uploadToCloudinary(buf);
+          return { ...q, image: url };
         }
-        return question;
+        return q;
       })
     );
 
-    const newQuiz = new Quiz({
-      title,
-      course,
-      subject,
-      questions: questionsWithImages,
-      negativeMarking,
-      totalTime,
-    });
+    // upsert logic: if quizId present, update; else create
+    const quizId = formData.get('quizId') as string | null;
+    let quizDoc;
+    if (quizId) {
+      quizDoc = await Quiz.findByIdAndUpdate(
+        quizId,
+        {
+          title,
+          course:         courses,
+          subject:        subjects,
+          negativeMarking,
+          totalTime,
+          questions:      questionsWithImages,
+        },
+        { new: true }
+      );
+    } else {
+      quizDoc = new Quiz({
+        title,
+        course:         courses,
+        subject:        subjects,
+        negativeMarking,
+        totalTime,
+        questions:      questionsWithImages,
+      });
+      await quizDoc.save();
+    }
 
-    await newQuiz.save();
-
-    return NextResponse.json({ message: 'Quiz added successfully!' });
-  } catch (error) {
-    console.error('Error adding quiz:', error);
-    return NextResponse.json({ error: 'Failed to add quiz' }, { status: 500 });
+    return NextResponse.json({ success: true, quiz: quizDoc });
+  } catch (err: any) {
+    console.error('quiz POST error:', err);
+    return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
 
-
-
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
-  const courseId = searchParams.get('courseId');
-  const subjectId = searchParams.get('subjectId');
-  const quizId = searchParams.get('quizId'); // Get quizId from searchParams
-
   try {
     await connectMongo();
+    const url       = new URL(request.url);
+    // gather all ?courseId=... and ?subjectId=...
+    const courseIds  = url.searchParams.getAll('courseId');
+    const subjectIds = url.searchParams.getAll('subjectId');
+    const quizId     = url.searchParams.get('quizId');
 
-    let quizzes;
+    // build filter
+    const filter: any = {};
+    if (quizId) filter._id = quizId;
+    if (courseIds.length)  filter.course  = { $in: courseIds };
+    if (subjectIds.length) filter.subject = { $in: subjectIds };
 
-    if (quizId) {
-      // Fetch specific quiz by ID, optionally filtered by courseId and subjectId
-      quizzes = await Quiz.findOne({ 
-        _id: quizId, 
-        ...(courseId && { course: courseId }), 
-        ...(subjectId && { subject: subjectId }) 
-      }).lean();
-    } else if (courseId || subjectId) {
-      // Fetch quizzes filtered by courseId or subjectId
-      quizzes = await Quiz.find({ 
-        ...(courseId && { course: courseId }), 
-        ...(subjectId && { subject: subjectId }) 
-      }).lean();
-    } else {
-      // Fetch all quizzes without filters
-      quizzes = await Quiz.find({}).lean();
-    }
+    const data = quizId
+      ? await Quiz.findOne(filter).lean()
+      : await Quiz.find(filter).lean();
 
-    return NextResponse.json(quizzes);
-  } catch (error) {
-    console.error('Error fetching quiz data:', error);
-    return NextResponse.json({ error: 'Failed to fetch quiz data' }, { status: 500 });
+    return NextResponse.json(data);
+  } catch (err: any) {
+    console.error('quiz GET error:', err);
+    return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }

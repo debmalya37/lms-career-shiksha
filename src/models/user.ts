@@ -6,6 +6,7 @@ export interface User extends Document {
   password: string;
   sessionToken: string;
   course: Types.ObjectId[];
+  purchaseHistory: PurchaseRecord[];
   subscription?: number;
   profile: Types.ObjectId[];
   phoneNo?: string;
@@ -14,12 +15,30 @@ export interface User extends Document {
   createdAt: Date;
 }
 
+export interface PurchaseRecord {
+  course: Types.ObjectId;
+  amount: number;
+  transactionId: string;
+  purchasedAt: Date;
+}
+
+const purchaseSchema = new Schema<PurchaseRecord>(
+  {
+    course:         { type: Schema.Types.ObjectId, ref: 'Course', required: true },
+    amount:         { type: Number, required: true },
+    transactionId:  { type: String, required: true },
+    purchasedAt:    { type: Date,   default: Date.now },
+  },
+  { _id: false }
+);
+
 const userSchema = new Schema<User>({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true, match: [/.+\@.+\..+/, 'Please use a valid email address'] },
   password: { type: String, required: true },
   sessionToken: { type: String, default: null },
   course: [{ type: Schema.Types.ObjectId, ref: "Course" }], // Correct type for an array of references
+  purchaseHistory: [purchaseSchema],
   subscription: { type: Number, required: false },
   profile: [{ type: Schema.Types.ObjectId, ref: 'Profile' }], // Correct type for an array of references
   phoneNo: { type: String, required: false }, // New field

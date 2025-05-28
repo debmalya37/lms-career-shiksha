@@ -60,6 +60,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ redirectUrl, transactionId });
   } catch (err:any) {
     console.error("PhonePe initiation error:", err.response?.data || err.message);
+    // console.log("MERCHANT_ID:", MERCHANT_ID);
+    //   console.log("SALT_KEY:", SALT_KEY);
+    //   console.log("SALT_INDEX:", keyIndex);
+
     return NextResponse.json(
       { error:"Payment initiation failed", details: err.message },
       { status:500 }

@@ -29,8 +29,8 @@ interface Question {
 interface Quiz {
   _id: string;
   title: string;
-  course: string;
-  subject: string;
+  courses: string[];      // renamed from course
+  subjects: string[];     // renamed from subject
   negativeMarking: number;
   totalTime: number;
   questions: Question[];
@@ -38,18 +38,17 @@ interface Quiz {
 
 export default function AdminQuizPage() {
   const [courses, setCourses] = useState<Course[]>([]);
-  const [subjects, setSubjects] = useState<Subject[]>([]);
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [selectedQuizId, setSelectedQuizId] = useState<string | null>(null);
 
   const [title, setTitle] = useState("");
-  const [selectedCourse, setSelectedCourse] = useState("");
-  const [selectedSubject, setSelectedSubject] = useState("");
+  const [selectedCourses, setSelectedCourses] = useState<string[]>([]);
+  const [selectedSubjects, setSelectedSubjects] = useState<Record<string, string>>({});
   const [negativeMarking, setNegativeMarking] = useState(0);
   const [totalTime, setTotalTime] = useState(0);
   const [questions, setQuestions] = useState<Question[]>([]);
 
-  // Fetch Courses
+  // Fetch Courses and Quizzes
   const fetchCourses = useCallback(async () => {
     try {
       const response = await axios.get(`/api/course`);
@@ -59,34 +58,35 @@ export default function AdminQuizPage() {
     }
   }, []);
 
-  // Fetch Quizzes
   const fetchQuizzes = useCallback(async () => {
     try {
       const response = await axios.get(`/api/quiz`);
-      setQuizzes(response.data);
+      // Normalize backend fields: `course` -> `courses`, `subject` -> `subjects`
+      const normalized: Quiz[] = response.data.map((q: any) => ({
+        _id: q._id,
+        title: q.title,
+        courses: Array.isArray(q.course) ? q.course : [q.course],
+        subjects: Array.isArray(q.subject) ? q.subject : [q.subject],
+        negativeMarking: q.negativeMarking,
+        totalTime: q.totalTime,
+        questions: q.questions,
+      }));
+      setQuizzes(normalized);
     } catch (error) {
       console.error("Error fetching quizzes:", error);
     }
   }, []);
 
-  // Fetch Subjects Based on Selected Course
   useEffect(() => {
-    if (selectedCourse) {
-      const course = courses.find((course) => course._id === selectedCourse);
-      setSubjects(course ? course.subjects : []);
-    } else {
-      setSubjects([]);
-    }
-  }, [selectedCourse, courses]);
-
-  // Fetch Initial Data
-  useEffect(() => {
-    fetchQuizzes();
     fetchCourses();
-  }, [fetchQuizzes, fetchCourses]);
+    fetchQuizzes();
+  }, [fetchCourses, fetchQuizzes]);
 
   const addQuestion = () =>
-    setQuestions([...questions, { question: "", answers: [], marks: 0, image: undefined }]);
+    setQuestions([
+      ...questions,
+      { question: "", answers: [], marks: 0, image: undefined },
+    ]);
 
   const addAnswer = (qIndex: number) => {
     const newQuestions = [...questions];
@@ -94,7 +94,10 @@ export default function AdminQuizPage() {
     setQuestions(newQuestions);
   };
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>, qIndex: number) => {
+  const handleImageChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    qIndex: number
+  ) => {
     if (e.target.files?.[0]) {
       const newQuestions = [...questions];
       newQuestions[qIndex].image = e.target.files[0];
@@ -105,8 +108,12 @@ export default function AdminQuizPage() {
   const handleEdit = (quiz: Quiz) => {
     setSelectedQuizId(quiz._id);
     setTitle(quiz.title);
-    setSelectedCourse(quiz.course);
-    setSelectedSubject(quiz.subject);
+    setSelectedCourses(quiz.courses);
+    const subjMap: Record<string, string> = {};
+    quiz.courses.forEach((cid, idx) => {
+      subjMap[cid] = quiz.subjects[idx] || "";
+    });
+    setSelectedSubjects(subjMap);
     setNegativeMarking(quiz.negativeMarking);
     setTotalTime(quiz.totalTime);
     setQuestions(
@@ -115,247 +122,284 @@ export default function AdminQuizPage() {
   };
 
   const handleSubmit = async () => {
+    for (const cid of selectedCourses) {
+      if (!selectedSubjects[cid]) {
+        alert("Please select a subject for each selected course.");
+        return;
+      }
+    }
+
     const formData = new FormData();
     if (selectedQuizId) formData.append("quizId", selectedQuizId);
     formData.append("title", title);
-    formData.append("course", selectedCourse);
-    formData.append("subject", selectedSubject);
+    selectedCourses.forEach((cid) => formData.append("courses", cid));
+    selectedCourses.forEach((cid) => formData.append("subjects", selectedSubjects[cid]));
     formData.append("negativeMarking", String(negativeMarking));
     formData.append("totalTime", String(totalTime));
-    formData.append("questions", JSON.stringify(questions.map((q) => ({ ...q, image: undefined }))));
-
-    questions.forEach((q, index) => {
+    formData.append(
+      "questions",
+      JSON.stringify(
+        questions.map((q) => ({ ...q, image: undefined }))
+      )
+    );
+    questions.forEach((q, idx) => {
       if (q.image instanceof File) {
-        formData.append("questionImages", q.image, `question_${index}`);
+        formData.append("questionImages", q.image, `question_${idx}`);
       }
     });
 
-    const endpoint = selectedQuizId ? `/api/quiz/edit` : `/api/quiz`;
+    const endpoint = selectedQuizId ? "/api/quiz/edit" : "/api/quiz";
     await axios.post(endpoint, formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
 
-    alert(selectedQuizId ? "Quiz updated successfully!" : "Quiz added successfully!");
-    setSelectedQuizId(null); // Reset the form
+    alert(selectedQuizId ? "Quiz updated!" : "Quiz created!");
+    setSelectedQuizId(null);
     setTitle("");
-    setSelectedCourse("");
-    setSelectedSubject("");
+    setSelectedCourses([]);
+    setSelectedSubjects({});
     setNegativeMarking(0);
     setTotalTime(0);
     setQuestions([]);
+    fetchQuizzes();
   };
 
   return (
-    
     <div className="min-h-screen bg-gray-100 flex flex-col items-center py-10 px-5">
+      {/* <Sidebar /> */}
       <div className="max-w-4xl w-full bg-white p-8 rounded-lg shadow-lg mb-8">
         <h2 className="text-3xl font-semibold text-gray-800 mb-6 text-center">
           {selectedQuizId ? "Edit Quiz" : "Create New Quiz"}
         </h2>
-        {/* Form for creating or editing quizzes */}
-        <div className="grid gap-4 sm:grid-cols-2 mb-6">
+
+        <div className="grid gap-4 mb-6">
           <input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Quiz Title"
             className="border p-2 rounded-md w-full"
           />
-          <select
-          title="courseselect"
-            className="border p-2 rounded-md w-full"
-            onChange={(e) => setSelectedCourse(e.target.value)}
-            value={selectedCourse}
-          >
-            <option value="">Select Course</option>
-            {courses.map((course) => (
-              <option key={course._id} value={course._id}>
-                {course.title}
-              </option>
-            ))}
-          </select>
-          <select
-          title="subjectselect"
-            className="border p-2 rounded-md w-full"
-            onChange={(e) => setSelectedSubject(e.target.value)}
-            value={selectedSubject}
-            disabled={!selectedCourse}
-          >
-            <option value="">Select Subject</option>
-            {subjects.map((subject) => (
-              <option key={subject._id} value={subject._id}>
-                {subject.name}
-              </option>
-            ))}
-          </select>
+
+<div>
+  <label className="block font-medium mb-1">Courses</label>
+  <div className="grid grid-cols-2 gap-2">
+    {courses.map((c) => ( 
+      <label key={c._id} className="flex items-center gap-2">
+        <input
+          type="checkbox"
+          className="h-4 w-4"
+          checked={selectedCourses.includes(c._id)}
+          onChange={() =>
+            setSelectedCourses((prev) =>
+              prev.includes(c._id)
+                ? prev.filter((id) => id !== c._id)
+                : [...prev, c._id]
+            )
+          }
+        />
+        <span className="select-none">{c.title}</span>
+      </label>
+    ))}
+  </div>
+</div>
+
+
+          {selectedCourses.map((cid) => {
+  const course = courses.find((c) => c._id === cid)!;
+  return (
+    <div key={cid} className="mt-4">
+      <div className="font-medium">Subjects for <em>{course.title}</em>:</div>
+      <div className="grid grid-cols-2 gap-2 mt-2">
+        {course.subjects.map((s) => (
+          <label key={s._id} className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              className="h-4 w-4"
+              checked={selectedSubjects[cid] === s._id}
+              onChange={() =>
+                setSelectedSubjects((prev) => ({
+                  ...prev,
+                  [cid]:
+                    prev[cid] === s._id
+                      ? ""               // uncheck if same
+                      : s._id,          // check new one
+                }))
+              }
+            />
+            <span className="select-none">{s.name}</span>
+          </label>
+        ))}
+      </div>
+    </div>
+  );
+})}
+
           <input
             type="number"
-            step="0.01" // Allow decimal values
+            step="0.01"
             value={negativeMarking}
             onChange={(e) => setNegativeMarking(parseFloat(e.target.value))}
-            placeholder="Negative Marking (e.g., -0.25)"
+            placeholder="Negative Marking"
             className="border p-2 rounded-md w-full"
           />
-
           <input
             type="number"
             value={totalTime}
             onChange={(e) => setTotalTime(parseFloat(e.target.value))}
-            placeholder="Total Time (minutes)"
+            placeholder="Total Time (mins)"
             className="border p-2 rounded-md w-full"
           />
         </div>
+
         <button
           onClick={addQuestion}
           className="bg-blue-600 text-white py-2 px-4 rounded-md mb-6 hover:bg-blue-500 w-full"
         >
           Add Question
         </button>
-        {/* Question and Answer Fields */}
-        {questions.map((q, qIndex) => (
-            <div key={qIndex} className="mb-4 p-4 border rounded-md bg-gray-50">
-              <h3 className="text-lg font-semibold text-gray-700 mb-2">
-                Question {qIndex + 1}
-              </h3>
-              {/* Question Textarea */}
-  <textarea
-    value={q.question}
-    onChange={(e) => {
-      const newQuestions = [...questions];
-      newQuestions[qIndex].question = e.target.value;
-      setQuestions(newQuestions);
-    }}
-    placeholder="Type your question here..."
-    className="border p-2 rounded-md w-full mb-4 resize-none"
-    rows={3} // Adjust rows as needed
-  />
 
-  {/* Question Preview */}
-  <div className="question-preview bg-gray-100 p-4 rounded-md">
-    <h3 className="text-lg font-semibold text-gray-700 mb-2">Preview:</h3>
-    <p
-      style={{ whiteSpace: "pre-wrap" }} // Preserve spaces and line breaks
-      className="text-gray-800"
-    >
-      {q.question}
-    </p>
-  </div>
-              
-              <input
-                type="number"
-                value={q.marks}
-                onChange={(e) => {
-                  const newQuestions = [...questions];
-                  newQuestions[qIndex].marks = parseFloat(e.target.value);
-                  setQuestions(newQuestions);
-                }}
-                placeholder="Marks"
-                className="border p-2 rounded-md w-full mb-4"
-              />
-              <input title="file" type="file" onChange={(e) => handleImageChange(e, qIndex)} />
-              <button
-                onClick={() => addAnswer(qIndex)}
-                className="bg-green-500 text-white py-1 px-3 rounded-md hover:bg-green-400 mt-4"
-              >
-                Add Answer
-              </button>
-              {q.answers.map((answer, aIndex) => (
-                <div key={aIndex} className="mt-4 flex items-center">
-                  <input
-                    value={answer.text}
-                    onChange={(e) => {
-                      const newQuestions = [...questions];
-                      newQuestions[qIndex].answers[aIndex].text = e.target.value;
-                      setQuestions(newQuestions);
-                    }}
-                    placeholder="Answer"
-                    className="border p-2 rounded-md w-full mr-2"
-                  />
-                  <label className="flex items-center text-sm font-medium text-gray-700">
-                    <input
-                      type="checkbox"
-                      checked={answer.isCorrect}
-                      onChange={(e) => {
-                        const newQuestions = [...questions];
-                        newQuestions[qIndex].answers[aIndex].isCorrect = e.target.checked;
-                        setQuestions(newQuestions);
-                      }}
-                      className="mr-1"
-                    />
-                    Correct?
-                  </label>
-                </div>
-              ))}
-              <div className="mt-4 flex justify-end">
-                <button
-                  onClick={() => {
-                    const newQuestions = questions.filter((_, index) => index !== qIndex);
-                    setQuestions(newQuestions);
-                  }}
-                  className="bg-red-500 text-white py-1 px-3 rounded-md hover:bg-red-400"
-                >
-                  Delete Question
-                </button>
-              </div>
+        {questions.map((q, qi) => (
+          <div key={qi} className="mb-4 p-4 border rounded-md bg-gray-50">
+            <h3 className="font-semibold mb-2">Question {qi + 1}</h3>
+            <label htmlFor={`question-${qi}`} className="sr-only">
+              Question {qi + 1}
+            </label>
+            <textarea
+              id={`question-${qi}`}
+              placeholder="Enter the question text"
+              value={q.question}
+              onChange={(e) => {
+                const arr = [...questions];
+                arr[qi].question = e.target.value;
+                setQuestions(arr);
+              }}
+              rows={3}
+              className="border p-2 rounded-md w-full mb-4 resize-none"
+            />
+            <div className="bg-gray-100 p-3 mb-4 rounded-md">
+              <p className="whitespace-pre-wrap">{q.question}</p>
             </div>
-          ))}
+            <input
+              type="number"
+              value={q.marks}
+              onChange={(e) => {
+                const arr = [...questions];
+                arr[qi].marks = parseFloat(e.target.value);
+                setQuestions(arr);
+              }}
+              placeholder="Marks"
+              className="border p-2 rounded-md w-full mb-4"
+            />
+            <input
+              type="file"
+              onChange={(e) => handleImageChange(e, qi)}
+              className="mb-4"
+              title="Upload an image for the question"
+            />
+            <button
+              onClick={() => addAnswer(qi)}
+              className="bg-green-500 text-white py-1 px-3 rounded-md hover:bg-green-400"
+            >
+              Add Answer
+            </button>
+            {q.answers.map((ans, ai) => (
+              <div key={ai} className="mt-3 flex items-center">
+                <input
+                  value={ans.text}
+                  onChange={(e) => {
+                    const arr = [...questions];
+                    arr[qi].answers[ai].text = e.target.value;
+                    setQuestions(arr);
+                  }}
+                  placeholder="Answer text"
+                  className="border p-2 rounded-md flex-1 mr-2"
+                />
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={ans.isCorrect}
+                    onChange={(e) => {
+                      const arr = [...questions];
+                      arr[qi].answers[ai].isCorrect = e.target.checked;
+                      setQuestions(arr);
+                    }}
+                    className="mr-1"
+                  />
+                  Correct
+                </label>
+              </div>
+            ))}
+            <div className="mt-4 flex justify-end">
+              <button
+                onClick={() =>
+                  setQuestions((prev) => prev.filter((_, i) => i !== qi))
+                }
+                className="bg-red-500 text-white py-1 px-3 rounded-md hover:bg-red-400"
+              >
+                Delete Question
+              </button>
+            </div>
+          </div>
+        ))}
 
         <button
           onClick={handleSubmit}
-          className="bg-indigo-600 text-white py-2 px-4 rounded-md mt-6 hover:bg-indigo-500 w-full"
+          className="bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-500 w-full"
         >
           {selectedQuizId ? "Update Quiz" : "Submit Quiz"}
         </button>
       </div>
 
-      {/* Existing Quizzes Section */}
+      {/* Existing Quizzes */}
       <div className="max-w-4xl w-full bg-white p-8 rounded-lg shadow-lg">
-        <h2 className="text-3xl font-semibold text-gray-800 mb-6 text-center">Existing Quizzes</h2>
+        <h2 className="text-3xl font-semibold text-gray-800 mb-6 text-center">
+          Existing Quizzes
+        </h2>
         <ul>
-  {quizzes.map((quiz) => (
-    <li
-      key={quiz._id}
-      className="flex justify-between items-center border-b py-2"
-    >
-      <div className="flex items-center">
-        <img
-          src={
-            typeof quiz.questions[0]?.image === "string"
-              ? quiz.questions[0]?.image
-              : ""
-          }
-          alt="Quiz Preview"
-          className="w-16 h-16 object-cover rounded-md mr-4"
-        />
-        <span>
-          <strong>{quiz.title}</strong> - {quiz.course} - {quiz.totalTime} mins
-        </span>
-      </div>
-      <div>
-        <button
-          onClick={() => handleEdit(quiz)}
-          className="bg-yellow-500 text-white py-1 px-3 rounded-md hover:bg-yellow-400 mr-2"
-        >
-          Edit
-        </button>
-        <button
-          onClick={async () => {
-            if (confirm('Are you sure you want to delete this quiz?')) {
-              await axios.delete(`/api/quiz/delete?quizId=${quiz._id}`);
-              setQuizzes((prev) => prev.filter((q) => q._id !== quiz._id));
-              alert('Quiz deleted successfully!');
-            }
-          }}
-          className="bg-red-500 text-white py-1 px-3 rounded-md hover:bg-red-400"
-        >
-          Delete
-        </button>
-      </div>
-    </li>
-  ))}
-</ul>
-
+          {quizzes.map((quiz) => (
+            <li key={quiz._id} className="border-b py-3 flex justify-between">
+              <div className="flex items-center">
+                <img
+                  src={
+                    typeof quiz.questions[0]?.image === 'string'
+                      ? quiz.questions[0]?.image
+                      : ''
+                  }
+                  alt="Preview"
+                  className="w-12 h-12 object-cover rounded-md mr-4"
+                />
+                <span>
+                  <strong>{quiz.title}</strong> -{' '}
+                  {
+  quiz.courses.map((cid) => courses.find((c) => c._id === cid)?.title).join(', ')
+}{' '}
+                  - {quiz.totalTime} mins
+                </span>
+              </div>
+              <div>
+                <button
+                  onClick={() => handleEdit(quiz)}
+                  className="bg-yellow-500 text-white py-1 px-3 rounded-md hover:bg-yellow-400 mr-2"
+                >
+                  Edit
+                </button>
+                <button
+                  onClick={async () => {
+                    if (confirm('Delete this quiz?')) {
+                      await axios.delete(`/api/quiz/delete?quizId=${quiz._id}`);
+                      setQuizzes((prev) => prev.filter((q) => q._id !== quiz._id));
+                      alert('Deleted');
+                    }
+                  }}
+                  className="bg-red-500 text-white py-1 px-3 rounded-md hover:bg-red-400"
+                >
+                  Delete
+                </button>
+              </div>
+            </li>
+          ))}
+        </ul>
       </div>
     </div>
-    
   );
 }

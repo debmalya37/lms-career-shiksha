@@ -29,7 +29,7 @@ export async function POST(request: Request) {
       password,
       phoneNo, // Add phoneNo
       address, // Add address
-      subscription: 10, // Default subscription duration
+      subscription: 30, // Default subscription duration
       course: [demoCourse._id, gkCourse._id], // Assign the demo course ID
       sessionToken: null,
       deviceIdentifier: null,

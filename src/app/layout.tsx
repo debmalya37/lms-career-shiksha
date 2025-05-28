@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import Navbar from "@/components/Navbar";
+import 'stream-chat-react/dist/css/v2/index.css';   // ← v2 stylesheet
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import '../lib/subscriptionCron';
+// import './globals.css'; 
 
 import AuthProvider from "@/context/AuthProvider";
 // import { startSubscriptionCron } from "../lib/subscriptionCron";
@@ -31,7 +33,7 @@ export default function RootLayout({
       <AuthProvider>
         <body className={`${inter.className} bg-gradient-to-b from-gray-100 to-blue-100`} >
           <Navbar />
-          {/* <DisableRightClick /> */}
+          <DisableRightClick />
           {children}
           <Toaster />
           <Footer />
