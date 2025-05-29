@@ -108,12 +108,22 @@ export default function AdminQuizPage() {
   const handleEdit = (quiz: Quiz) => {
     setSelectedQuizId(quiz._id);
     setTitle(quiz.title);
-    setSelectedCourses(quiz.courses);
+
+    // 1) filter out any bad IDs
+    const validCourses = quiz.courses.filter((cid) =>
+      courses.some((c) => c._id === cid)
+    );
+    setSelectedCourses(validCourses);
+
+    // 2) build subjects map in parallel to those valid courses
     const subjMap: Record<string, string> = {};
-    quiz.courses.forEach((cid, idx) => {
+    validCourses.forEach((cid) => {
+      // find index in the original arrays to preserve order
+      const idx = quiz.courses.indexOf(cid);
       subjMap[cid] = quiz.subjects[idx] || "";
     });
     setSelectedSubjects(subjMap);
+
     setNegativeMarking(quiz.negativeMarking);
     setTotalTime(quiz.totalTime);
     setQuestions(
@@ -122,12 +132,14 @@ export default function AdminQuizPage() {
   };
 
   const handleSubmit = async () => {
+    // only iterate our filtered, non-null course IDs
     for (const cid of selectedCourses) {
       if (!selectedSubjects[cid]) {
         alert("Please select a subject for each selected course.");
         return;
       }
     }
+
 
     const formData = new FormData();
     if (selectedQuizId) formData.append("quizId", selectedQuizId);
@@ -138,13 +150,11 @@ export default function AdminQuizPage() {
     formData.append("totalTime", String(totalTime));
     formData.append(
       "questions",
-      JSON.stringify(
-        questions.map((q) => ({ ...q, image: undefined }))
-      )
+      JSON.stringify(questions)
     );
     questions.forEach((q, idx) => {
       if (q.image instanceof File) {
-        formData.append("questionImages", q.image, `question_${idx}`);
+        formData.append(`questionImage_${idx}`, q.image, `question_${idx}`);
       }
     });
 
@@ -205,7 +215,9 @@ export default function AdminQuizPage() {
 
 
           {selectedCourses.map((cid) => {
-  const course = courses.find((c) => c._id === cid)!;
+  const course = courses.find((c) => c._id === cid);
+  if (!course) return null;
+  
   return (
     <div key={cid} className="mt-4">
       <div className="font-medium">Subjects for <em>{course.title}</em>:</div>
@@ -259,88 +271,110 @@ export default function AdminQuizPage() {
         </button>
 
         {questions.map((q, qi) => (
-          <div key={qi} className="mb-4 p-4 border rounded-md bg-gray-50">
-            <h3 className="font-semibold mb-2">Question {qi + 1}</h3>
-            <label htmlFor={`question-${qi}`} className="sr-only">
-              Question {qi + 1}
-            </label>
-            <textarea
-              id={`question-${qi}`}
-              placeholder="Enter the question text"
-              value={q.question}
-              onChange={(e) => {
-                const arr = [...questions];
-                arr[qi].question = e.target.value;
-                setQuestions(arr);
-              }}
-              rows={3}
-              className="border p-2 rounded-md w-full mb-4 resize-none"
-            />
-            <div className="bg-gray-100 p-3 mb-4 rounded-md">
-              <p className="whitespace-pre-wrap">{q.question}</p>
-            </div>
-            <input
-              type="number"
-              value={q.marks}
-              onChange={(e) => {
-                const arr = [...questions];
-                arr[qi].marks = parseFloat(e.target.value);
-                setQuestions(arr);
-              }}
-              placeholder="Marks"
-              className="border p-2 rounded-md w-full mb-4"
-            />
-            <input
-              type="file"
-              onChange={(e) => handleImageChange(e, qi)}
-              className="mb-4"
-              title="Upload an image for the question"
-            />
-            <button
-              onClick={() => addAnswer(qi)}
-              className="bg-green-500 text-white py-1 px-3 rounded-md hover:bg-green-400"
-            >
-              Add Answer
-            </button>
-            {q.answers.map((ans, ai) => (
-              <div key={ai} className="mt-3 flex items-center">
-                <input
-                  value={ans.text}
-                  onChange={(e) => {
-                    const arr = [...questions];
-                    arr[qi].answers[ai].text = e.target.value;
-                    setQuestions(arr);
-                  }}
-                  placeholder="Answer text"
-                  className="border p-2 rounded-md flex-1 mr-2"
-                />
-                <label className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={ans.isCorrect}
-                    onChange={(e) => {
-                      const arr = [...questions];
-                      arr[qi].answers[ai].isCorrect = e.target.checked;
-                      setQuestions(arr);
-                    }}
-                    className="mr-1"
-                  />
-                  Correct
-                </label>
-              </div>
-            ))}
-            <div className="mt-4 flex justify-end">
-              <button
-                onClick={() =>
-                  setQuestions((prev) => prev.filter((_, i) => i !== qi))
-                }
-                className="bg-red-500 text-white py-1 px-3 rounded-md hover:bg-red-400"
-              >
-                Delete Question
-              </button>
-            </div>
-          </div>
-        ))}
+  <div key={qi} className="mb-4 p-4 border rounded-md bg-gray-50">
+    <h3 className="font-semibold mb-2">Question {qi + 1}</h3>
+
+    {/* Question text input */}
+    <textarea
+      value={q.question}
+      onChange={(e) => {
+        const arr = [...questions];
+        arr[qi].question = e.target.value;
+        setQuestions(arr);
+      }}
+      placeholder="Type your question here..."
+      className="border p-2 rounded-md w-full mb-4 resize-none"
+      rows={3}
+    />
+
+    {/* Text preview */}
+    <div className="bg-gray-100 p-4 rounded-md mb-4">
+      <p className="whitespace-pre-wrap text-gray-800">{q.question}</p>
+    </div>
+
+    {/* --- New: Image Preview or Placeholder --- */}
+    {typeof q.image === "string" ? (
+      <img
+        src={q.image}
+        alt={`Question ${qi + 1} image`}
+        className="w-32 h-32 object-cover rounded-md mb-4"
+      />
+    ) : (
+      <div className="text-gray-500 italic mb-4">No image</div>
+    )}
+
+    {/* Marks input */}
+    <input
+      type="number"
+      value={q.marks}
+      onChange={(e) => {
+        const arr = [...questions];
+        arr[qi].marks = parseFloat(e.target.value);
+        setQuestions(arr);
+      }}
+      placeholder="Marks"
+      className="border p-2 rounded-md w-full mb-4"
+    />
+
+    {/* File input to replace or add image */}
+    <input
+      type="file"
+      onChange={(e) => handleImageChange(e, qi)}
+      className="mb-4"
+      title="Upload an image for the question"
+    />
+
+    {/* Add answer button */}
+    <button
+      onClick={() => addAnswer(qi)}
+      className="bg-green-500 text-white py-1 px-3 rounded-md hover:bg-green-400"
+    >
+      Add Answer
+    </button>
+
+    {/* Answers list */}
+    {q.answers.map((ans, ai) => (
+      <div key={ai} className="mt-3 flex items-center">
+        <input
+          value={ans.text}
+          onChange={(e) => {
+            const arr = [...questions];
+            arr[qi].answers[ai].text = e.target.value;
+            setQuestions(arr);
+          }}
+          placeholder="Answer text"
+          className="border p-2 rounded-md flex-1 mr-2"
+        />
+        <label className="flex items-center">
+          <input
+            type="checkbox"
+            checked={ans.isCorrect}
+            onChange={(e) => {
+              const arr = [...questions];
+              arr[qi].answers[ai].isCorrect = e.target.checked;
+              setQuestions(arr);
+            }}
+            className="mr-1"
+          />
+          Correct
+        </label>
+      </div>
+    ))}
+
+    {/* Delete question button */}
+    <div className="mt-4 flex justify-end">
+      <button
+        onClick={() =>
+          setQuestions((prev) => prev.filter((_, i) => i !== qi))
+        }
+        className="bg-red-500 text-white py-1 px-3 rounded-md hover:bg-red-400"
+      >
+        Delete Question
+      </button>
+    </div>
+  </div>
+))}
+
 
         <button
           onClick={handleSubmit}

@@ -35,35 +35,53 @@ export async function POST(request: Request) {
     const formData = await request.formData();
     const quizId = formData.get('quizId') as string;
     const title = formData.get('title') as string;
-    const course = formData.get('course') as string;
-    const subject = formData.get('subject') as string;
+    const courses = formData.getAll('courses') as string[];
+    const subjects = formData.getAll('subjects') as string[];
     const negativeMarking = parseFloat(formData.get('negativeMarking') as string);
     const totalTime = parseFloat(formData.get('totalTime') as string);
-    const questionsData = formData.getAll('questions') as string[]; // Parse JSON strings
-    const questionImages = formData.getAll('questionImages') as File[]; // Get files
+    const questionsData = formData.getAll('questions') as string[];
+    const questionImages = formData.getAll('questionImages') as File[];
 
-    const questions = JSON.parse(questionsData[0]);
+    if (!quizId) {
+      return NextResponse.json({ error: 'quizId is required' }, { status: 400 });
+    }
 
-    // Upload images and attach URLs to the questions
+    if (courses.length !== subjects.length) {
+      return NextResponse.json(
+        { error: 'courses[] and subjects[] length mismatch' },
+        { status: 400 }
+      );
+    }
+
+    const questions = JSON.parse(questionsData[0] || '[]');
+
+    // Upload images and attach URLs by explicit index lookup
     const updatedQuestions = await Promise.all(
       questions.map(async (question: any, index: number) => {
-        if (questionImages[index]) {
-          const buffer = await questionImages[index].arrayBuffer();
+        const fileField = formData.get(`questionImage_${index}`) as File | null;
+        if (fileField) {
+          const buffer = await fileField.arrayBuffer();
           const imageUrl = await uploadToCloudinary(Buffer.from(buffer));
           return { ...question, image: imageUrl };
         }
+        // if no new upload, leave existing URL or undefined
         return question;
       })
     );
 
-    await Quiz.findByIdAndUpdate(quizId, {
-      title,
-      course,
-      subject,
-      questions: updatedQuestions,
-      negativeMarking,
-      totalTime,
-    });
+
+    await Quiz.findByIdAndUpdate(
+      quizId,
+      {
+        title,
+        course: courses,
+        subject: subjects,
+        questions: updatedQuestions,
+        negativeMarking,
+        totalTime,
+      },
+      { new: true }
+    );
 
     return NextResponse.json({ message: 'Quiz updated successfully!' });
   } catch (error) {
