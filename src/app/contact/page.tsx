@@ -1,87 +1,190 @@
 "use client";
-import { useState } from 'react';
-import Link from 'next/link';
+import Link from "next/link";
+import { useState } from "react";
+import { FaPhone, FaEnvelope, FaMapMarkerAlt } from "react-icons/fa";
 
 export default function Contact() {
-  const [fullName, setFullName] = useState('');
-  const [interestCourse, setInterestCourse] = useState('');
-  const [phoneNumber, setPhoneNumber] = useState(''); // New state for phone number
-  const [message, setMessage] = useState('');
+  const [fullName, setFullName] = useState("");
+  const [interestCourse, setInterestCourse] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e:any) => {
+  const handleSubmit = async (e: any) => {
     e.preventDefault();
-    const mailtoLink = `mailto:civilacademy.in@gmail.com?subject=Contact Us&body=Name: ${fullName}%0D%0APhone: ${phoneNumber}%0D%0AInterest Course: ${interestCourse}%0D%0AMessage: ${message}`;
-    window.location.href = mailtoLink; // Redirect to mailto link
+    setLoading(true);
+
+    // 1) Persist into our API
+    try {
+      await fetch("/api/user-queries", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fullName,
+          phoneNumber,
+          interestCourse,
+          message,
+        }),
+      });
+      // (We ignore the response after we store it)
+    } catch (err) {
+      console.error("Failed to save query:", err);
+      // You could show a toast or error message if you like
+    } finally {
+      setLoading(false);
+      // 2) Then open the default mail client
+      const mailtoLink = 
+        `mailto:civilacademy.in@gmail.com?subject=Contact Us&body=` +
+        `Name: ${encodeURIComponent(fullName)}%0D%0A` +
+        `Phone: ${encodeURIComponent(phoneNumber)}%0D%0A` +
+        `Interest Course: ${encodeURIComponent(interestCourse)}%0D%0A` +
+        `Message: ${encodeURIComponent(message)}`;
+      window.location.href = mailtoLink;
+    }
   };
 
   return (
-    <main className="bg-gradient-to-b from-gray-950 to-blue-950 min-h-screen p-4 sm:p-8">
-      <div className="container mx-auto max-w-md">
-        <h1 className="text-2xl sm:text-3xl font-bold text-center text-blue-200 mb-4 sm:mb-6">Contact Us</h1>
-        <p className="text-gray-200 text-center mb-4">If you have any questions, feel free to reach out!</p>
+    <main className="min-h-screen bg-gradient-to-br from-white via-sky-100 to-blue-200 px-4 py-10 flex flex-col items-center">
+      {/* Heading Section */}
+      <div className="text-center max-w-3xl mb-10 px-4">
+        <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">Get In Touch</h1>
+        <p className="text-gray-700 text-sm sm:text-base leading-relaxed">
+          We’ll create high-quality linkable content and build at least 40 high-authority links to each asset, paving the way for you to grow your rankings, improve brand.
+        </p>
+      </div>
+
+      {/* Contact Form Section */}
+      <div className="bg-white rounded-2xl shadow-lg w-full max-w-5xl flex flex-col md:flex-row overflow-hidden">
         
-        <div className="text-grey-500 mt-1 mb-1 bg-blue-400 p-4 sm:p-6 w-full rounded-lg text-center">
-          Meerut Centre - Career Shiksha IAS/PCS, 2nd Flr, Star Plaza, Bachcha Park, Meerut Mob- 9927827825
-        </div>
-        
-        <div className="text-grey-500 mt-1 mb-1 bg-blue-400 p-4 sm:p-6 w-full rounded-lg text-center">
-          Dehradun Centre - Career Shiksha IAS/PCS, GMS Road, above Kotak Mahindra Bank, near Ballupur, Dehradun Mob - 6398761583
+        {/* Left: Contact Info */}
+        <div className="bg-blue-500 text-white w-full md:w-1/2 p-6 sm:p-8 flex flex-col justify-between">
+          <div>
+            <h2 className="text-lg sm:text-xl font-semibold mb-4">Contact Information</h2>
+            <p className="text-sm mb-6">
+              If you have any questions, feel free to reach out!
+            </p>
+            <div className="flex items-center mb-4">
+              <FaPhone className="mr-3 -scale-x-100" />
+              <a href="tel:+916398761583" className="hover:underline">
+                +91 63987 61583
+              </a>
+            </div>
+            <div className="flex items-start mb-6">
+              <FaMapMarkerAlt className="mt-1 mr-3" />
+              <span className="ml-2 h-fit w-fit text-left" >
+            <Link
+              href="https://www.google.com/maps?q=Career+Shiksha+IAS+PCS+GMS+Road+Dehradun"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:underline ml-2 align-left text-left"
+            >
+              Dehradun Centre - Career Shiksha IAS/PCS, GMS Road, above Kotak Mahindra Bank, near Ballupur, Dehradun
+              {/* <span>Dehradun Centre - Career Shiksha IAS/PCS, GMS Road, above Kotak Mahindra Bank, near Ballupur, Dehradun Mob - 6398761583</span> */}
+              </Link>
+              </span>
+            </div>
+          </div>
+
+          <div>
+            <hr className="my-4 border-white/50" />
+            <div className="flex items-center mb-4">
+              <FaPhone className="mr-3 -scale-x-100" />
+              <a href="tel:+919927827825" className="hover:underline">
+                +91 99278 27825
+              </a>
+            </div>
+            <div className="flex items-start mb-4">
+              <FaMapMarkerAlt className="mt-1 mr-3" />
+              <span className="ml-2 h-fit w-fit text-left">
+              <Link
+    href="https://www.google.com/maps?q=Career+Shiksha+IAS+PCS+Bachcha+Park+Meerut"
+    target="_blank"
+    rel="noopener noreferrer"
+    className="hover:underline ml-2 text-left"
+  >
+              Meerut Centre - Career Shiksha IAS/PCS, 2nd Flr, Star Plaza, Bachcha Park, Meerut
+              </Link>
+              </span>
+            </div>
+          </div>
+
+          {/* Decorative Circle */}
+          <div className="mt-10 rounded-full w-36 h-36 bg-white/20 self-center blur-sm hidden sm:block"></div>
         </div>
 
-        <form onSubmit={handleSubmit} className="bg-green-100 p-4 sm:p-6 rounded-lg shadow-md">
-          <div className="mb-4">
-            <label htmlFor="fullName" className="block text-sm font-medium text-gray-700">Full Name</label>
-            <input
-              type="text"
-              id="fullName"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              required
-              className="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-blue-500 text-black"
-            />
-          </div>
-          <div className="mb-4">
-            <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700">Phone Number</label>
-            <input
-              type="text"
-              id="phoneNumber"
-              value={phoneNumber}
-              onChange={(e) => setPhoneNumber(e.target.value)}
-              required
-              className="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-blue-500 text-black"
-            />
-          </div>
-          <div className="mb-4">
-            <label htmlFor="interestCourse" className="block text-sm font-medium text-gray-700">Interest Course</label>
-            <input
-              type="text"
-              id="interestCourse"
-              value={interestCourse}
-              onChange={(e) => setInterestCourse(e.target.value)}
-              required
-              className="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-blue-500 text-black"
-            />
-          </div>
-          <div className="mb-4">
-            <label htmlFor="message" className="block text-sm font-medium text-gray-700">Message</label>
-            <textarea
-              id="message"
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              required
-              className="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-blue-500 text-black"
-              rows={4}
-            />
-          </div>
-          <button
-            type="submit"
-            className="w-full bg-blue-600 text-white font-semibold py-2 rounded-md hover:bg-blue-500 transition duration-300"
-          >
-            Submit
-          </button>
-        </form>
+        {/* Right: Form */}
+        <div className="w-full md:w-1/2 p-6 sm:p-8 bg-white">
+          <form onSubmit={handleSubmit} className="space-y-5">
+            
+            {/* Name and Phone - Stack on small screens */}
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="w-full sm:w-1/2">
+                <label className="block text-gray-700 text-sm mb-1">Your Name</label>
+                <input
+                title="Please enter your full name"
+                  autoComplete="name"
+                  type="text"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  required
+                  className="w-full border-b border-gray-400 py-2 focus:outline-none focus:border-blue-500"
+                />
+              </div>
+              <div className="w-full sm:w-1/2">
+                <label className="block text-gray-700 text-sm mb-1">Phone Number</label>
+                <input
+                  type="tel"
+                  title="Please enter your phone number"
+                  autoComplete="tel"
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  required
+                  className="w-full border-b border-gray-400 py-2 focus:outline-none focus:border-blue-500"
+                />
+              </div>
+            </div>
 
-        <p className="text-center text-gray-200 mt-4">We look forward to hearing from you!</p>
+            {/* Course */}
+            <div>
+              <label className="block text-gray-700 text-sm mb-1">Interested Course / Subject</label>
+              <input
+                type="text"
+                title="Please enter the course or subject you are interested in"
+                autoComplete="course"
+                value={interestCourse}
+                onChange={(e) => setInterestCourse(e.target.value)}
+                required
+                className="w-full border-b border-gray-400 py-2 focus:outline-none focus:border-blue-500"
+              />
+            </div>
+
+            {/* Message */}
+            <div>
+              <label className="block text-blue-500 font-medium text-sm mb-1">Message</label>
+              <textarea
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                rows={4}
+                placeholder="Write here your message 👋"
+                required
+                className="w-full border-b border-blue-300 py-2 focus:outline-none focus:border-blue-500 resize-none"
+              ></textarea>
+            </div>
+
+            {/* Submit Button */}
+            <button
+              type="submit"
+              disabled={loading}
+              className={`w-full ${
+                loading
+                  ? 'bg-blue-300 cursor-not-allowed'
+                  : 'bg-blue-500 hover:bg-blue-600'
+              } text-white font-semibold py-2 rounded-md transition duration-300`}
+            >
+              {loading ? 'Sending…' : 'Send Message'}
+            </button>
+          </form>
+        </div>
       </div>
     </main>
   );

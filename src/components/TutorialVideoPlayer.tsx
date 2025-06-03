@@ -13,12 +13,15 @@ interface TutorialVideoPlayerProps {
 }
 
 function getYouTubeId(url: string): string | null {
-  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+  const regExp =
+    /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
   const match = url.match(regExp);
   return match && match[2].length === 11 ? match[2] : null;
 }
 
-export default function TutorialVideoPlayer({ url }: TutorialVideoPlayerProps) {
+export default function TutorialVideoPlayer({
+  url,
+}: TutorialVideoPlayerProps) {
   const videoId = getYouTubeId(url);
   const outerContainerRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -31,6 +34,7 @@ export default function TutorialVideoPlayer({ url }: TutorialVideoPlayerProps) {
   const [duration, setDuration] = useState(0);
   const [showControls, setShowControls] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [playbackRate, setPlaybackRate] = useState(1);
 
   // Load YouTube Iframe API if not loaded
   useEffect(() => {
@@ -49,9 +53,11 @@ export default function TutorialVideoPlayer({ url }: TutorialVideoPlayerProps) {
 
   const playerRef = useRef<any>(null);
 
-  // Initialize player when API is ready
+  // Initialize player once when API is ready
   useEffect(() => {
     if (!apiReady || !videoId || !containerRef.current) return;
+    // If we've already created the player, do not recreate
+    if (playerRef.current) return;
 
     const playerVars = {
       autoplay: 0,
@@ -59,9 +65,10 @@ export default function TutorialVideoPlayer({ url }: TutorialVideoPlayerProps) {
       modestbranding: 1,
       rel: 0,
       disablekb: 1,
-      fs: 0, // We'll handle full screen separately
+      fs: 0,
       iv_load_policy: 3,
       playsinline: 1,
+      // start at the currentTime if it exists
     };
 
     playerRef.current = new window.YT.Player(containerRef.current, {
@@ -71,11 +78,15 @@ export default function TutorialVideoPlayer({ url }: TutorialVideoPlayerProps) {
       playerVars: playerVars,
       events: {
         onReady: (event: any) => {
-          setDuration(event.target.getDuration());
+          const dur = event.target.getDuration();
+          setDuration(dur);
+          // Set the initial playback rate
+          event.target.setPlaybackRate(playbackRate);
         },
         onStateChange: (event: any) => {
-          setIsPlaying(event.data === window.YT.PlayerState.PLAYING);
-          if (event.data === window.YT.PlayerState.PLAYING) {
+          const state = event.data;
+          setIsPlaying(state === window.YT.PlayerState.PLAYING);
+          if (state === window.YT.PlayerState.PLAYING) {
             startProgressUpdate();
           } else {
             cancelAnimationFrame(animationRef.current!);
@@ -83,9 +94,9 @@ export default function TutorialVideoPlayer({ url }: TutorialVideoPlayerProps) {
         },
       },
     });
-  }, [apiReady, videoId]);
+  }, [apiReady, videoId, playbackRate]);
 
-  // Update progress bar continuously while the video plays
+  // Continuously update the progress bar while video plays
   const startProgressUpdate = () => {
     const updateProgress = () => {
       if (playerRef.current && playerRef.current.getCurrentTime) {
@@ -98,17 +109,16 @@ export default function TutorialVideoPlayer({ url }: TutorialVideoPlayerProps) {
     animationRef.current = requestAnimationFrame(updateProgress);
   };
 
-  // Update seek time based on mouse/touch position
+  // Seek logic (both mouse & touch)
   const updateSeekFromClientX = (clientX: number) => {
-    if (!progressBarRef.current || !playerRef.current) return;
+    if (!progressBarRef.current || !playerRef.current || !duration) return;
     const rect = progressBarRef.current.getBoundingClientRect();
-    const pos = (clientX - rect.left) / rect.width;
+    const pos = Math.min(Math.max(0, (clientX - rect.left) / rect.width), 1);
     const seekTime = pos * duration;
     playerRef.current.seekTo(seekTime, true);
     setCurrentTime(seekTime);
   };
 
-  // Mouse event handlers for dragging the progress bar
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
     e.stopPropagation();
     setIsDragging(true);
@@ -127,7 +137,6 @@ export default function TutorialVideoPlayer({ url }: TutorialVideoPlayerProps) {
     }
   };
 
-  // Touch event handlers for mobile dragging
   const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
     e.stopPropagation();
     setIsDragging(true);
@@ -144,7 +153,7 @@ export default function TutorialVideoPlayer({ url }: TutorialVideoPlayerProps) {
     setIsDragging(false);
   };
 
-  // Global listeners for mouse move/up while dragging
+  // Add/remove global listeners for mousemove and mouseup during drag
   useEffect(() => {
     if (isDragging) {
       document.addEventListener("mousemove", handleMouseMove);
@@ -159,14 +168,14 @@ export default function TutorialVideoPlayer({ url }: TutorialVideoPlayerProps) {
     };
   }, [isDragging]);
 
-  // Format seconds to MM:SS
+  // Format time as MM:SS
   const formatTime = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = Math.floor(seconds % 60);
     return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
   };
 
-  // Play/pause toggle
+  // Toggle play / pause without restarting
   const handlePlayPause = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
     if (!playerRef.current) return;
@@ -177,15 +186,16 @@ export default function TutorialVideoPlayer({ url }: TutorialVideoPlayerProps) {
     }
   };
 
-  // Seek forward/backward
-  const seek = (seconds: number, e: React.MouseEvent<HTMLButtonElement>) => {
+  // Seek forward/backward by an offset
+  const seek = (secondsOffset: number, e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
     if (playerRef.current) {
-      playerRef.current.seekTo(playerRef.current.getCurrentTime() + seconds, true);
+      const newTime = playerRef.current.getCurrentTime() + secondsOffset;
+      playerRef.current.seekTo(newTime, true);
     }
   };
 
-  // Full screen toggle using vendor-prefixed methods (cast to any)
+  // Full screen toggle
   const handleFullScreen = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
     if (!outerContainerRef.current) return;
@@ -219,17 +229,28 @@ export default function TutorialVideoPlayer({ url }: TutorialVideoPlayerProps) {
     }
   };
 
-  if (!videoId)
+  // Change playback rate
+  const changePlaybackRate = (rate: number) => {
+    if (playerRef.current) {
+      playerRef.current.setPlaybackRate(rate);
+      setPlaybackRate(rate);
+    }
+  };
+
+  if (!videoId) {
     return <div className="text-red-500">Invalid video URL</div>;
+  }
 
   return (
     <div
       ref={outerContainerRef}
       className="relative w-full aspect-video bg-black group"
-      onClick={() => setShowControls(!showControls)}
+      onClick={() => setShowControls((prev) => !prev)}
     >
+      {/* The actual YouTube iframe player will be injected here */}
       <div ref={containerRef} className="w-full h-full" />
 
+      {/* Current / Duration Timestamps */}
       <div
         className={`absolute bottom-20 left-2 text-white text-sm transition-opacity duration-300 ${
           showControls ? "opacity-100" : "opacity-0"
@@ -239,12 +260,14 @@ export default function TutorialVideoPlayer({ url }: TutorialVideoPlayerProps) {
         {formatTime(currentTime)} / {formatTime(duration)}
       </div>
 
+      {/* Control Overlay */}
       <div
         className={`absolute inset-0 flex flex-col justify-end items-center transition-opacity duration-300 ${
           showControls ? "opacity-100" : "opacity-0"
         } group-hover:opacity-100`}
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Top controls area: Play/Pause, skipping, full screen */}
         <div className="w-full bg-gradient-to-t from-black/80 to-transparent p-4 flex items-center justify-center gap-4">
           <button
             onClick={(e) => seek(-10, e)}
@@ -260,6 +283,7 @@ export default function TutorialVideoPlayer({ url }: TutorialVideoPlayerProps) {
             title={isPlaying ? "Pause" : "Play"}
           >
             {isPlaying ? (
+              /* Pause Icon */
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 className="h-6 w-6 md:h-8 md:w-8"
@@ -273,6 +297,7 @@ export default function TutorialVideoPlayer({ url }: TutorialVideoPlayerProps) {
                 />
               </svg>
             ) : (
+              /* Play Icon */
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 className="h-6 w-6 md:h-8 md:w-8"
@@ -318,6 +343,7 @@ export default function TutorialVideoPlayer({ url }: TutorialVideoPlayerProps) {
           </button>
         </div>
 
+        {/* Progress Bar */}
         <div
           ref={progressBarRef}
           className={`relative w-full h-2 bg-gray-600 cursor-pointer transition-opacity duration-300 ${
@@ -334,6 +360,28 @@ export default function TutorialVideoPlayer({ url }: TutorialVideoPlayerProps) {
           >
             <div className="absolute right-0 -top-1 h-4 w-4 bg-red-600 rounded-full transform translate-x-1/2 pointer-events-none" />
           </div>
+        </div>
+
+        {/* Playback Rate Controls */}
+        <div
+          className={`w-full flex justify-center gap-2 py-2 bg-black/80 transition-opacity duration-300 ${
+            showControls ? "opacity-100" : "opacity-0"
+          } group-hover:opacity-100`}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {[1, 1.25, 1.5, 2].map((rate) => (
+            <button
+              key={rate}
+              onClick={() => changePlaybackRate(rate)}
+              className={`text-white px-3 py-1 rounded-md ${
+                playbackRate === rate
+                  ? "bg-red-600"
+                  : "bg-gray-700 hover:bg-gray-600"
+              }`}
+            >
+              {rate}×
+            </button>
+          ))}
         </div>
       </div>
     </div>

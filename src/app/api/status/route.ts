@@ -1,101 +1,161 @@
-// app/api/status/route.ts
-import { NextRequest, NextResponse } from 'next/server';
-import crypto from 'crypto';
-import axios from 'axios';
+// File: app/api/status/route.ts
+import { NextRequest, NextResponse } from "next/server";
+import crypto from "crypto";
+import axios from "axios";
+import dbConnect from "@/lib/db";
+import { User } from "@/models/user";
 
-interface PhonePeStatusResponse {
-  success: boolean;
-  code:    string;
-  message: string;
-  data?: {
-    transactionId: string;
-    courseId?:     string;
-  };
+const PHONEPE_BASE = "https://api-preprod.phonepe.com/apis/pg-sandbox";
+
+async function fetchPhonePeStatus(id: string) {
+  const mid = process.env.PHONEPE_MERCHANT_ID!;
+  const key = process.env.PHONEPE_SALT_KEY!;
+  const idx = process.env.PHONEPE_SALT_INDEX!;
+  const path = `/pg/v1/status/${mid}/${id}`;
+  const checksum =
+    crypto.createHash("sha256").update(path + key).digest("hex") + `###${idx}`;
+  const resp = await axios.get(PHONEPE_BASE + path, {
+    headers: {
+      "Content-Type": "application/json",
+      accept: "application/json",
+      "X-VERIFY": checksum,
+      "X-MERCHANT-ID": mid,
+    },
+  });
+  return resp.data;
 }
 
-export async function POST(req: NextRequest): Promise<NextResponse<PhonePeStatusResponse>> {
-  // 1) Parse JSON body
-  let body: any;
+async function enrollUser(token: string, courseId: string) {
+  await dbConnect();
+  await User.updateOne({ sessionToken: token }, { $addToSet: { course: courseId } });
+}
+
+export async function GET(req: NextRequest) {
+  const url = new URL(req.url);
+  const id = url.searchParams.get("id");          // merchantTransactionId
+  const courseId = url.searchParams.get("courseId");
+  const raw = url.searchParams.get("raw");        // if present, return JSON instead of redirect
+
+  if (!id || !courseId) {
+    return NextResponse.json(
+      { success: false, code: "MISSING", message: "id & courseId required" },
+      { status: 400 }
+    );
+  }
+
+  let phonePe;
   try {
-    body = await req.json();
+    phonePe = await fetchPhonePeStatus(id);
   } catch (e) {
-    return NextResponse.json({
-      success: false,
-      code:    'BAD_JSON',
-      message: 'Cannot parse request body as JSON',
-    }, { status: 400 });
-  }
-
-  const id       = body.id as string | undefined;
-  const courseId = body.courseId as string | undefined;
-
-  if (!id) {
-    return NextResponse.json({
-      success: false,
-      code:    'MISSING_ID',
-      message: 'Missing transaction id in request body',
-    }, { status: 400 });
-  }
-
-  // 2) Load & validate env vars
-  const merchantId = process.env.PHONEPE_MERCHANT_ID;
-  const saltKey    = process.env.PHONEPE_SALT_KEY;
-  const saltIndex  = process.env.PHONEPE_SALT_INDEX;
-  if (!merchantId || !saltKey || !saltIndex) {
-    console.error('❌ Missing PhonePe env vars:', { merchantId, saltKey, saltIndex });
-    return NextResponse.json({
-      success: false,
-      code:    'CONFIG_ERROR',
-      message: 'PhonePe configuration is incomplete on the server',
-    }, { status: 500 });
-  }
-
-  // 3) Build path & signature
-  const path    = `/pg/v1/status/${merchantId}/${id}`;
-  const toSign  = path + saltKey;
-  const hash    = crypto.createHash('sha256').update(toSign).digest('hex');
-  const checksum = `${hash}###${saltIndex}`;
-
-  // 4) Pick the right base URL
-  const baseUrl = process.env.NODE_ENV === 'production'
-    ? 'https://api-preprod.phonepe.com/apis/pg-sandbox'
-    : 'https://api-preprod.phonepe.com/apis/pg-sandbox';
-
-  // 5) Call PhonePe
-  try {
-    const resp = await axios.get(`${baseUrl}${path}`, {
-      headers: {
-        'Content-Type':   'application/json',
-        accept:           'application/json',
-        'X-VERIFY':       checksum,
-        'X-MERCHANT-ID':  merchantId,
-      },
-      timeout: 10000,
-    });
-
-    if (resp.data.success) {
-      return NextResponse.json({
-        success: true,
-        code:    resp.data.code,
-        message: resp.data.message,
-        data: {
-          transactionId: id,
-          courseId,
-        },
-      });
-    } else {
-      return NextResponse.json({
-        success: false,
-        code:    resp.data.code,
-        message: resp.data.message,
-      });
+    console.error("PhonePe fetch error", e);
+    // If “raw=true”, return JSON indicating failure
+    if (raw === "true") {
+      return NextResponse.json(
+        { success: false, code: "PHONEPE_API_ERROR", message: "Could not fetch PhonePe status" },
+        { status: 502 }
+      );
     }
-  } catch (err: any) {
-    console.error('❌ PhonePe status API error:', err.response?.data || err.message);
-    return NextResponse.json({
-      success: false,
-      code:    err.response?.data?.code || 'PHONEPE_ERROR',
-      message: err.response?.data?.message || err.message,
-    }, { status: 502 });
+    // Otherwise, redirect to /failure
+    const redirectTo = new URL(`/failure/${id}?courseId=${courseId}`, req.url);
+    return NextResponse.redirect(redirectTo);
   }
+
+  // If the caller specifically asked for raw JSON, return it:
+  if (raw === "true") {
+    return NextResponse.json({
+      success: phonePe.success,
+      code: phonePe.code,
+      message: phonePe.message,
+      data: { transactionId: id, courseId },
+    });
+  }
+
+  // Otherwise, do the “redirect” logic as before:
+  if (phonePe.success) {
+    const sessionToken = req.cookies.get("sessionToken")?.value;
+    if (sessionToken) {
+      await enrollUser(sessionToken, courseId);
+      // Also record purchase history
+      await User.updateOne(
+        { sessionToken },
+        {
+          $push: {
+            purchaseHistory: {
+              course: courseId,
+              amount: phonePe.data?.amount ?? 0,
+              transactionId: id,
+              purchasedAt: new Date(),
+            },
+          },
+        }
+      );
+    }
+    const redirectTo = new URL(`/success/${id}?courseId=${courseId}`, req.url);
+    return NextResponse.redirect(redirectTo);
+  } else {
+    const redirectTo = new URL(`/failure/${id}?courseId=${courseId}`, req.url);
+    return NextResponse.redirect(redirectTo);
+  }
+}
+
+export async function POST(req: NextRequest) {
+  // (You can leave the POST logic as‐is, or add “raw=true” handling here if needed.)
+  const { searchParams } = new URL(req.url);
+  const txnId = searchParams.get("id");
+  const courseId = searchParams.get("courseId");
+
+  if (!txnId || !courseId) {
+    return NextResponse.json(
+      { success: false, code: "MISSING_PARAMS", message: "id & courseId required" },
+      { status: 400 }
+    );
+  }
+
+  let formData: any;
+  try {
+    formData = await req.formData();
+  } catch {
+    return NextResponse.json(
+      { success: false, code: "BAD_FORM", message: "Invalid form‐data" },
+      { status: 400 }
+    );
+  }
+
+  let phonePeResp: any;
+  try {
+    phonePeResp = await fetchPhonePeStatus(txnId);
+  } catch (e: any) {
+    console.error("PhonePe fetch error", e.response?.data || e.message);
+    return NextResponse.json(
+      { success: false, code: e.code || "PHONEPE_ERROR", message: e.message },
+      { status: 502 }
+    );
+  }
+
+  if (phonePeResp.success) {
+    const sessionToken = req.cookies.get("sessionToken")?.value;
+    if (sessionToken) {
+      await enrollUser(sessionToken, courseId);
+      await User.updateOne(
+        { sessionToken },
+        {
+          $push: {
+            purchaseHistory: {
+              course: courseId,
+              amount: phonePeResp.data?.amount ?? 0,
+              transactionId: txnId,
+              purchasedAt: new Date(),
+            },
+          },
+        }
+      );
+    }
+  }
+
+  return NextResponse.json({
+    success: phonePeResp.success,
+    code: phonePeResp.code,
+    message: phonePeResp.message,
+    data: { transactionId: txnId, courseId },
+  });
 }

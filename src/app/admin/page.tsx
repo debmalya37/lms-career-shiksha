@@ -72,6 +72,9 @@ const AdminPanel = () => {
         <Link href="/admin/topics" className="bg-teal-600 text-white p-6 rounded-lg shadow-md text-center">
           <h2 className="text-xl font-semibold">Manage Topics</h2>
         </Link>
+        <Link href="/admin/order" className="bg-teal-600 text-white p-6 rounded-lg shadow-md text-center">
+          <h2 className="text-xl font-semibold">Manage Orders</h2>
+        </Link>
         <Link href="/admin/subjects" className="bg-gray-600 text-white p-6 rounded-lg shadow-md text-center">
           <h2 className="text-xl font-semibold">Manage Subjects</h2>
         </Link>
@@ -80,6 +83,9 @@ const AdminPanel = () => {
         </Link>
         <Link href="/admin/notifications" className="bg-red-600 text-white p-6 rounded-lg shadow-md text-center">
           <h2 className="text-xl font-semibold">Manage Notifications</h2>
+        </Link>
+        <Link href="/admin/userqueries" className="bg-red-600 text-white p-6 rounded-lg shadow-md text-center">
+          <h2 className="text-xl font-semibold">Manage User Queries</h2>
         </Link>
         <Link href="/admin/bannerAds" className="bg-blue-950 text-white p-6 rounded-lg shadow-md text-center">
           <h2 className="text-xl font-semibold">Manage Ads Banner</h2>

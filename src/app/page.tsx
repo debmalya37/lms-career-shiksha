@@ -87,7 +87,7 @@ export default function Home() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const profileRes = await axios.get(`/api/profile`);
+        const profileRes = await axios.get(`/api/profile`,{ withCredentials: true, });
         const profileData: UserProfile = profileRes.data;
         console.log("Profile Data:", profileData);
   

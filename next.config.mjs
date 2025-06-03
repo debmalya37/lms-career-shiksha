@@ -8,6 +8,9 @@ const baseConfig = {
   // distDir: 'dist',
   // trailingSlash: true,
   // assetPrefix: '/',
+  experimental: {
+    missingSuspenseWithCSRBailout: false,
+  },
 };
 
 const withPWA = nextPWA({

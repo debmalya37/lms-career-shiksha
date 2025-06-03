@@ -1,4 +1,4 @@
-// File: app/status/[id]/page.tsx
+// app/success/[id]/page.tsx
 "use client";
 
 import { useParams, useSearchParams, useRouter } from "next/navigation";
@@ -9,7 +9,6 @@ import "react-toastify/dist/ReactToastify.css";
 import { motion } from "framer-motion";
 import {
   CheckCircleIcon,
-  XCircleIcon,
   ArrowPathIcon,
   DocumentArrowDownIcon,
 } from "@heroicons/react/24/outline";
@@ -22,6 +21,8 @@ interface PhonePeStatusResponse {
   data?: {
     transactionId: string;
     courseId?: string;
+    // (optional) you could also return amount here if your status API gives it
+    // amount?: number;
   };
 }
 
@@ -30,7 +31,7 @@ interface Course {
   title: string;
 }
 
-export default function StatusPage() {
+export default function SuccessPage() {
   const { id: transactionId } = useParams() as { id: string };
   const searchParams = useSearchParams();
   const courseIdFromUrl = searchParams.get("courseId")!;
@@ -38,66 +39,59 @@ export default function StatusPage() {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [status, setStatus] = useState<string | null>(null);
-  const [txId, setTxId] = useState<string>(transactionId);
-  const [courseId, setCourseId] = useState<string>(courseIdFromUrl);
+  const [txId, setTxId] = useState<string | null>(null);
+  const [courseId, setCourseId] = useState<string | null>(courseIdFromUrl);
   const [courseTitle, setCourseTitle] = useState<string | null>(null);
+  // If your status response actually returns amount, you can capture it here:
+  const [amountPaid, setAmountPaid] = useState<number | null>(null);
 
   const fetchStatus = useCallback(async () => {
-    if (!transactionId) return;
-
     setLoading(true);
     setError(null);
-
-    // Always initialize to the URL param in case the API doesn't return a data field
-    setTxId(transactionId);
-    setCourseId(courseIdFromUrl);
-    setCourseTitle(null);
-
     try {
       const { data } = await axios.get<PhonePeStatusResponse>(
         `/api/status?id=${transactionId}&courseId=${courseIdFromUrl}&raw=true`
       );
 
+      // If for some reason success===false, redirect to /failure
       if (!data.success) {
-        throw new Error(`${data.code}: ${data.message}`);
+        router.replace(`/failure/${transactionId}?courseId=${courseIdFromUrl}`);
+        return;
       }
 
-      // Use API’s returned transactionId (if any); otherwise fall back to URL
-      const returnedTxnId = data.data?.transactionId || transactionId;
-      setTxId(returnedTxnId);
+      // At this point, payment is confirmed successful
+      setTxId(data.data!.transactionId);
+      const cid = data.data!.courseId ?? courseIdFromUrl;
+      setCourseId(cid);
 
-      // Use API’s returned courseId (if any); otherwise fall back to URL
-      const returnedCourseId = data.data?.courseId || courseIdFromUrl;
-      setCourseId(returnedCourseId);
+      // If your API returns an amount, you could do:
+      // setAmountPaid(data.data!.amount ?? null);
 
-      setStatus(data.code);
       toast.success(`Transaction ${data.code}`);
 
-      // Only fetch `courseTitle` if the payment was successful
-      if (data.code === "PAYMENT_SUCCESS" && returnedCourseId) {
+      // Fetch course name:
+      if (cid) {
         const courseRes = await axios.get<{ course: Course }>(
-          `/api/course/${returnedCourseId}`
+          `/api/course/${cid}`
         );
         setCourseTitle(courseRes.data.course.title);
       }
     } catch (err) {
-      const msg =
+      // If the status check itself fails, treat it as a failure:
+      const errMsg =
         err instanceof AxiosError
           ? err.response?.data?.message || err.message
           : (err as Error).message;
-      setError(msg);
-      toast.error(msg);
+      setError(errMsg);
+      toast.error(errMsg);
     } finally {
       setLoading(false);
     }
-  }, [transactionId, courseIdFromUrl]);
+  }, [transactionId, courseIdFromUrl, router]);
 
   useEffect(() => {
     fetchStatus();
   }, [fetchStatus]);
-
-  const isSuccess = status === "PAYMENT_SUCCESS";
 
   const downloadInvoice = async () => {
     if (!txId || !courseId) return;
@@ -139,7 +133,7 @@ export default function StatusPage() {
             </div>
           ) : error ? (
             <div className="text-center space-y-4">
-              <XCircleIcon className="w-16 h-16 text-red-500 mx-auto" />
+              {/* If there was an error during status fetch, show it */}
               <p className="text-red-600">{error}</p>
               <button
                 onClick={fetchStatus}
@@ -151,17 +145,9 @@ export default function StatusPage() {
           ) : (
             <div className="space-y-6">
               <div className="text-center">
-                {isSuccess ? (
-                  <CheckCircleIcon className="w-16 h-16 text-green-500 mx-auto" />
-                ) : (
-                  <XCircleIcon className="w-16 h-16 text-red-500 mx-auto" />
-                )}
-                <h2
-                  className={`mt-4 text-2xl font-bold ${
-                    isSuccess ? "text-green-800" : "text-red-800"
-                  }`}
-                >
-                  {isSuccess ? "Payment Successful" : "Payment Failed"}
+                <CheckCircleIcon className="w-16 h-16 text-green-500 mx-auto" />
+                <h2 className="mt-4 text-2xl font-bold text-green-800">
+                  Payment Successful
                 </h2>
               </div>
 
@@ -170,21 +156,24 @@ export default function StatusPage() {
                   <span className="font-medium text-gray-700">Txn ID:</span>
                   <span className="text-gray-900">{txId}</span>
                 </div>
-                {courseTitle ? (
+                {courseTitle && (
                   <div className="flex justify-between">
                     <span className="font-medium text-gray-700">Course:</span>
                     <span className="text-gray-900">{courseTitle}</span>
                   </div>
-                ) : (
+                )}
+                {amountPaid !== null && (
                   <div className="flex justify-between">
-                    <span className="font-medium text-gray-700">Course ID:</span>
-                    <span className="text-gray-900">{courseId}</span>
+                    <span className="font-medium text-gray-700">Amount Paid:</span>
+                    <span className="text-gray-900">
+                      ₹{(amountPaid / 100).toFixed(2)}
+                    </span>
                   </div>
                 )}
               </div>
 
               <div className="flex flex-col sm:flex-row sm:space-x-4 space-y-2 sm:space-y-0">
-                {isSuccess && courseId && (
+                {courseId && (
                   <button
                     onClick={() => router.push(`/courses/${courseId}`)}
                     className="flex-1 inline-flex justify-center items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
@@ -192,7 +181,7 @@ export default function StatusPage() {
                     Go to Course
                   </button>
                 )}
-                {isSuccess && txId && courseId && (
+                {txId && courseId && (
                   <button
                     onClick={downloadInvoice}
                     className="flex-1 inline-flex justify-center items-center px-4 py-2 bg-gray-100 text-gray-800 rounded-md hover:bg-gray-200 transition"
