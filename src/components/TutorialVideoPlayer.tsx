@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, MouseEvent, TouchEvent } from "react";
 
 declare global {
   interface Window {
@@ -19,12 +19,10 @@ function getYouTubeId(url: string): string | null {
   return match && match[2].length === 11 ? match[2] : null;
 }
 
-export default function TutorialVideoPlayer({
-  url,
-}: TutorialVideoPlayerProps) {
+export default function TutorialVideoPlayer({ url }: TutorialVideoPlayerProps) {
   const videoId = getYouTubeId(url);
-  const outerContainerRef = useRef<HTMLDivElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const outerRef = useRef<HTMLDivElement>(null);
+  const playerContainerRef = useRef<HTMLDivElement>(null);
   const progressBarRef = useRef<HTMLDivElement>(null);
   const animationRef = useRef<number>();
 
@@ -32,11 +30,11 @@ export default function TutorialVideoPlayer({
   const [apiReady, setApiReady] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [showControls, setShowControls] = useState(false);
+  const [showControls, setShowControls] = useState(false); // or `true` if you want them shown by default
   const [isDragging, setIsDragging] = useState(false);
   const [playbackRate, setPlaybackRate] = useState(1);
 
-  // Load YouTube Iframe API if not loaded
+  // 1. Load YouTube Iframe API
   useEffect(() => {
     if (!videoId) return;
     if (!window.YT) {
@@ -51,13 +49,24 @@ export default function TutorialVideoPlayer({
     }
   }, [videoId]);
 
-  const playerRef = useRef<any>(null);
+  // 3. Update progress continuously while playing
+  const startProgressLoop = () => {
+    const step = () => {
+      if (playerRef.current && playerRef.current.getCurrentTime) {
+        if (!isDragging) {
+          setCurrentTime(playerRef.current.getCurrentTime());
+        }
+      }
+      animationRef.current = requestAnimationFrame(step);
+    };
+    animationRef.current = requestAnimationFrame(step);
+  };
 
-  // Initialize player once when API is ready
+  // 2. Initialize the player once API is ready
+  const playerRef = useRef<any>(null);
   useEffect(() => {
-    if (!apiReady || !videoId || !containerRef.current) return;
-    // If we've already created the player, do not recreate
-    if (playerRef.current) return;
+    if (!apiReady || !videoId || !playerContainerRef.current) return;
+    if (playerRef.current) return; // do not recreate if already exists
 
     const playerVars = {
       autoplay: 0,
@@ -68,11 +77,10 @@ export default function TutorialVideoPlayer({
       fs: 0,
       iv_load_policy: 3,
       playsinline: 1,
-      // start at the currentTime if it exists
     };
 
-    playerRef.current = new window.YT.Player(containerRef.current, {
-      videoId: videoId,
+    playerRef.current = new window.YT.Player(playerContainerRef.current, {
+      videoId,
       height: "100%",
       width: "100%",
       playerVars: playerVars,
@@ -80,14 +88,13 @@ export default function TutorialVideoPlayer({
         onReady: (event: any) => {
           const dur = event.target.getDuration();
           setDuration(dur);
-          // Set the initial playback rate
           event.target.setPlaybackRate(playbackRate);
         },
         onStateChange: (event: any) => {
           const state = event.data;
           setIsPlaying(state === window.YT.PlayerState.PLAYING);
           if (state === window.YT.PlayerState.PLAYING) {
-            startProgressUpdate();
+            startProgressLoop();
           } else {
             cancelAnimationFrame(animationRef.current!);
           }
@@ -96,22 +103,9 @@ export default function TutorialVideoPlayer({
     });
   }, [apiReady, videoId, playbackRate]);
 
-  // Continuously update the progress bar while video plays
-  const startProgressUpdate = () => {
-    const updateProgress = () => {
-      if (playerRef.current && playerRef.current.getCurrentTime) {
-        if (!isDragging) {
-          setCurrentTime(playerRef.current.getCurrentTime());
-        }
-        animationRef.current = requestAnimationFrame(updateProgress);
-      }
-    };
-    animationRef.current = requestAnimationFrame(updateProgress);
-  };
-
-  // Seek logic (both mouse & touch)
-  const updateSeekFromClientX = (clientX: number) => {
-    if (!progressBarRef.current || !playerRef.current || !duration) return;
+  // 4. Seek logic (mouse & touch)
+  const updateSeekFromX = (clientX: number) => {
+    if (!progressBarRef.current || !playerRef.current || duration <= 0) return;
     const rect = progressBarRef.current.getBoundingClientRect();
     const pos = Math.min(Math.max(0, (clientX - rect.left) / rect.width), 1);
     const seekTime = pos * duration;
@@ -119,15 +113,15 @@ export default function TutorialVideoPlayer({
     setCurrentTime(seekTime);
   };
 
-  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+  const handleMouseDown = (e: MouseEvent<HTMLDivElement>) => {
     e.stopPropagation();
     setIsDragging(true);
-    updateSeekFromClientX(e.clientX);
+    updateSeekFromX(e.clientX);
   };
 
-  const handleMouseMove = (e: MouseEvent) => {
+  const handleMouseMove = (e: globalThis.MouseEvent) => {
     if (isDragging) {
-      updateSeekFromClientX(e.clientX);
+      updateSeekFromX(e.clientX);
     }
   };
 
@@ -137,15 +131,15 @@ export default function TutorialVideoPlayer({
     }
   };
 
-  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+  const handleTouchStart = (e: TouchEvent<HTMLDivElement>) => {
     e.stopPropagation();
     setIsDragging(true);
-    updateSeekFromClientX(e.touches[0].clientX);
+    updateSeekFromX(e.touches[0].clientX);
   };
 
-  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+  const handleTouchMove = (e: TouchEvent<HTMLDivElement>) => {
     if (isDragging) {
-      updateSeekFromClientX(e.touches[0].clientX);
+      updateSeekFromX(e.touches[0].clientX);
     }
   };
 
@@ -153,7 +147,6 @@ export default function TutorialVideoPlayer({
     setIsDragging(false);
   };
 
-  // Add/remove global listeners for mousemove and mouseup during drag
   useEffect(() => {
     if (isDragging) {
       document.addEventListener("mousemove", handleMouseMove);
@@ -168,14 +161,14 @@ export default function TutorialVideoPlayer({
     };
   }, [isDragging]);
 
-  // Format time as MM:SS
-  const formatTime = (seconds: number) => {
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = Math.floor(seconds % 60);
-    return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
+  // 5. Format time (MM:SS)
+  const formatTime = (secs: number) => {
+    const m = Math.floor(secs / 60);
+    const s = Math.floor(secs % 60);
+    return `${m}:${s.toString().padStart(2, "0")}`;
   };
 
-  // Toggle play / pause without restarting
+  // 6. Play/Pause toggle
   const handlePlayPause = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
     if (!playerRef.current) return;
@@ -186,50 +179,41 @@ export default function TutorialVideoPlayer({
     }
   };
 
-  // Seek forward/backward by an offset
-  const seek = (secondsOffset: number, e: React.MouseEvent<HTMLButtonElement>) => {
+  // 7. Skip forward/back by 10 seconds
+  const skip = (offset: number, e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
-    if (playerRef.current) {
-      const newTime = playerRef.current.getCurrentTime() + secondsOffset;
-      playerRef.current.seekTo(newTime, true);
-    }
+    if (!playerRef.current) return;
+    const newTime = playerRef.current.getCurrentTime() + offset;
+    playerRef.current.seekTo(newTime, true);
   };
 
-  // Full screen toggle
+  // 8. Fullscreen toggle
   const handleFullScreen = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
-    if (!outerContainerRef.current) return;
+    if (!outerRef.current) return;
     if (
       !document.fullscreenElement &&
       !(document as any).webkitFullscreenElement &&
       !(document as any).mozFullScreenElement &&
       !(document as any).msFullscreenElement
     ) {
-      if (outerContainerRef.current.requestFullscreen) {
-        outerContainerRef.current.requestFullscreen().catch((err) =>
-          console.error("Error attempting to enable full-screen mode:", err)
+      if (outerRef.current.requestFullscreen) {
+        outerRef.current.requestFullscreen().catch((err) =>
+          console.error("Fullscreen request error:", err)
         );
-      } else if ((outerContainerRef.current as any).webkitRequestFullscreen) {
-        (outerContainerRef.current as any).webkitRequestFullscreen();
-      } else if ((outerContainerRef.current as any).mozRequestFullScreen) {
-        (outerContainerRef.current as any).mozRequestFullScreen();
-      } else if ((outerContainerRef.current as any).msRequestFullscreen) {
-        (outerContainerRef.current as any).msRequestFullscreen();
+      } else if ((outerRef.current as any).webkitRequestFullscreen) {
+        (outerRef.current as any).webkitRequestFullscreen();
+      } else if ((outerRef.current as any).mozRequestFullScreen) {
+        (outerRef.current as any).mozRequestFullScreen();
+      } else if ((outerRef.current as any).msRequestFullscreen) {
+        (outerRef.current as any).msRequestFullscreen();
       }
     } else {
-      if (document.exitFullscreen) {
-        document.exitFullscreen();
-      } else if ((document as any).webkitExitFullscreen) {
-        (document as any).webkitExitFullscreen();
-      } else if ((document as any).mozCancelFullScreen) {
-        (document as any).mozCancelFullScreen();
-      } else if ((document as any).msExitFullscreen) {
-        (document as any).msExitFullscreen();
-      }
+      document.exitFullscreen();
     }
   };
 
-  // Change playback rate
+  // 9. Change playback rate
   const changePlaybackRate = (rate: number) => {
     if (playerRef.current) {
       playerRef.current.setPlaybackRate(rate);
@@ -238,21 +222,25 @@ export default function TutorialVideoPlayer({
   };
 
   if (!videoId) {
-    return <div className="text-red-500">Invalid video URL</div>;
+    return (
+      <div className="flex items-center justify-center h-64 bg-gray-800 text-red-400">
+        Invalid video URL
+      </div>
+    );
   }
 
   return (
     <div
-      ref={outerContainerRef}
-      className="relative w-full aspect-video bg-black group"
+      ref={outerRef}
+      className="group relative w-full aspect-video bg-black overflow-hidden rounded-lg shadow-lg"
       onClick={() => setShowControls((prev) => !prev)}
     >
-      {/* The actual YouTube iframe player will be injected here */}
-      <div ref={containerRef} className="w-full h-full" />
+      {/* 1) YouTube Iframe Placeholder */}
+      <div ref={playerContainerRef} className="w-full h-full" />
 
-      {/* Current / Duration Timestamps */}
+      {/* 2) Timestamps */}
       <div
-        className={`absolute bottom-20 left-2 text-white text-sm transition-opacity duration-300 ${
+        className={`absolute bottom-20 left-4 text-white text-sm md:text-base font-medium transition-opacity duration-200 ${
           showControls ? "opacity-100" : "opacity-0"
         } group-hover:opacity-100`}
         onClick={(e) => e.stopPropagation()}
@@ -260,30 +248,46 @@ export default function TutorialVideoPlayer({
         {formatTime(currentTime)} / {formatTime(duration)}
       </div>
 
-      {/* Control Overlay */}
+      {/* 3) Control Overlay */}
       <div
-        className={`absolute inset-0 flex flex-col justify-end items-center transition-opacity duration-300 ${
+        className={`absolute inset-0 flex flex-col justify-end items-center transition-opacity duration-200 ${
           showControls ? "opacity-100" : "opacity-0"
-        } group-hover:opacity-100`}
+        } group-hover:opacity-100 bg-gradient-to-t from-black/60 to-transparent`}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Top controls area: Play/Pause, skipping, full screen */}
-        <div className="w-full bg-gradient-to-t from-black/80 to-transparent p-4 flex items-center justify-center gap-4">
+        {/* Playback Rate Selector */}
+        <div className="flex gap-2 mb-2">
+          {[1, 1.25, 1.5, 2].map((rate) => (
+            <button
+              key={rate}
+              onClick={() => changePlaybackRate(rate)}
+              className={`text-white px-3 py-1 rounded-md text-xs md:text-sm ${
+                playbackRate === rate
+                  ? "bg-red-600"
+                  : "bg-gray-700 hover:bg-gray-600"
+              }`}
+            >
+              {rate}×
+            </button>
+          ))}
+        </div>
+
+        {/* Play / Skip / Fullscreen Buttons */}
+        <div className="flex items-center gap-6 mb-4">
           <button
-            onClick={(e) => seek(-10, e)}
-            className="text-white hover:text-gray-300 text-sm md:text-base"
-            title="Rewind 10 seconds"
+            onClick={(e) => skip(-10, e)}
+            title="Rewind 10s"
+            className="text-white hover:text-gray-300 text-base md:text-lg"
           >
             ⏪ 10s
           </button>
 
           <button
             onClick={handlePlayPause}
-            className="bg-red-600 text-white p-2 md:p-3 rounded-full hover:bg-red-700 transition-colors duration-200 flex items-center justify-center w-10 h-10 md:w-12 md:h-12"
             title={isPlaying ? "Pause" : "Play"}
+            className="bg-red-600 text-white p-3 rounded-full hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-400"
           >
             {isPlaying ? (
-              /* Pause Icon */
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 className="h-6 w-6 md:h-8 md:w-8"
@@ -297,7 +301,6 @@ export default function TutorialVideoPlayer({
                 />
               </svg>
             ) : (
-              /* Play Icon */
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 className="h-6 w-6 md:h-8 md:w-8"
@@ -314,21 +317,21 @@ export default function TutorialVideoPlayer({
           </button>
 
           <button
-            onClick={(e) => seek(10, e)}
-            className="text-white hover:text-gray-300 text-sm md:text-base"
-            title="Forward 10 seconds"
+            onClick={(e) => skip(10, e)}
+            title="Forward 10s"
+            className="text-white hover:text-gray-300 text-base md:text-lg"
           >
             10s ⏩
           </button>
 
           <button
             onClick={handleFullScreen}
-            className="bg-gray-800 text-white p-2 md:p-3 rounded-full hover:bg-gray-700 transition-colors duration-200 flex items-center justify-center w-10 h-10 md:w-12 md:h-12"
-            title="Full Screen"
+            title="Fullscreen"
+            className="bg-gray-800 text-white p-2 rounded-full hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              className="h-6 w-6 md:h-8 md:w-8"
+              className="h-5 w-5 md:h-6 md:w-6"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -343,46 +346,26 @@ export default function TutorialVideoPlayer({
           </button>
         </div>
 
-        {/* Progress Bar */}
+        {/* 4) Progress Bar */}
         <div
           ref={progressBarRef}
-          className={`relative w-full h-2 bg-gray-600 cursor-pointer transition-opacity duration-300 ${
-            showControls ? "opacity-100" : "opacity-0"
-          } group-hover:opacity-100 mt-2`}
+          className="relative w-full h-1.5 bg-gray-600 cursor-pointer rounded-sm transition-opacity duration-200 mb-2"
           onMouseDown={handleMouseDown}
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
         >
           <div
-            className="absolute top-0 left-0 h-full bg-red-600 pointer-events-none transition-all duration-100"
+            className="absolute top-0 left-0 h-full bg-red-600 rounded-sm"
             style={{ width: `${(currentTime / duration) * 100}%` }}
           >
-            <div className="absolute right-0 -top-1 h-4 w-4 bg-red-600 rounded-full transform translate-x-1/2 pointer-events-none" />
+            <div
+              className="absolute right-0 -top-1.5 h-3 w-3 bg-red-600 rounded-full transform translate-x-1/2"
+            />
           </div>
         </div>
 
-        {/* Playback Rate Controls */}
-        <div
-          className={`w-full flex justify-center gap-2 py-2 bg-black/80 transition-opacity duration-300 ${
-            showControls ? "opacity-100" : "opacity-0"
-          } group-hover:opacity-100`}
-          onClick={(e) => e.stopPropagation()}
-        >
-          {[1, 1.25, 1.5, 2].map((rate) => (
-            <button
-              key={rate}
-              onClick={() => changePlaybackRate(rate)}
-              className={`text-white px-3 py-1 rounded-md ${
-                playbackRate === rate
-                  ? "bg-red-600"
-                  : "bg-gray-700 hover:bg-gray-600"
-              }`}
-            >
-              {rate}×
-            </button>
-          ))}
-        </div>
+       
       </div>
     </div>
   );
