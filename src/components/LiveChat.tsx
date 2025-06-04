@@ -29,33 +29,32 @@ export default function LiveChat({ channelId }: { channelId: string }) {
 
     async function init() {
       console.log('[LiveChat] init() start', { channelId });
-
+    
       // 1) fetch our chat token
       const res = await fetch('/api/chat/token');
       if (!res.ok) {
         const err = await res.text();
         throw new Error(`Token endpoint error: ${res.status} ${err}`);
       }
-      const { userId, chatToken } = await res.json();
-      console.log('[LiveChat] fetched token', { userId, chatToken: chatToken.slice(0,8) + '…' });
-
+      const { userId, name, chatToken } = await res.json();
+    
       // 2) instantiate and connect
-      client = StreamChat.getInstance(apiKey);
+      client = StreamChat.getInstance(apiKey); // <--- instantiate first!
       console.log('[LiveChat] connecting user to Stream');
-      await client.connectUser({ id: userId }, chatToken);
+      await client.connectUser({ id: userId, name }, chatToken); // <--- then connect with name
       console.log('[LiveChat] connectUser OK');
-
+    
       // 3) create/watch the channel
       const ch = client.channel('livestream', channelId, { name: `Live Class ${channelId}` } as any);
       console.log('[LiveChat] watching channel');
       await ch.watch();
       console.log('[LiveChat] channel.watch OK');
-
+    
       // 4) set state
       setChatClient(client);
       setChannel(ch);
     }
-
+    
     init().catch((err) => {
       console.error('[LiveChat] init error:', err);
       setLoadingError(err.message);

@@ -27,10 +27,11 @@ export async function GET(request: NextRequest) {
       process.env.STREAM_API_SECRET!
     );
     const userId = user._id.toString();
+    const name = user.name || 'Anonymous'; // fallback if needed
     const chatToken = serverClient.createToken(userId);
 
-    // 5) return both id & token
-    return NextResponse.json({ userId, chatToken });
+    // 5) return id, name & token
+    return NextResponse.json({ userId, name, chatToken });
   } catch (err: any) {
     console.error('chat token error:', err);
     return NextResponse.json(
