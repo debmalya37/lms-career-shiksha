@@ -54,11 +54,11 @@ export default function Home() {
       try {
         const res = await axios.get(`/api/session-status`, { withCredentials: true });
         if (!res.data.sessionActive) {
-          router.push("/login");
+          router.push("/signup");
         }
       } catch (error) {
         console.error("Session check failed:", error);
-        router.push("/login");
+        router.push("/signup");
       }
     }
     checkSession();

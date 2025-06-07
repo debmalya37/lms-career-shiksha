@@ -1,13 +1,15 @@
 // models/promoCodeModel.ts
-import mongoose, { Schema, Document } from 'mongoose';
+// models/promoCodeModel.ts
+import mongoose, { Schema, Document, Types } from 'mongoose';
 
 export interface IPromoCode extends Document {
   code: string;
   discountType: 'percentage' | 'amount';
   discountValue: number;
   expiresAt: Date;
-  usageLimit: number;      // max total uses
-  usedCount: number;       // increments on each use
+  usageLimit: number;
+  usedCount: number;
+  applicableCourses: Types.ObjectId[]; // empty = general
   createdAt: Date;
 }
 
@@ -18,6 +20,7 @@ const PromoCodeSchema = new Schema<IPromoCode>({
   expiresAt:      { type: Date, required: true },
   usageLimit:     { type: Number, required: true },
   usedCount:      { type: Number, default: 0 },
+  applicableCourses: [{ type: Schema.Types.ObjectId, ref: 'Course' }],
   createdAt:      { type: Date, default: Date.now }
 });
 

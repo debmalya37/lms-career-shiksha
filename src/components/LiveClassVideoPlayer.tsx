@@ -1,6 +1,12 @@
 "use client";
 
-import React, { useState, useEffect, useRef, MouseEvent, TouchEvent } from "react";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  MouseEvent,
+  TouchEvent,
+} from "react";
 
 declare global {
   interface Window {
@@ -10,7 +16,7 @@ declare global {
 }
 
 export default function LiveClassVideoPlayer({ url }: { url: string }) {
-  // Helper: extract the 11‐character YouTube ID from a live‐URL (supports “live/” and “embed/” formats).
+  // Extract 11-character YouTube ID from various URL forms (live, embed, watch?v=, etc.)
   function getYouTubeId(url: string): string | null {
     const regExp =
       /(?:embed\/|v=|live\/|v\/|e\/|watch\?v=|&v=)([^#&?]*).*/;
@@ -19,22 +25,22 @@ export default function LiveClassVideoPlayer({ url }: { url: string }) {
   }
 
   const videoId = getYouTubeId(url);
-  const playerRef = useRef<any| null>(null);
+  const playerRef = useRef<any | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const outerContainerRef = useRef<HTMLDivElement>(null);
 
-  // UI state flags:
+  // UI state
   const [isPlaying, setIsPlaying] = useState(false);
   const [apiReady, setApiReady] = useState(false);
 
-  // Progress bar state:
+  // Progress bar state
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const progressBarRef = useRef<HTMLDivElement>(null);
   const animationRef = useRef<number>();
   const [isDragging, setIsDragging] = useState(false);
 
-  // 1) Load YouTube IFrame API only once:
+  // 1. Load YouTube IFrame API (only once per component mount)
   useEffect(() => {
     if (!videoId) return;
 
@@ -50,7 +56,7 @@ export default function LiveClassVideoPlayer({ url }: { url: string }) {
     }
 
     return () => {
-      // On unmount, destroy the player to avoid orphaned iframes.
+      // On unmount, destroy the player to avoid leftover iframes
       if (playerRef.current) {
         playerRef.current.destroy();
         playerRef.current = null;
@@ -58,12 +64,10 @@ export default function LiveClassVideoPlayer({ url }: { url: string }) {
     };
   }, [videoId]);
 
-  // 2) Once API is ready and we have a videoId, create the player exactly once:
+  // 2. Initialize the player once API is ready & videoId is available
   useEffect(() => {
     if (!apiReady || !videoId || !containerRef.current) return;
-
-    // If we've already built the player, do not rebuild it.
-    if (playerRef.current) return;
+    if (playerRef.current) return; // do not re-create if already exists
 
     const playerVars: YT.PlayerVars = {
       autoplay: 0,
@@ -83,20 +87,16 @@ export default function LiveClassVideoPlayer({ url }: { url: string }) {
       playerVars,
       events: {
         onReady: (event: any) => {
-          // Once the player is ready, grab its duration (for a live/DVR stream, this is the “elapsed broadcast time”)
           const p = event.target as any;
           const dur = p.getDuration();
           setDuration(dur);
         },
         onStateChange: (event: any) => {
           const state = event.data;
-          // YT.PlayerState.PLAYING === 1
-          // YT.PlayerState.PAUSED  === 2
           setIsPlaying(state === window.YT.PlayerState.PLAYING);
           if (state === window.YT.PlayerState.PLAYING) {
             startProgressUpdate();
           } else {
-            // Stop updating the progress bar whenever the video is not “PLAYING”
             cancelAnimationFrame(animationRef.current!);
           }
         },
@@ -104,7 +104,7 @@ export default function LiveClassVideoPlayer({ url }: { url: string }) {
     });
   }, [apiReady, videoId]);
 
-  // 3) Continuously update the “currentTime” while the video plays:
+  // 3. Update “currentTime” continuously while playing
   const startProgressUpdate = () => {
     const step = () => {
       if (playerRef.current && playerRef.current.getCurrentTime) {
@@ -115,7 +115,7 @@ export default function LiveClassVideoPlayer({ url }: { url: string }) {
     animationRef.current = requestAnimationFrame(step);
   };
 
-  // 4) Seek handling (both mouse and touch):
+  // 4. Seek logic (mouse & touch) — only triggers if user directly clicks/drags on the bar
   const updateSeekFromClientX = (clientX: number) => {
     if (!progressBarRef.current || !playerRef.current || duration === 0) return;
     const rect = progressBarRef.current.getBoundingClientRect();
@@ -142,7 +142,6 @@ export default function LiveClassVideoPlayer({ url }: { url: string }) {
       setIsDragging(false);
     }
   };
-  
 
   const handleTouchStart = (e: TouchEvent<HTMLDivElement>) => {
     setIsDragging(true);
@@ -161,42 +160,38 @@ export default function LiveClassVideoPlayer({ url }: { url: string }) {
 
   useEffect(() => {
     if (isDragging) {
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
+      document.addEventListener("mousemove", handleMouseMove);
+      document.addEventListener("mouseup", handleMouseUp);
     } else {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
     }
     return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
     };
   }, [handleMouseMove, handleMouseUp, isDragging]);
-  // 5) Play / Pause toggle. **We do NOT “seek” here**—just pause or play the existing head.
+
+  // 5. Play / Pause toggle
   const handlePlayPause = () => {
     if (!playerRef.current) return;
     if (isPlaying) {
       playerRef.current.pauseVideo();
     } else {
       playerRef.current.playVideo();
-      // Note: Since we never re‐created the player or forced a seek,
-      // the internal head remains at whatever timestamp it was paused at.
     }
   };
 
-  // 6) Skip forward/back by 10 seconds
+  // 6. Skip forward/back by 10 seconds
   const skip = (offset: number) => {
     if (!playerRef.current) return;
     const current = playerRef.current.getCurrentTime();
     playerRef.current.seekTo(current + offset, true);
   };
 
-  // 7) “Go Live” button: snap to the very end (live edge)
-  //    For a YouTube live/DVR stream, seeking to “duration” jumps to live.
+  // 7. “Go Live” button: seek to end of live‐DVR
   const handleGoLive = () => {
     if (!playerRef.current) return;
-    // If duration is 0 (sometimes live streams report 0 until buffer), 
-    // wait a moment and try again:
     const dur = playerRef.current.getDuration();
     if (dur <= 0) {
       setTimeout(() => {
@@ -208,9 +203,9 @@ export default function LiveClassVideoPlayer({ url }: { url: string }) {
     }
   };
 
-  // 8) Toggle full screen
+  // 8. Toggle Full Screen
   const handleFullScreen = (e: MouseEvent<HTMLButtonElement>) => {
-    e.stopPropagation();
+    e.stopPropagation(); // ensure only button triggers this
     if (!outerContainerRef.current) return;
     if (!document.fullscreenElement) {
       outerContainerRef.current.requestFullscreen().catch((err) => {
@@ -221,7 +216,7 @@ export default function LiveClassVideoPlayer({ url }: { url: string }) {
     }
   };
 
-  // 9) Utility: format seconds as “MM:SS”
+  // 9. Format seconds as “MM:SS”
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60);
     const s = Math.floor(seconds % 60);
@@ -235,47 +230,47 @@ export default function LiveClassVideoPlayer({ url }: { url: string }) {
   return (
     <div
       ref={outerContainerRef}
-      className="relative w-full aspect-video bg-black group"
-      onClick={() => {
-        /* Tapping anywhere toggles the control overlay */
-      }}
+      className="relative w-full aspect-video bg-black"
+      /* No onClick or hover handlers here—clicking elsewhere does nothing */
     >
-      {/* 1) Actual YouTube iframe gets injected here */}
+      {/* 1) YouTube iframe container */}
       <div ref={containerRef} className="w-full h-full" />
 
-      {/* 2) Progress Bar: only visible on hover (the “group” parent gives us that) */}
+      {/* 2) Progress Bar (always visible) */}
       <div
         ref={progressBarRef}
-        className="absolute bottom-16 left-0 right-0 h-2 bg-gray-600 cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+        className="absolute bottom-16 left-0 right-0 h-2 bg-gray-600 cursor-pointer z-10"
         onMouseDown={handleMouseDown}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
+        style={{ pointerEvents: "auto" }} // allow seeking only on the bar itself
       >
-        {/* The filled portion, based on (currentTime / duration) percent */}
+        {/* Filled portion */}
         <div
-          className="absolute top-0 left-0 h-full bg-red-600 transition-all duration-100"
+          className="absolute top-0 left-0 h-full bg-red-600"
           style={{
-            width: duration > 0 ? `${(currentTime / duration) * 100}%` : "0%",
+            width:
+              duration > 0 ? `${(currentTime / duration) * 100}%` : "0%",
           }}
         >
-          <div className="absolute right-0 -top-1 h-4 w-4 bg-red-600 rounded-full transform translate-x-1/2" />
+          <div className="absolute right-0 -top-1 h-4 w-4 bg-red-600 rounded-full" />
         </div>
       </div>
 
-      {/* 3) Control Overlay (Play/Pause, Skip, Go Live, Fullscreen, Timestamp) */}
-      <div className="absolute inset-0 flex flex-col justify-between p-4 pointer-events-none">
-        {/* Top area: currentTime / duration */}
-        <div className="flex justify-between text-white text-sm pointer-events-auto">
+      {/* 3) Control Overlay (buttons & timestamps) */}
+      <div className="absolute inset-0 flex flex-col justify-between p-4 z-20">
+        {/* Top: currentTime / duration (pointer-events none, so cannot click) */}
+        <div className="flex justify-between text-white text-sm pointer-events-none">
           <span>{formatTime(currentTime)}</span>
           <span>{formatTime(duration)}</span>
         </div>
 
-        {/* Center controls */}
-        <div className="flex justify-center items-center gap-6 pointer-events-auto">
+        {/* Center: Play/Pause & Skip (pointer-events auto only on buttons) */}
+        <div className="flex justify-center items-center gap-6">
           <button
             onClick={() => skip(-10)}
-            className="text-white bg-black/50 hover:bg-black/70 px-3 py-1 rounded"
+            className="pointer-events-auto text-white bg-black/50 hover:bg-black/70 px-3 py-1 rounded"
             title="Rewind 10s"
           >
             ⏪ 10s
@@ -283,7 +278,7 @@ export default function LiveClassVideoPlayer({ url }: { url: string }) {
 
           <button
             onClick={handlePlayPause}
-            className="bg-red-600 hover:bg-red-700 text-white p-3 rounded-full"
+            className="pointer-events-auto bg-red-600 hover:bg-red-700 text-white p-3 rounded-full"
             title={isPlaying ? "Pause" : "Play"}
           >
             {isPlaying ? "⏸" : "▶"}
@@ -291,18 +286,18 @@ export default function LiveClassVideoPlayer({ url }: { url: string }) {
 
           <button
             onClick={() => skip(10)}
-            className="text-white bg-black/50 hover:bg-black/70 px-3 py-1 rounded"
+            className="pointer-events-auto text-white bg-black/50 hover:bg-black/70 px-3 py-1 rounded"
             title="Forward 10s"
           >
             10s ⏩
           </button>
         </div>
 
-        {/* Bottom area: “Go Live” and “Fullscreen” */}
-        <div className="flex justify-between items-center pointer-events-auto">
+        {/* Bottom: Go Live & Fullscreen (pointer-events auto on buttons) */}
+        <div className="flex justify-between items-center">
           <button
             onClick={handleGoLive}
-            className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded"
+            className="pointer-events-auto bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded"
             title="Go Live"
           >
             🔴 Go Live
@@ -310,7 +305,7 @@ export default function LiveClassVideoPlayer({ url }: { url: string }) {
 
           <button
             onClick={handleFullScreen}
-            className="bg-gray-800 hover:bg-gray-700 text-white p-2 rounded"
+            className="pointer-events-auto bg-gray-800 hover:bg-gray-700 text-white p-2 rounded"
             title="Full Screen"
           >
             <svg

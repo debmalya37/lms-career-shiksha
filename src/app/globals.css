@@ -143,6 +143,23 @@
   opacity: 1;
 }
 
+/* Enables perspective on the parent container */
+.perspective {
+  perspective: 1000px;
+}
+/* Allow children to preserve 3D transforms */
+.transform-style {
+  transform-style: preserve-3d;
+}
+/* Hide backface of each side */
+.backface-hidden {
+  backface-visibility: hidden;
+}
+/* Rotate on Y axis */
+.rotate-y-180 {
+  transform: rotateY(180deg);
+}
+
 
 /* Add this to your global styles or in the component's style tag */
 

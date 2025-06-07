@@ -375,8 +375,15 @@ const handlePurchase = useCallback(async () => {
 
             {/* Purchase button */}
 
+            {/* ← UPDATED: Instead of directly enrolling/purchasing, navigate to AdmissionForm */}
             <button
-              onClick={course?.isFree ? handleEnrollFree : handlePurchase}
+              onClick={() =>
+                router.push(
+                  `/admission?courseId=${course._id}&courseName=${encodeURIComponent(
+                    course.title
+                  )}`
+                )
+              }
               disabled={purchased || payLoading}
               className={`mt-4 w-full py-3 rounded-lg font-semibold transition ${
                 purchased
@@ -385,12 +392,12 @@ const handlePurchase = useCallback(async () => {
               } text-white`}
             >
               {purchased
-          ? "Go to course"
-          : payLoading
-          ? "Processing..."
-          : course.isFree
-          ? "Enroll for free"
-          : "Buy now"}
+                ? "Go to course"
+                : payLoading
+                ? "Processing..."
+                : course.isFree
+                ? "Enroll for free"
+                : "Buy now"}
             </button>
             <Link href="/contact">
                 <motion.button

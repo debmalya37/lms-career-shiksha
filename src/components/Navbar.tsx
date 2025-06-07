@@ -54,6 +54,10 @@ const Navbar: React.FC = () => {
             <FiFileText className="h-5 w-5" />
             <span>Notes</span>
           </Link>
+          <Link href="/leaderboard" className="flex items-center space-x-3 p-2 rounded hover:bg-blue-700">
+            <FiFileText className="h-5 w-5" />
+            <span>Leaderboard</span>
+          </Link>
           <Link href="/contact" className="flex items-center space-x-3 p-2 rounded hover:bg-blue-700">
             <FiPhone className="h-5 w-5" />
             <span>Contact</span>

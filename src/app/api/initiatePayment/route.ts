@@ -34,10 +34,10 @@ export async function POST(req: NextRequest) {
     merchantTransactionId: transactionId,
     amount: Math.round(amount * 100), // in paise
     // ← Instead of /status/[id], point it at /payment-result/[id]
-    redirectUrl: `https://civilacademyapp.com/api/phonepe/check?id=${transactionId}&courseId=${courseId}&sessionToken=${sessionToken}`,
+    redirectUrl: `http://civilacademyapp.com/api/phonepe/check?id=${transactionId}&courseId=${courseId}&sessionToken=${sessionToken}`,
     redirectMode: "POST",
     // callbackUrl can be the same
-    callbackUrl: `https://civilacademyapp.com/api/phonepe/check?id=${transactionId}&courseId=${courseId}&sessionToken=${sessionToken}`,
+    callbackUrl: `http://civilacademyapp.com/api/phonepe/check?id=${transactionId}&courseId=${courseId}&sessionToken=${sessionToken}`,
     mobileNumber: user.phoneNo || "",
     paymentInstrument: { type: "PAY_PAGE" },
   };
