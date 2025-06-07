@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { format } from "date-fns";
 
-export default function AdmissionForm({ user }: { user: any }) {
+export default function AdmissionForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const courseId = searchParams.get("courseId") || "";
@@ -14,10 +14,10 @@ export default function AdmissionForm({ user }: { user: any }) {
     profileImage: null as File | null,
     aadhaarImage: null as File | null,
     aadhaarNumber: "",
-    name: user?.name || "",
+    name:  "",
     fatherName: "",
-    phone: user?.phone || "",
-    email: user?.email || "",
+    phone: "",
+    email: "",
     address1: "",
     address2: "",
     state: "",            // New field for State dropdown
