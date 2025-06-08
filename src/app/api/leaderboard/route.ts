@@ -1,39 +1,37 @@
+// app/api/leaderboard/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import dbConnect from "@/lib/db";
-import Leaderboard from "@/models/Leaderboard"; // create this model
+import QuizLeaderboard from "@/models/quizLeaderboardModel";
 
 export async function POST(req: NextRequest) {
   await dbConnect();
-  const body = await req.json();
+  const {
+    quizId,
+    quizTitle,
+    courseId,
+    courseTitle,
+    userEmail,
+    userName,
+    score,
+  } = await req.json();
 
   try {
-    const { userEmail, userName, quizId, quizTitle, score } = body;
-
-    // Find if user already exists
-    let record = await Leaderboard.findOne({ userEmail });
-
-    if (record) {
-      // Update average and count
-      const newTotal = record.totalScore + score;
-      const newCount = record.quizCount + 1;
-      record.averageScore = newTotal / newCount;
-      record.totalScore = newTotal;
-      record.quizCount = newCount;
-    } else {
-      // First time
-      record = new Leaderboard({
-        userEmail,
+    // Upsert: if this user already attempted, keep the highest score
+    await QuizLeaderboard.findOneAndUpdate(
+      { quizId, userEmail },
+      {
+        $max: { score },                 // only update if new `score` is higher
+        quizTitle,
+        courseId,
+        courseTitle,
         userName,
-        quizCount: 1,
-        totalScore: score,
-        averageScore: score,
-      });
-    }
-
-    await record.save();
+        attemptedAt: new Date(),
+      },
+      { upsert: true, setDefaultsOnInsert: true }
+    );
     return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error("Error saving to leaderboard:", error);
+  } catch (err) {
+    console.error("Leaderboard upsert error", err);
     return NextResponse.json({ success: false }, { status: 500 });
   }
 }
