@@ -18,9 +18,8 @@ export default function IDCard() {
   const [error, setError] = useState<string | null>(null);
   const [flipped, setFlipped] = useState(false);
 
-  // Refs to the on‐screen card sides
   const frontRef = useRef<HTMLDivElement>(null);
-  const backRef  = useRef<HTMLDivElement>(null);
+  const backRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetch("/api/admission/me")
@@ -32,21 +31,42 @@ export default function IDCard() {
       .catch((err) => setError(err.message));
   }, []);
 
-  if (error) return <div className="text-red-500 p-4">Error: {error}</div>;
-  if (!data) return <div className="p-4">Loading ID card…</div>;
+  if (error) {
+    if (error === "No admission found") {
+      return (
+        <div className="min-h-screen flex items-center justify-center flex-col text-center p-8 text-white bg-gradient-to-br from-gray-900 via-indigo-900 to-black">
+          <Image src={logo} alt="Logo" width={60} height={60} className="mb-4" />
+          <h2 className="text-xl font-semibold mb-2">No ID Card Available</h2>
+          <p className="text-sm text-gray-300 max-w-md">
+            This is because either you never took Admission in any course or we couldn&apos;t find your admission details. Please try again later or contact the academy.
+          </p>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-6 px-5 py-2 bg-teal-500 hover:bg-teal-400 text-black font-semibold rounded-full shadow-md transition"
+          >
+            🔄 Retry
+          </button>
+        </div>
+      );
+    }
 
-  const issueDate  = new Date(data.createdAt);
+    return (
+      <div className="text-red-400 bg-red-900/30 p-6 rounded-lg border border-red-600 max-w-md mx-auto mt-10 text-center">
+        <h2 className="text-lg font-bold mb-2">Something went wrong</h2>
+        <p className="text-sm">{error}</p>
+      </div>
+    );
+  }
+
+  if (!data) return <div className="p-4 text-white">Loading ID card…</div>;
+
+  const issueDate = new Date(data.createdAt);
   const expiryDate = new Date(issueDate);
   expiryDate.setFullYear(expiryDate.getFullYear() + 1);
   const fmt = (d: Date) =>
     d.toLocaleDateString(undefined, { day: "2-digit", month: "short", year: "numeric" });
 
-  /** 
-   * Snapshot an element by cloning it into a hidden, un‐clipped container,
-   * calling html2canvas on that clone, then cleaning up.
-   */
   async function snapshotElement(el: HTMLDivElement): Promise<string> {
-    // 1) Create an offscreen container
     const wrapper = document.createElement("div");
     Object.assign(wrapper.style, {
       position: "fixed",
@@ -59,19 +79,17 @@ export default function IDCard() {
     });
     document.body.appendChild(wrapper);
 
-    // 2) Clone the node
     const clone = el.cloneNode(true) as HTMLElement;
-    // Remove any transforms/clipping on the clone
-    clone.style.transform = "none";
-    clone.style.perspective = "none";
-    clone.style.overflow = "visible";
-    clone.style.position = "relative";
-    clone.style.top = "0";
-    clone.style.left = "0";
-
+    Object.assign(clone.style, {
+      transform: "none",
+      perspective: "none",
+      overflow: "visible",
+      position: "relative",
+      top: "0",
+      left: "0",
+    });
     wrapper.appendChild(clone);
 
-    // 3) Use html2canvas on the wrapper (so all child styles apply)
     const canvas = await html2canvas(clone, {
       scale: 2,
       backgroundColor: null,
@@ -79,10 +97,7 @@ export default function IDCard() {
       height: el.offsetHeight,
     });
 
-    // 4) Clean up
     document.body.removeChild(wrapper);
-
-    // 5) Return data URL
     return canvas.toDataURL("image/png");
   }
 
@@ -105,31 +120,29 @@ export default function IDCard() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-indigo-900 to-black flex flex-col items-center justify-center p-6 space-y-4">
+      <div className="bg-gradient-to-br from-gray-900 via-indigo-900 to-black flex flex-col items-center justify-center py-10 space-y-4">
+    
       <button
-        // onClick={downloadPdf}
-        className="bg-teal-400 hover:bg-teal-500 text-black font-semibold px-6 py-3 rounded-full shadow-xl transition"
+        className="bg-teal-400 hover:bg-teal-500 text-black font-semibold px-6 py-2 rounded-full shadow-xl transition text-sm sm:text-base"
       >
-        📥 Download ID Card (2-Page) button coming soon
+        📥 Download ID Card (Coming Soon)
       </button>
 
-      {/* Visible 3D Flip Card */}
-      <div className="relative w-[420px] h-[260px] perspective">
+      {/* Flip Card Container */}
+      <div className="relative w-full max-w-sm aspect-[420/260] perspective">
         <div
-          className={`relative w-full h-full transform-style preserve-3d transition-transform duration-700 ${
+          className={`relative w-full h-full transition-transform duration-700 transform-style preserve-3d ${
             flipped ? "rotate-y-180" : ""
           }`}
         >
-          {/* Front Side */}
+          {/* Front */}
           <div
             className="absolute inset-0 backface-hidden"
             ref={frontRef}
           >
-            <div className="w-full h-full rounded-3xl shadow-2xl overflow-hidden border border-gray-700 
-                            bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-indigo-800 to-indigo-900 
-                            relative">
-              <div className="absolute top-4 left-4">
-                <Image src={logo} alt="Logo" width={40} height={40} />
+            <div className="w-full h-full rounded-xl shadow-xl overflow-hidden border border-gray-700 bg-gradient-to-br from-indigo-800 to-indigo-900 relative">
+              <div className="absolute top-3 left-3">
+                <Image src={logo} alt="Logo" width={35} height={35} />
               </div>
               <div className="absolute inset-0 pointer-events-none">
                 <div className="absolute top-0 left-1/2 w-1/3 h-1 bg-teal-300/50 animate-pulse-slow" />
@@ -143,13 +156,13 @@ export default function IDCard() {
                     <img
                       src={data.profileImageUrl}
                       alt="Profile"
-                      className="relative w-28 h-28 object-cover rounded-xl border-4 border-white shadow-lg"
+                      className="relative w-24 h-24 object-cover rounded-xl border-4 border-white shadow-md"
                     />
                   </div>
                 </div>
-                <div className="w-2/3 flex flex-col justify-center px-6 text-white">
-                  <h2 className="font-sans text-xl font-extrabold tracking-wide mb-2">STUDENT CARD</h2>
-                  <div className="space-y-2 text-sm">
+                <div className="w-2/3 flex flex-col justify-center px-3 text-white text-sm">
+                  <h2 className="text-lg font-bold tracking-wide mb-2">STUDENT CARD</h2>
+                  <div className="space-y-1">
                     <div>
                       <span className="opacity-75">Name:</span>{" "}
                       <span className="font-medium">{data.name}</span>
@@ -158,14 +171,14 @@ export default function IDCard() {
                       <span className="opacity-75">Father’s:</span>{" "}
                       <span className="font-medium">{data.fatherName}</span>
                     </div>
-                    <div className="flex space-x-4">
+                    <div className="flex justify-between text-xs">
                       <div>
-                        <span className="opacity-75 text-xs">Issue:</span><br />
-                        <span className="font-medium text-sm">{fmt(issueDate)}</span>
+                        <span className="opacity-75">Issue:</span><br />
+                        <span>{fmt(issueDate)}</span>
                       </div>
                       <div>
-                        <span className="opacity-75 text-xs">Expiry:</span><br />
-                        <span className="font-medium text-sm">{fmt(expiryDate)}</span>
+                        <span className="opacity-75">Expiry:</span><br />
+                        <span>{fmt(expiryDate)}</span>
                       </div>
                     </div>
                   </div>
@@ -174,19 +187,19 @@ export default function IDCard() {
             </div>
           </div>
 
-          {/* Back Side */}
+          {/* Back */}
           <div
             className="absolute inset-0 backface-hidden rotate-y-180"
             ref={backRef}
           >
-            <div className="w-full h-full rounded-3xl shadow-2xl overflow-hidden bg-gray-800 text-white p-6">
-              <h3 className="text-lg font-semibold mb-2">Terms &amp; Conditions</h3>
+            <div className="w-full h-full rounded-xl shadow-xl overflow-hidden bg-gray-800 text-white p-4 sm:p-6">
+              <h3 className="text-sm sm:text-base font-semibold mb-2">Terms &amp; Conditions</h3>
               <ul className="text-xs space-y-1 list-disc list-inside opacity-80">
-                <li>Non-transferable ID usage strictly for enrolled students.</li>
-                <li>Carry this card at all academy sessions and exams.</li>
-                <li>Return upon course completion or termination.</li>
-                <li>Any tampering invalidates this card immediately.</li>
-                <li>Possession implies acceptance of all academy policies.</li>
+                <li>Non-transferable ID for enrolled students only.</li>
+                <li>Carry this card at all sessions and exams.</li>
+                <li>Return after course completion or termination.</li>
+                <li>Tampering voids the ID immediately.</li>
+                <li>Use of card implies policy acceptance.</li>
               </ul>
             </div>
           </div>
@@ -195,7 +208,7 @@ export default function IDCard() {
 
       <button
         onClick={() => setFlipped((f) => !f)}
-        className="text-teal-400 hover:text-teal-200 transition"
+        className="text-teal-400 hover:text-teal-300 transition text-sm"
       >
         {flipped ? "← Show Front" : "Show Terms →"}
       </button>
