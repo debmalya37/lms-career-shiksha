@@ -1,30 +1,59 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { jsPDF } from "jspdf";
+import html2canvas from "html2canvas";
 import Image from "next/image";
 import logo from "../../public/image/logo.jpeg";
 
 interface AdmissionData {
   name: string;
-  fatherName: string;
-  profileImageUrl: string;
+  profileImageUrl?: string;
   createdAt: string;
 }
 
-export default function IDCard() {
-  const [data, setData] = useState<AdmissionData | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [flipped, setFlipped] = useState(false);
+interface ProfileData {
+  name: string;
+  email: string;
+  subscription: number;   // number of days of subscription
+}
 
+export default function IDCard() {
+  const [admission, setAdmission] = useState<AdmissionData | null>(null);
+  const [profile, setProfile]     = useState<ProfileData | null>(null);
+  const [error, setError]         = useState<string | null>(null);
+  const [flipped, setFlipped]     = useState(false);
+
+  const frontRef = useRef<HTMLDivElement>(null);
+  const backRef  = useRef<HTMLDivElement>(null);
+
+  // 1) Try to fetch admission; fallback to profile
   useEffect(() => {
     fetch("/api/admission/me")
       .then(async (res) => {
-        if (!res.ok) throw new Error((await res.json()).error || res.statusText);
+        if (!res.ok) {
+          const json = await res.json();
+          throw new Error(json.error || res.statusText);
+        }
         return res.json();
       })
-      .then((adm: AdmissionData) => setData(adm))
-      .catch((err) => setError(err.message));
+      .then((adm: AdmissionData) => setAdmission(adm))
+      .catch(async (err) => {
+        if (err.message === "No admission found") {
+          const prof = await fetch("/api/profile").then((r) => r.json());
+          if (prof.error) {
+            setError(prof.error);
+          } else {
+            setProfile({
+              name:         prof.name,
+              email:        prof.email,
+              subscription: prof.subscription, // days
+            });
+          }
+        } else {
+          setError(err.message);
+        }
+      });
   }, []);
 
   if (error) {
@@ -32,66 +61,90 @@ export default function IDCard() {
       <div className="min-h-screen flex items-center justify-center p-8 bg-gradient-to-br from-gray-900 via-indigo-900 to-black text-white text-center">
         <Image src={logo} alt="Logo" width={60} height={60} className="mb-4" />
         <div>
-          <h2 className="text-2xl font-semibold mb-2">No ID Card Available</h2>
-          <p className="text-gray-300 mb-4 max-w-md mx-auto">
-            {error === "No admission found"
-              ? "We couldn't find your admission details. If you’ve recently enrolled, please try again later or contact support."
-              : error}
-          </p>
-          <button
-            onClick={() => window.location.reload()}
-            className="mt-2 px-5 py-2 bg-teal-500 hover:bg-teal-400 rounded-full shadow-md transition"
-          >
-            🔄 Retry
-          </button>
+          <h2 className="text-2xl font-semibold mb-2">Oops!</h2>
+          <p className="text-gray-300 max-w-md mx-auto">{error}</p>
         </div>
       </div>
     );
   }
 
-  if (!data) {
-    return <div className="p-4 text-center text-white">Loading ID card…</div>;
+  if (!admission && !profile) {
+    return <div className="p-4 text-center text-white">Loading ID Card…</div>;
   }
 
-  const issueDate = new Date(data.createdAt);
-  const expiryDate = new Date(issueDate);
-  expiryDate.setFullYear(expiryDate.getFullYear() + 1);
+  // Source data
+  const name       = admission?.name || profile!.name;
+  const email      = profile?.email;
+  const profileImg = admission?.profileImageUrl;
+  const issueDate  = admission
+    ? new Date(admission.createdAt)
+    : new Date();
+  // expiry = issue + subscription days
+  const expiryDate = profile
+    ? new Date(issueDate.getTime() + profile.subscription * 24 * 60 * 60 * 1000)
+    : new Date(issueDate.setFullYear(issueDate.getFullYear() + 1));
+
   const fmt = (d: Date) =>
-    d.toLocaleDateString(undefined, { day: "2-digit", month: "short", year: "numeric" });
+    d.toLocaleDateString(undefined, {
+      day:   "2-digit",
+      month: "short",
+      year:  "numeric",
+    });
 
-  const downloadDataPdf = () => {
-    const doc = new jsPDF({ unit: "pt", format: "a4" });
-    const left = 40;
+  // snapshot helper
+  async function snapshot(el: HTMLDivElement) {
+    const wrapper = document.createElement("div");
+    Object.assign(wrapper.style, {
+      position: "fixed",
+      top:      "-9999px",
+      left:     "-9999px",
+      overflow: "visible",
+      width:    `${el.offsetWidth}px`,
+      height:   `${el.offsetHeight}px`,
+    });
+    document.body.appendChild(wrapper);
+
+    const clone = el.cloneNode(true) as HTMLElement;
+    Object.assign(clone.style, {
+      transform: "none",
+      position:  "relative",
+      overflow:  "visible",
+      top:       "0",
+      left:      "0",
+    });
+    wrapper.appendChild(clone);
+
+    const canvas = await html2canvas(clone, { scale: 2, backgroundColor: null });
+    document.body.removeChild(wrapper);
+    return canvas.toDataURL("image/png");
+  }
+
+  // Data‐only PDF
+  const downloadDataPdf = async () => {
+    const doc = new jsPDF({ unit: "px", format: "a4" });
     let y = 60;
-
-    // Page 1: Header & Profile Data
-    doc.setFontSize(22);
-    doc.text("Student ID Card Data", left, y);
+    doc.setFontSize(22).text("Student ID Card Data", 40, y);
     y += 30;
+    doc.setFontSize(12).text(`Name: ${name}`, 40, y);
+    y += 20;
+    if (email) {
+      doc.text(`Email: ${email}`, 40, y);
+      y += 20;
+    }
+    doc.text(`Issue Date: ${fmt(issueDate)}`, 40, y);
+    y += 20;
+    doc.text(`Expiry Date: ${fmt(expiryDate)}`, 40, y);
 
-    doc.setFontSize(12);
-    doc.text(`Name: ${data.name}`, left, y);
-    y += 20;
-    doc.text(`Father’s Name: ${data.fatherName}`, left, y);
-    y += 20;
-    doc.text(`Issue Date: ${fmt(issueDate)}`, left, y);
-    y += 20;
-    doc.text(`Expiry Date: ${fmt(expiryDate)}`, left, y);
-
-    // Profile image
-    if (data.profileImageUrl) {
+    if (profileImg) {
       const img = document.createElement("img");
       img.crossOrigin = "anonymous";
-      img.src = data.profileImageUrl;
-      img.onload = () => {
+      img.src         = profileImg;
+      img.onload      = () => {
         doc.addImage(img, "JPEG", 400, 60, 100, 100);
         doc.addPage();
-        // Page 2: Terms & Conditions
-        y = 60;
-        doc.setFontSize(16);
-        doc.text("Terms & Conditions", left, y);
-        y += 25;
+        doc.setFontSize(16).text("Terms & Conditions", 40, 60);
         doc.setFontSize(10);
+        let ty = 90;
         [
           "1. This ID card is non-transferable.",
           "2. Valid only for the enrolled course and duration.",
@@ -99,19 +152,16 @@ export default function IDCard() {
           "4. Report loss immediately to administration.",
           "5. Use implies acceptance of all policies.",
         ].forEach((line) => {
-          doc.text(line, left, y, { maxWidth: 500 });
-          y += 18;
+          doc.text(line, 40, ty);
+          ty += 20;
         });
-        doc.save(`IDCard_${data.name.replace(/\s+/g, "_")}.pdf`);
+        doc.save(`IDCard_${name.replace(/\s+/g, "_")}.pdf`);
       };
     } else {
-      // No profile image
       doc.addPage();
-      y = 60;
-      doc.setFontSize(16);
-      doc.text("Terms & Conditions", left, y);
-      y += 25;
+      doc.setFontSize(16).text("Terms & Conditions", 40, 60);
       doc.setFontSize(10);
+      let ty = 90;
       [
         "1. This ID card is non-transferable.",
         "2. Valid only for the enrolled course and duration.",
@@ -119,10 +169,10 @@ export default function IDCard() {
         "4. Report loss immediately to administration.",
         "5. Use implies acceptance of all policies.",
       ].forEach((line) => {
-        doc.text(line, left, y, { maxWidth: 500 });
-        y += 18;
+        doc.text(line, 40, ty);
+        ty += 20;
       });
-      doc.save(`IDCard_${data.name.replace(/\s+/g, "_")}.pdf`);
+      doc.save(`IDCard_${name.replace(/\s+/g, "_")}.pdf`);
     }
   };
 
@@ -142,8 +192,8 @@ export default function IDCard() {
             flipped ? "rotate-y-180" : ""
           }`}
         >
-          {/* Front Side */}
-          <div className="absolute inset-0 backface-hidden">
+          {/* Front */}
+          <div className="absolute inset-0 backface-hidden" ref={frontRef}>
             <div className="w-full h-full rounded-xl shadow-xl overflow-hidden border border-gray-700 bg-gradient-to-br from-indigo-800 to-indigo-900 relative">
               <div className="absolute top-3 left-3">
                 <Image src={logo} alt="Logo" width={35} height={35} />
@@ -155,35 +205,43 @@ export default function IDCard() {
               <div className="absolute inset-0 bg-white/5 animate-pulse-slow"></div>
               <div className="relative z-10 flex h-full">
                 <div className="w-1/3 flex items-center justify-center">
-                  <div className="relative">
-                    <div className="absolute inset-0 bg-teal-400 rounded-lg blur-lg opacity-30"></div>
-                    <img
-                      src={data.profileImageUrl}
-                      alt="Profile"
-                      className="relative w-24 h-24 object-cover rounded-xl border-4 border-white shadow-md"
-                    />
-                  </div>
+                  {profileImg ? (
+                    <div className="relative">
+                      <div className="absolute inset-0 bg-teal-400 rounded-lg blur-lg opacity-30"></div>
+                      <img
+                        src={profileImg}
+                        alt="Profile"
+                        className="relative w-24 h-24 object-cover rounded-xl border-4 border-white shadow-md"
+                      />
+                    </div>
+                  ) : (
+                    <div className="w-24 h-24 bg-gray-700 rounded-xl flex items-center justify-center text-gray-400">
+                      No Photo
+                    </div>
+                  )}
                 </div>
                 <div className="w-2/3 flex flex-col justify-center px-3 text-white text-sm">
                   <h2 className="text-lg font-bold mb-2">STUDENT CARD</h2>
                   <p>
                     <span className="opacity-75">Name: </span>
-                    <span>{data.name}</span>
+                    {name}
                   </p>
-                  <p>
-                    <span className="opacity-75">Father’s: </span>
-                    <span>{data.fatherName}</span>
-                  </p>
+                  {email && (
+                    <p className="mt-1">
+                      <span className="opacity-75">Email: </span>
+                      {email}
+                    </p>
+                  )}
                   <div className="flex justify-between text-xs mt-2">
                     <div>
                       <span className="opacity-75">Issue:</span>
                       <br />
-                      <span>{fmt(issueDate)}</span>
+                      {fmt(issueDate)}
                     </div>
                     <div>
                       <span className="opacity-75">Expiry:</span>
                       <br />
-                      <span>{fmt(expiryDate)}</span>
+                      {fmt(expiryDate as unknown as Date)}
                     </div>
                   </div>
                 </div>
@@ -191,8 +249,8 @@ export default function IDCard() {
             </div>
           </div>
 
-          {/* Back Side */}
-          <div className="absolute inset-0 backface-hidden rotate-y-180">
+          {/* Back */}
+          <div className="absolute inset-0 backface-hidden rotate-y-180" ref={backRef}>
             <div className="w-full h-full rounded-xl shadow-xl overflow-hidden bg-gray-800 text-white p-4">
               <h3 className="text-base font-semibold mb-2">Terms & Conditions</h3>
               <ul className="text-xs list-disc list-inside space-y-1">

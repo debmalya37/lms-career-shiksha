@@ -10,7 +10,7 @@ export default function Signup() {
   const [phoneNo, setPhoneNo] = useState("");
   const [address, setAddress] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<boolean>(false);
+  const [success, setSuccess] = useState(false);
   const router = useRouter();
 
   const handleSignup = async () => {
@@ -39,6 +39,23 @@ export default function Signup() {
     }
   };
 
+  // helper for floating labels
+  const floatingLabel = (htmlFor: string, label: string) => (
+    <label
+      htmlFor={htmlFor}
+      className="
+        absolute left-1 
+        text-gray-500 
+        transition-all 
+        pointer-events-none
+        peer-focus:-top-2 peer-focus:text-xs peer-focus:text-blue-500 
+        peer-valid:-top-2 peer-valid:text-xs
+      "
+    >
+      {label}
+    </label>
+  );
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-gray-100 to-blue-100 p-4">
       <div className="w-full max-w-md bg-white rounded-3xl shadow-lg overflow-hidden">
@@ -62,85 +79,89 @@ export default function Signup() {
             {/* Email */}
             <div className="relative">
               <input
+              title="Enter your email address"
                 id="email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder=" "
+                placeholder=""
                 required
-                className="peer block w-full border-b-2 border-gray-300 bg-transparent py-2 px-1 text-gray-800 placeholder-transparent focus:border-blue-500 focus:outline-none"
+                className="
+                  peer block w-full 
+                  border-b-2 border-gray-300 
+                  bg-transparent py-2 px-1 
+                  text-gray-800 
+                  focus:border-blue-500 
+                  focus:outline-none
+                "
               />
-              <label
-                htmlFor="email"
-                className="absolute left-1 top-2 text-gray-500 text-sm transform 
-                           transition-all peer-placeholder-shown:top-2 peer-placeholder-shown:text-base 
-                           peer-focus:-top-2 peer-focus:text-xs peer-focus:text-blue-500"
-              >
-                Email address
-              </label>
+              {floatingLabel("email", "Email address")}
             </div>
 
             {/* Password */}
             <div className="relative">
               <input
+              title="Enter a secure password"
                 id="password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder=" "
+                placeholder=""
                 required
-                className="peer block w-full border-b-2 border-gray-300 bg-transparent py-2 px-1 text-gray-800 placeholder-transparent focus:border-blue-500 focus:outline-none"
+                className="
+                  peer block w-full 
+                  border-b-2 border-gray-300 
+                  bg-transparent py-2 px-1 
+                  text-gray-800 
+                  focus:border-blue-500 
+                  focus:outline-none
+                "
               />
-              <label
-                htmlFor="password"
-                className="absolute left-1 top-2 text-gray-500 text-sm transform 
-                           transition-all peer-placeholder-shown:top-2 peer-placeholder-shown:text-base 
-                           peer-focus:-top-2 peer-focus:text-xs peer-focus:text-blue-500"
-              >
-                Password
-              </label>
+              {floatingLabel("password", "Password")}
             </div>
 
             {/* Confirm Password */}
             <div className="relative">
               <input
+              title="Confirm your password"
                 id="confirmPassword"
                 type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder=" "
+                placeholder=""
                 required
-                className="peer block w-full border-b-2 border-gray-300 bg-transparent py-2 px-1 text-gray-800 placeholder-transparent focus:border-blue-500 focus:outline-none"
+                className="
+                  peer block w-full 
+                  border-b-2 border-gray-300 
+                  bg-transparent py-2 px-1 
+                  text-gray-800 
+                  focus:border-blue-500 
+                  focus:outline-none
+                "
               />
-              <label
-                htmlFor="confirmPassword"
-                className="absolute left-1 top-2 text-gray-500 text-sm transform 
-                           transition-all peer-placeholder-shown:top-2 peer-placeholder-shown:text-base 
-                           peer-focus:-top-2 peer-focus:text-xs peer-focus:text-blue-500"
-              >
-                Confirm Password
-              </label>
+              {floatingLabel("confirmPassword", "Confirm Password")}
             </div>
 
             {/* Phone Number */}
             <div className="relative">
               <input
+              title="Enter your phone number"
                 id="phoneNo"
                 type="tel"
                 value={phoneNo}
                 onChange={(e) => setPhoneNo(e.target.value)}
-                placeholder=" "
+                placeholder=""
                 required
-                className="peer block w-full border-b-2 border-gray-300 bg-transparent py-2 px-1 text-gray-800 placeholder-transparent focus:border-blue-500 focus:outline-none"
+                className="
+                  peer block w-full 
+                  border-b-2 border-gray-300 
+                  bg-transparent py-2 px-1 
+                  text-gray-800 
+                  focus:border-blue-500 
+                  focus:outline-none
+                "
               />
-              <label
-                htmlFor="phoneNo"
-                className="absolute left-1 top-2 text-gray-500 text-sm transform 
-                           transition-all peer-placeholder-shown:top-2 peer-placeholder-shown:text-base 
-                           peer-focus:-top-2 peer-focus:text-xs peer-focus:text-blue-500"
-              >
-                Phone Number
-              </label>
+              {floatingLabel("phoneNo", "Phone Number")}
             </div>
 
             {/* Address */}
@@ -149,16 +170,24 @@ export default function Signup() {
                 id="address"
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
-                placeholder=" "
+                placeholder=""
                 required
                 rows={3}
-                className="peer block w-full resize-none rounded-md border border-gray-300 bg-transparent py-2 px-3 text-gray-800 placeholder-transparent focus:border-blue-500 focus:outline-none"
+                className="
+                  peer block w-full resize-none rounded-md 
+                  border border-gray-300 bg-transparent py-2 px-3 
+                  text-gray-800 focus:border-blue-500 focus:outline-none
+                "
               />
               <label
                 htmlFor="address"
-                className="absolute left-3 top-2 text-gray-500 text-sm transform 
-                           transition-all peer-placeholder-shown:top-4 peer-placeholder-shown:text-base 
-                           peer-focus:-top-2 peer-focus:text-xs peer-focus:text-blue-500"
+                className="
+                  absolute left-3 top-2 
+                  text-gray-500 text-sm 
+                  transition-all pointer-events-none
+                  peer-focus:-top-2 peer-focus:text-xs peer-focus:text-blue-500 
+                  peer-valid:-top-2 peer-valid:text-xs
+                "
               >
                 Residential Address
               </label>
@@ -168,7 +197,13 @@ export default function Signup() {
           {/* Button */}
           <button
             onClick={handleSignup}
-            className="mt-8 w-full bg-gradient-to-r from-blue-500 to-blue-700 text-white font-semibold py-3 rounded-full shadow-lg hover:from-blue-600 hover:to-blue-800 transition"
+            className="
+              mt-8 w-full 
+              bg-gradient-to-r from-blue-500 to-blue-700 
+              text-white font-semibold 
+              py-3 rounded-full shadow-lg 
+              hover:from-blue-600 hover:to-blue-800 transition
+            "
           >
             Sign Up
           </button>
