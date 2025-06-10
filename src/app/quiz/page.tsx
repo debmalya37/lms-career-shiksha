@@ -4,391 +4,298 @@ import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import ClipLoader from "react-spinners/ClipLoader";
 
-type Answer = {
-  text: string;
-  isCorrect: boolean;
-};
-
-type Question = {
-  question: string;
-  answers: Answer[];
-  marks: number;
-  image?: string;
-};
-
-type QuizData = {
-  _id: string;
-  title: string;
-  totalTime: number;
-  negativeMarking: number;
-  questions: Question[];
-};
-
-type Course = {
-  _id: string;
-  title: string;
-};
-
-type Subject = {
-  _id: string;
-  name: string;
-};
-
-type UserProfile = {
-  name: string;
-  email: string;
-};
-
-type QuizState = {
-  currentQuestion: number;
-  score: number;
-  correctCount: number;
-  incorrectCount: number;
-  skippedCount: number;
-  showResults: boolean;
-  timeLeft: number;
-  isLoading: boolean;
-  quizData: QuizData | null;
-  answers: Array<string | null>;
-  visitedQuestions: boolean[];
-  incorrectQuestions: { question: string; correctAnswer: string; userAnswer: string }[];
-};
+type Answer     = { text: string; isCorrect: boolean };
+type Question   = { question: string; answers: Answer[]; marks: number; image?: string };
+type QuizData   = { _id: string; title: string; totalTime: number; negativeMarking: number; questions: Question[] };
+type UserProfile = { name: string; email: string };
 
 function QuizAppContent() {
-  const searchParams = useSearchParams();
-  const quizId = searchParams.get("quizId") || "";
-  const initialCourseId = searchParams.get("courseId") || "";
+  const searchParams     = useSearchParams();
+  const quizId           = searchParams.get("quizId") || "";
+  const initialCourseId  = searchParams.get("courseId") || "";
   const initialSubjectId = searchParams.get("subjectId") || "";
 
-  const [state, setState] = useState<QuizState>({
+  const [quizData, setQuizData] = useState<QuizData|null>(null);
+  const [profile, setProfile]   = useState<UserProfile|null>(null);
+  const [state, setState]       = useState({
     currentQuestion: 0,
-    score: 0,
-    correctCount: 0,
-    incorrectCount: 0,
-    skippedCount: 0,
-    showResults: false,
-    timeLeft: 0,
-    isLoading: false,
-    quizData: null,
-    answers: [],
-    visitedQuestions: [],
-    incorrectQuestions: [],
+    answers:         [] as (string|null)[],
+    visited:         [] as boolean[],
+    showResults:     false,
+    timeLeft:        0,
+    isLoading:       false,
+    score:           0,
+    correctCount:    0,
+    incorrectCount:  0,
   });
+  const resultsSent = useRef(false);
 
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [courses, setCourses] = useState<Course[]>([]);
-  const [subjects, setSubjects] = useState<Subject[]>([]);
-  const [selectedCourse, setSelectedCourse] = useState(initialCourseId);
-  const [selectedSubject, setSelectedSubject] = useState(initialSubjectId);
-  const resultsSent = useRef(false); // ✅ track if results are already sent
-
-  // Fetch user profile
+  // 1) load quiz & profile
   useEffect(() => {
-    const fetchUserProfile = async () => {
-      try {
-        const response = await fetch(`/api/profile`);
-        const profile = await response.json();
-        setUserProfile({ name: profile.name, email: profile.email });
-      } catch (error) {
-        console.error("Failed to fetch user profile:", error);
-      }
-    };
-    fetchUserProfile();
-  }, []);
-
-  // Fetch courses
-  useEffect(() => {
-    const fetchCourses = async () => {
-      try {
-        const response = await fetch(`/api/course`);
-        const data: Course[] = await response.json();
-        setCourses(data);
-      } catch (error) {
-        console.error("Failed to fetch courses:", error);
-      }
-    };
-    fetchCourses();
-  }, []);
-
-  // Fetch subjects based on selected course
-  useEffect(() => {
-    if (selectedCourse) {
-      const fetchSubjects = async () => {
-        try {
-          const response = await fetch(`/api/subjects?courseId=${selectedCourse}`);
-          const data: Subject[] = await response.json();
-          setSubjects(data);
-        } catch (error) {
-          console.error("Failed to fetch subjects:", error);
-        }
-      };
-      fetchSubjects();
+    if (!quizId) return;
+    async function load() {
+      setState(s => ({ ...s, isLoading: true }));
+      const [ q, p ] = await Promise.all([
+        fetch(`/api/quiz?quizId=${quizId}&courseId=${initialCourseId}&subjectId=${initialSubjectId}`)
+          .then(r => r.json()),
+        fetch("/api/profile").then(r => r.json())
+      ]);
+      setQuizData(q);
+      setProfile({ name: p.name, email: p.email });
+      setState(s => ({
+        ...s,
+        isLoading: false,
+        timeLeft:  q.totalTime * 60,
+        answers:  Array(q.questions.length).fill(null),
+        visited:  Array(q.questions.length).fill(false),
+      }));
     }
-  }, [selectedCourse]);
+    load();
+  }, [quizId, initialCourseId, initialSubjectId]);
 
-  // Fetch quiz data
-  useEffect(() => {
-    if (quizId && selectedCourse && selectedSubject) {
-      const fetchQuizData = async () => {
-        setState((prev) => ({ ...prev, isLoading: true }));
-        try {
-          const response = await fetch(
-            `/api/quiz?quizId=${quizId}&courseId=${selectedCourse}&subjectId=${selectedSubject}`
-          );
-          const quizData: QuizData = await response.json();
-          setState((prev) => ({
-            ...prev,
-            quizData,
-            timeLeft: quizData.totalTime * 60,
-            isLoading: false,
-            answers: Array(quizData.questions.length).fill(null),
-            visitedQuestions: Array(quizData.questions.length).fill(false),
-          }));
-        } catch (error) {
-          console.error("Failed to fetch quiz data:", error);
-          setState((prev) => ({ ...prev, isLoading: false }));
-        }
-      };
-      fetchQuizData();
-    }
-  }, [quizId, selectedCourse, selectedSubject]);
-
-  // Countdown timer
+  // 2) timer
   useEffect(() => {
     if (state.timeLeft > 0 && !state.showResults) {
-      const timer = setInterval(() => {
-        setState((prev) => ({ ...prev, timeLeft: prev.timeLeft - 1 }));
-      }, 1000);
-      return () => clearInterval(timer);
-    } else if (state.timeLeft === 0 && state.quizData && !state.showResults) {
-      const skippedCount = state.answers.filter((a) => !a).length;
-
-      setState((prev) => ({
-        ...prev,
-        showResults: true,
-        skippedCount,
-      }));
+      const t = setTimeout(() => setState(s => ({ ...s, timeLeft: s.timeLeft - 1 })), 1000);
+      return () => clearTimeout(t);
     }
-  }, [state.timeLeft, state.showResults, state.quizData]);
+    if (state.timeLeft === 0 && quizData && !state.showResults) {
+      setState(s => ({ ...s, showResults: true }));
+    }
+  }, [state.timeLeft, state.showResults, quizData]);
 
-  // ✅ Send result once when results are shown
+  // 3) send once
   useEffect(() => {
-    const sendResultsByEmail = async () => {
-      if (!state.quizData || !userProfile || resultsSent.current) return;
-
-      const payload = {
-        quizTitle: state.quizData.title,
-        quizId,
-        courseId: selectedCourse,
-        subjectId: selectedSubject,
-        score: state.score,
-        correctAnswers: state.correctCount,
-        incorrectAnswers: state.incorrectCount,
-        userName: userProfile.name,
-        userEmail: userProfile.email,
-      };
-
-      try {
-        await fetch(`/api/sendQuizResults`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-
-        await fetch(`/api/leaderboard`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-
-        resultsSent.current = true; // ✅ Mark as sent
-      } catch (error) {
-        console.error("Failed to send results:", error);
-      }
+    if (!state.showResults || resultsSent.current || !quizData || !profile) return;
+    const payload = {
+      quizTitle:    quizData.title,
+      quizId,
+      courseId:     initialCourseId,
+      subjectId:    initialSubjectId,
+      score:        state.score,
+      correctAnswers: state.correctCount,
+      incorrectAnswers: state.incorrectCount,
+      userName:     profile.name,
+      userEmail:    profile.email,
     };
+    Promise.all([
+      
+      fetch("/api/leaderboard", {
+        method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(payload)
+      }),
+      fetch("/api/sendQuizResults", {
+        method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(payload)
+      }),
+    ]).finally(() => resultsSent.current = true);
+  }, [state.showResults, quizData, profile]);
 
-    if (state.showResults && !resultsSent.current) {
-      sendResultsByEmail();
-    }
-  }, [state.showResults, state.quizData, state.score, state.correctCount, state.incorrectCount, quizId, selectedCourse, selectedSubject, userProfile]);
-
-  const formatTime = (time: number) => {
-    const minutes = Math.floor(time / 60);
-    const seconds = time % 60;
-    return `${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
+  const formatTime = (sec: number) => {
+    const m = Math.floor(sec/60), s = sec%60;
+    return `${m}:${s<10?"0":""}${s}`;
   };
 
-  const handleAnswerClick = (isCorrect: boolean, userAnswer: string) => {
+  const handleAnswer = (isCorrect: boolean, text: string) => {
     const idx = state.currentQuestion;
-    if (state.answers[idx] !== null || !state.quizData) return;
+    // allow changing answer any time before final results
+    const answers = [...state.answers]; answers[idx] = text;
+    const visited = [...state.visited]; visited[idx] = true;
 
-    const question = state.quizData.questions[idx];
-    const correctAnswer = question.answers.find((a) => a.isCorrect)?.text || "N/A";
-    const marks = question.marks;
+    // recompute full score
+    let score=0, correct=0, incorrect=0;
+    quizData!.questions.forEach((q,i) => {
+      const a = answers[i];
+      if (!a) return;
+      if (q.answers.find(x=>x.text===a)!.isCorrect) {
+        score += q.marks; correct++;
+      } else {
+        score -= quizData!.negativeMarking; incorrect++;
+      }
+    });
 
-    let score = state.score;
-    let correct = state.correctCount;
-    let incorrect = state.incorrectCount;
-
-    if (isCorrect) {
-      score += marks;
-      correct++;
-    } else {
-      score -= state.quizData.negativeMarking;
-      incorrect++;
-    }
-
-    const updatedAnswers = [...state.answers];
-    updatedAnswers[idx] = userAnswer;
-
-    const updatedVisited = [...state.visitedQuestions];
-    updatedVisited[idx] = true;
-
-    const newIncorrectQuestions = isCorrect
-      ? state.incorrectQuestions
-      : [
-          ...state.incorrectQuestions,
-          { question: question.question, correctAnswer, userAnswer },
-        ];
-
-    setState((prev) => ({
-      ...prev,
-      answers: updatedAnswers,
-      visitedQuestions: updatedVisited,
-      score,
-      correctCount: correct,
-      incorrectCount: incorrect,
-      incorrectQuestions: newIncorrectQuestions,
+    setState(s => ({
+      ...s,
+      answers, visited,
+      score, correctCount: correct, incorrectCount: incorrect
     }));
   };
 
-  const navigateQuestion = (direction: "next" | "prev") => {
-    const isLast = state.currentQuestion === (state.quizData?.questions.length || 0) - 1;
+  const goto = (i:number) => setState(s=>({ ...s, currentQuestion: i }));
 
-    if (direction === "next" && isLast) {
-      const skippedCount = state.answers.filter((a) => !a).length;
-      setState((prev) => ({
-        ...prev,
-        showResults: true,
-        skippedCount,
-      }));
-      return;
-    }
+  if (state.isLoading || !quizData) {
+    return <div className="flex justify-center mt-20"><ClipLoader/></div>;
+  }
 
-    setState((prev) => ({
-      ...prev,
-      currentQuestion:
-        direction === "next"
-          ? Math.min(prev.currentQuestion + 1, prev.quizData?.questions.length! - 1)
-          : Math.max(prev.currentQuestion - 1, 0),
-    }));
-  };
+  // … inside QuizAppContent, replace the `if (state.showResults) { … }` block with this:
 
-  const resetQuiz = () => {
-    resultsSent.current = false; // ✅ Reset flag
-    setState((prev) => ({
-      ...prev,
-      currentQuestion: 0,
-      score: 0,
-      correctCount: 0,
-      incorrectCount: 0,
-      skippedCount: 0,
-      showResults: false,
-      timeLeft: (prev.quizData?.totalTime ?? 0) * 60,
-      incorrectQuestions: [],
-      answers: Array(prev.quizData?.questions.length || 0).fill(null),
-      visitedQuestions: Array(prev.quizData?.questions.length || 0).fill(false),
-    }));
-  };
+if (state.showResults) {
+  const skippedCount = state.answers.filter(a => a === null).length;
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground">
-      <div className="mb-8">
-        <h2 className="text-xl font-semibold mb-4">
-          Timer: {state.timeLeft > 0 ? formatTime(state.timeLeft) : "Time's up!"}
-        </h2>
+    <div className="max-w-2xl mx-auto my-10 p-6 bg-white rounded shadow">
+      <h2 className="text-2xl font-bold mb-4">Quiz Results</h2>
+
+      {/* Score Summary */}
+      <div className="mb-6 grid grid-cols-2 gap-4 text-sm sm:text-base">
+        <div className="bg-green-100 p-4 rounded">
+          <p className="font-semibold">Score</p>
+          <p className="text-xl font-bold text-green-700">{state.score}</p>
+        </div>
+        <div className="bg-blue-100 p-4 rounded">
+          <p className="font-semibold">Correct Answers</p>
+          <p className="text-xl font-bold text-blue-700">{state.correctCount}</p>
+        </div>
+        <div className="bg-red-100 p-4 rounded">
+          <p className="font-semibold">Incorrect Answers</p>
+          <p className="text-xl font-bold text-red-700">{state.incorrectCount}</p>
+        </div>
+        <div className="bg-yellow-100 p-4 rounded">
+          <p className="font-semibold">Skipped Questions</p>
+          <p className="text-xl font-bold text-yellow-700">{skippedCount}</p>
+        </div>
       </div>
 
-      {state.isLoading ? (
-        <div className="flex flex-col items-center">
-          <ClipLoader />
-          <p>Loading quiz, please wait...</p>
-        </div>
-      ) : state.showResults ? (
-        <div className="bg-card p-8 rounded-lg shadow-md w-full max-w-md">
-          <h2 className="text-2xl font-bold mb-4">Results</h2>
-          <p className="text-lg mb-2">Score: {state.score}</p>
-          <p className="text-lg mb-2">Correct: {state.correctCount}</p>
-          <p className="text-lg mb-2">Incorrect: {state.incorrectCount}</p>
-          <p className="text-lg mb-2">Skipped: {state.skippedCount}</p>
+      {/* Review Section */}
+      <h3 className="text-lg font-semibold mb-3">Review Answers</h3>
+      <ul className="space-y-4 text-sm sm:text-base">
+        {quizData.questions.map((q, i) => {
+          const userAns = state.answers[i];
+          const correctAns = q.answers.find(a => a.isCorrect)?.text || "N/A";
+          const isCorrect = userAns === correctAns;
 
-          <div className="mt-4">
-            <h3 className="text-lg font-semibold mb-2">Review:</h3>
-            <ul>
-              {state.quizData?.questions.map((q, i) => {
-                const userAns = state.answers[i];
-                const correctAns = q.answers.find((a) => a.isCorrect)?.text || "N/A";
-                const isCorrect = userAns === correctAns;
+          return (
+            <li key={i} className="border-t pt-4">
+              <p className="font-medium">Q{i + 1}. {q.question}</p>
 
-                return (
-                  <li key={i} className="mb-4">
-                    <p className="text-sm font-medium">Q{i + 1}: {q.question}</p>
-                    <p className={`text-sm ${isCorrect ? "text-green-600" : "text-red-600"}`}>
-                      Your Answer: {userAns || "Skipped"}
-                    </p>
-                    <p className="text-sm">Correct Answer: {correctAns}</p>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
+              <p>
+                Your answer:{" "}
+                <span className={
+                  userAns == null
+                    ? "text-gray-500"
+                    : isCorrect
+                      ? "text-green-600"
+                      : "text-red-600"
+                }>
+                  {userAns || "— skipped —"}
+                </span>
+              </p>
 
-          <Button onClick={resetQuiz} className="w-full mt-4">Try Again</Button>
-        </div>
-      ) : (
-        <div className="bg-card p-8 rounded-lg shadow-md w-full max-w-md">
-          <h2 className="text-2xl font-bold mb-4">
-            Question {state.currentQuestion + 1}/{state.quizData?.questions.length}
-          </h2>
-          <p className="text-lg mb-4 whitespace-pre-wrap">
-            {state.quizData?.questions[state.currentQuestion].question}
-          </p>
-          {state.quizData?.questions[state.currentQuestion].image && (
-            <img
-              src={state.quizData.questions[state.currentQuestion].image}
-              alt="Question"
-              className="w-full rounded-lg mb-4"
-            />
-          )}
-          <div className="grid grid-cols-2 gap-4">
-            {state.quizData?.questions[state.currentQuestion].answers.map((a, i) => {
-              const isSelected = state.answers[state.currentQuestion] === a.text;
-              return (
-                <Button
-                  key={i}
-                  onClick={() => handleAnswerClick(a.isCorrect, a.text)}
-                  className={`w-full ${isSelected ? "bg-white text-blue-800 border-blue-800" : "bg-blue-800 text-white"}`}
-                  disabled={state.answers[state.currentQuestion] !== null}
-                >
-                  {a.text}
-                </Button>
-              );
-            })}
-          </div>
-          <div className="flex justify-between mt-4">
-            <Button onClick={() => navigateQuestion("prev")}>Previous</Button>
-            <Button onClick={() => navigateQuestion("next")}>Next</Button>
-          </div>
-        </div>
-      )}
+              {/* Always show the correct answer */}
+              <p className="text-gray-700">
+                Correct answer: <span className="font-semibold">{correctAns}</span>
+              </p>
+            </li>
+          );
+        })}
+      </ul>
+
+      <Button onClick={() => window.location.reload()} className="mt-6 w-full">
+        Retake Quiz
+      </Button>
     </div>
   );
 }
 
-export default function QuizApp() {
+  
+
   return (
-    <Suspense fallback={<div>Loading...</div>}>
-      <QuizAppContent />
-    </Suspense>
+    <div className="flex flex-col lg:flex-row min-h-screen bg-gray-100">
+      
+      {/* === Question & Answers Panel === */}
+      <div className="flex-1 p-4 sm:p-6 max-w-4xl mx-auto">
+        {/* Sticky Timer */}
+        <div className="sticky top-0 z-10 bg-white p-4 mb-4 shadow-md rounded flex items-center justify-between">
+          <h2 className="text-lg font-bold">🧭 Time Left:</h2>
+          <span className="text-xl font-mono text-red-600">{formatTime(state.timeLeft)}</span>
+        </div>
+
+        {/* Question Box */}
+        <div className="bg-white shadow rounded-lg p-6 transition-all duration-300">
+          <h3 className="text-lg sm:text-xl font-semibold mb-4">
+            Q{state.currentQuestion + 1}/{quizData?.questions.length}
+
+          </h3>
+          <p className="text-lg mb-4 whitespace-pre-wrap">
+            {quizData?.questions[state.currentQuestion].question}
+          </p>
+
+          {/* Optional Image */}
+          {quizData.questions[state.currentQuestion].image && (
+            <img
+              src={quizData.questions[state.currentQuestion].image}
+              alt="Question visual"
+              className="w-full max-h-64 object-contain rounded mb-4 border"
+            />
+          )}
+
+          {/* Answers */}
+          <div className="space-y-3">
+            {quizData.questions[state.currentQuestion].answers.map((ans, i) => {
+              const isSelected = state.answers[state.currentQuestion] === ans.text;
+              return (
+                <button
+                  key={i}
+                  onClick={() => handleAnswer(ans.isCorrect, ans.text)}
+                  className={`w-full text-left px-4 py-3 rounded-lg border text-base transition-all duration-200
+                    ${isSelected
+                      ? "bg-green-100 border-green-500 text-green-800 font-semibold shadow"
+                      : "bg-white border-gray-300 hover:bg-gray-50"
+                    }`}
+                >
+                  {ans.text}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Navigation Buttons */}
+          <div className="mt-6 flex justify-between gap-4 flex-wrap">
+            <Button
+              onClick={() => goto(Math.max(state.currentQuestion - 1, 0))}
+              disabled={state.currentQuestion === 0}
+              className="w-full sm:w-auto"
+            >
+              ⬅ Previous
+            </Button>
+            <Button
+              onClick={() => {
+                if (state.currentQuestion === quizData.questions.length - 1) {
+                  setState(s => ({ ...s, showResults: true }));
+                } else goto(state.currentQuestion + 1);
+              }}
+              className="w-full sm:w-auto"
+            >
+              {state.currentQuestion === quizData.questions.length - 1 ? "✅ Submit Quiz" : "Next ➡"}
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* === Question Map Sidebar === */}
+      <div className="w-full lg:w-72 p-4 bg-white border-t lg:border-t-0 lg:border-l shadow-sm">
+        <h4 className="font-semibold mb-3 text-center lg:text-left">🧩 Question Map</h4>
+        <div className="grid grid-cols-8 sm:grid-cols-10 lg:grid-cols-5 gap-2">
+          {quizData.questions.map((_, i) => {
+            let bg = "bg-gray-300";
+            if (state.answers[i] != null) bg = "bg-green-500";
+            else if (state.visited[i]) bg = "bg-yellow-400";
+
+            return (
+              <button
+                key={i}
+                onClick={() => goto(i)}
+                className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center text-white font-semibold hover:scale-105 transition transform ${bg}`}
+                title={`Go to Q${i + 1}`}
+              >
+                {i + 1}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </div>
   );
+}
+
+export default function QuizApp(){
+  return <Suspense fallback={<div>Loading…</div>}><QuizAppContent/></Suspense>;
 }

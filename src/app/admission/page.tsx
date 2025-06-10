@@ -1,29 +1,37 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { format } from "date-fns";
 
 export default function AdmissionForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const courseId = searchParams.get("courseId") || "";
+  const courseId   = searchParams.get("courseId")   || "";
   const courseName = searchParams.get("courseName") || "";
 
   const [formData, setFormData] = useState({
-    profileImage: null as File | null,
-    aadhaarImage: null as File | null,
-    aadhaarNumber: "",
-    name:  "",
-    fatherName: "",
-    phone: "",
-    email: "",
-    address1: "",
-    address2: "",
-    state: "",            // New field for State dropdown
-    dob: "",              // YYYY-MM-DD format
+    photoOfCandidate:  null as File | null,
+    aadhaarFront:      null as File | null,
+    aadhaarBack:       null as File | null,
+    name:              "",
+    fatherName:        "",
+    phone:             "",
+    email:             "",
+    address1:          "",
+    address2:          "",
+    state:             "",
+    city:              "",
+    dob:               "",
     courseId,
   });
+
+  // Minimal sample of cities per state; expand as needed
+  const citiesByState: Record<string,string[]> = {
+    "West Bengal": ["Kolkata","Howrah","Durgapur"],
+    "Maharashtra": ["Mumbai","Pune","Nagpur"],
+    // …etc
+  };
 
   const indianStates = [
     "Andhra Pradesh",
@@ -65,51 +73,56 @@ export default function AdmissionForm() {
   ];
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
   ) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (field: keyof typeof formData) => (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const file = e.target.files?.[0] || null;
-    setFormData({ ...formData, profileImage: file });
+    setFormData((f) => ({ ...f, [field]: file }));
   };
 
-  // inside AdmissionForm component:
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const payload = new FormData();
+    payload.append("courseId",   formData.courseId);
+    payload.append("name",       formData.name);
+    payload.append("fatherName", formData.fatherName);
+    payload.append("phone",      formData.phone);
+    payload.append("email",      formData.email);
+    payload.append("address1",   formData.address1);
+    payload.append("address2",   formData.address2);
+    payload.append("state",      formData.state);
+    payload.append("city",       formData.city);
+    payload.append("dob",        formData.dob);
+    if (formData.photoOfCandidate) 
+      payload.append("photoOfCandidate", formData.photoOfCandidate);
+    if (formData.aadhaarFront) 
+      payload.append("aadhaarFront", formData.aadhaarFront);
+    if (formData.aadhaarBack) 
+      payload.append("aadhaarBack", formData.aadhaarBack);
 
-const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  const payload = new FormData();
-  payload.append('courseId', formData.courseId);
-  payload.append('name', formData.name);
-  payload.append('fatherName', formData.fatherName);
-  payload.append('phone', formData.phone);
-  payload.append('email', formData.email);
-  payload.append('address1', formData.address1);
-  payload.append('address2', formData.address2);
-  payload.append('state', formData.state);
-  payload.append('dob', formData.dob);
-  payload.append('aadhaarNumber', formData.aadhaarNumber);
-  if (formData.profileImage) payload.append('profileImage', formData.profileImage);
-  if (formData.aadhaarImage) payload.append('aadhaarImage', formData.aadhaarImage);
-
-  try {
-    const res = await fetch('/api/admission', {
-      method: 'POST',
-      body: payload,
-    });
-    const data = await res.json();
-    if (res.ok) {
-      // success → proceed to payment
-      router.push(`/`);
-    } else {
-      alert(data.error || 'Submission failed');
+    try {
+      const res = await fetch("/api/admission", {
+        method: "POST",
+        body: payload,
+      });
+      const data = await res.json();
+      if (res.ok) {
+        router.push("/");
+      } else {
+        alert(data.error || "Submission failed");
+      }
+    } catch (err: any) {
+      alert(err.message || "Unknown error");
     }
-  } catch (err: any) {
-    alert(err.message || 'Unknown error');
-  }
-};
+  };
 
   return (
     <div className="max-w-3xl mx-auto p-6">
@@ -118,7 +131,6 @@ const handleSubmit = async (e: React.FormEvent) => {
           <h2 className="text-2xl font-bold mb-6 text-center">
             Student Admission Form
           </h2>
-
           <form
             onSubmit={handleSubmit}
             className="grid grid-cols-1 md:grid-cols-2 gap-6"
@@ -126,7 +138,7 @@ const handleSubmit = async (e: React.FormEvent) => {
             {/* Hidden Course ID */}
             <input type="hidden" name="courseId" value={courseId} />
 
-            {/* Display Course Name (read-only) */}
+            {/* Course Name */}
             <div className="col-span-full">
               <label
                 htmlFor="courseName"
@@ -139,25 +151,63 @@ const handleSubmit = async (e: React.FormEvent) => {
                 name="courseName"
                 value={courseName}
                 readOnly
-                className="mt-1 block w-full rounded-md border-gray-300 bg-gray-100 py-2 px-3 text-gray-700 focus:border-blue-500 focus:outline-none focus:ring-blue-500"
+                className="mt-1 block w-full rounded-md border-gray-300 bg-gray-100 py-2 px-3 text-gray-700"
               />
             </div>
 
-            {/* Profile Image Upload */}
+            {/* Photo of Candidate */}
             <div className="col-span-full">
               <label
-                htmlFor="profileImage"
+                htmlFor="photoOfCandidate"
                 className="block text-sm font-medium text-gray-700"
               >
-                Profile Image
+                Photo of Candidate
               </label>
               <input
                 type="file"
-                id="profileImage"
-                name="profileImage"
+                id="photoOfCandidate"
+                name="photoOfCandidate"
                 accept="image/*"
-                onChange={handleFileChange}
-                className="mt-1 block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                onChange={handleFileChange("photoOfCandidate")}
+                className="mt-1 block w-full text-sm text-gray-600"
+              />
+            </div>
+
+            {/* Aadhaar Front */}
+            <div>
+              <label
+                htmlFor="aadhaarFront"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Aadhaar Card (Front)
+              </label>
+              <input
+                type="file"
+                id="aadhaarFront"
+                name="aadhaarFront"
+                accept="image/*"
+                onChange={handleFileChange("aadhaarFront")}
+                required
+                className="mt-1 block w-full text-sm text-gray-600"
+              />
+            </div>
+
+            {/* Aadhaar Back */}
+            <div>
+              <label
+                htmlFor="aadhaarBack"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Aadhaar Card (Back)
+              </label>
+              <input
+                type="file"
+                id="aadhaarBack"
+                name="aadhaarBack"
+                accept="image/*"
+                onChange={handleFileChange("aadhaarBack")}
+                required
+                className="mt-1 block w-full text-sm text-gray-600"
               />
             </div>
 
@@ -175,11 +225,11 @@ const handleSubmit = async (e: React.FormEvent) => {
                 value={formData.name}
                 onChange={handleChange}
                 required
-                className="mt-1 block w-full rounded-md border-gray-300 py-2 px-3 focus:border-blue-500 focus:outline-none focus:ring-blue-500"
+                className="mt-1 block w-full rounded-md border-gray-300 py-2 px-3"
               />
             </div>
 
-            {/* Father's Name */}
+            {/* Father’s Name */}
             <div>
               <label
                 htmlFor="fatherName"
@@ -193,7 +243,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                 value={formData.fatherName}
                 onChange={handleChange}
                 required
-                className="mt-1 block w-full rounded-md border-gray-300 py-2 px-3 focus:border-blue-500 focus:outline-none focus:ring-blue-500"
+                className="mt-1 block w-full rounded-md border-gray-300 py-2 px-3"
               />
             </div>
 
@@ -212,7 +262,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                 value={formData.phone}
                 onChange={handleChange}
                 required
-                className="mt-1 block w-full rounded-md border-gray-300 py-2 px-3 focus:border-blue-500 focus:outline-none focus:ring-blue-500"
+                className="mt-1 block w-full rounded-md border-gray-300 py-2 px-3"
               />
             </div>
 
@@ -231,12 +281,12 @@ const handleSubmit = async (e: React.FormEvent) => {
                 value={formData.email}
                 onChange={handleChange}
                 required
-                className="mt-1 block w-full rounded-md border-gray-300 py-2 px-3 focus:border-blue-500 focus:outline-none focus:ring-blue-500"
+                className="mt-1 block w-full rounded-md border-gray-300 py-2 px-3"
               />
-              </div>
+            </div>
 
-              {/* Date of Birth */}
-              <div>
+            {/* DOB */}
+            <div>
               <label
                 htmlFor="dob"
                 className="block text-sm font-medium text-gray-700"
@@ -250,48 +300,16 @@ const handleSubmit = async (e: React.FormEvent) => {
                 value={formData.dob}
                 onChange={handleChange}
                 required
-                className="mt-1 block w-full rounded-md border-gray-300 py-2 px-3 focus:border-blue-500 focus:outline-none focus:ring-blue-500"
+                className="mt-1 block w-full rounded-md border-gray-300 py-2 px-3"
               />
               {formData.dob && (
                 <p className="text-sm text-gray-600 mt-1">
-                  Selected:{" "}
-                  {format(new Date(formData.dob), "MMMM d, yyyy")}
+                  Selected: {format(new Date(formData.dob), "MMMM d, yyyy")}
                 </p>
               )}
             </div>
 
-              {/* Aadhaar Image Upload */}
-<div className="col-span-full">
-  <label htmlFor="aadhaarImage" className="block text-sm font-medium text-gray-700">
-    Aadhaar Card Image
-  </label>
-  <input
-    type="file"
-    id="aadhaarImage"
-    name="aadhaarImage"
-    accept="image/*"
-    onChange={e => setFormData(f => ({ ...f, aadhaarImage: e.target.files?.[0] || null }))}
-    required
-    className="mt-1 block w-full text-sm text-gray-600 file:rounded-md file:border-0 file:py-2 file:px-4 file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-  />
-</div>
-
-{/* Aadhaar Number */}
-<div>
-  <label htmlFor="aadhaarNumber" className="block text-sm font-medium text-gray-700">
-    Aadhaar Number
-  </label>
-  <input
-    id="aadhaarNumber"
-    name="aadhaarNumber"
-    value={formData.aadhaarNumber}
-    onChange={handleChange}
-    required
-    className="mt-1 block w-full rounded-md border-gray-300 py-2 px-3 focus:border-blue-500 focus:outline-none focus:ring-blue-500"
-  />
-</div>
-
-            {/* Residential Address */}
+            {/* Address 1 */}
             <div className="col-span-full">
               <label
                 htmlFor="address1"
@@ -302,25 +320,33 @@ const handleSubmit = async (e: React.FormEvent) => {
               <textarea
                 id="address1"
                 name="address1"
-                placeholder="Address Line 1"
                 value={formData.address1}
                 onChange={handleChange}
                 required
-                className="mt-1 block w-full rounded-md border-gray-300 py-2 px-3 focus:border-blue-500 focus:outline-none focus:ring-blue-500 mb-2"
                 rows={2}
-              />
-              <textarea
-                id="address2"
-                name="address2"
-                placeholder="Address Line 2"
-                value={formData.address2}
-                onChange={handleChange}
-                className="mt-1 block w-full rounded-md border-gray-300 py-2 px-3 focus:border-blue-500 focus:outline-none focus:ring-blue-500 mb-2"
-                rows={2}
+                className="mt-1 block w-full rounded-md border-gray-300 py-2 px-3"
               />
             </div>
 
-            {/* State Dropdown */}
+            {/* Address 2 */}
+            <div className="col-span-full">
+              <label
+                htmlFor="address2"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Address Line 2 (optional)
+              </label>
+              <textarea
+                id="address2"
+                name="address2"
+                value={formData.address2}
+                onChange={handleChange}
+                rows={2}
+                className="mt-1 block w-full rounded-md border-gray-300 py-2 px-3"
+              />
+            </div>
+
+            {/* State */}
             <div>
               <label
                 htmlFor="state"
@@ -333,8 +359,13 @@ const handleSubmit = async (e: React.FormEvent) => {
                 name="state"
                 value={formData.state}
                 onChange={handleChange}
+                // onChange={(e) => {
+                //   handleChange(e);
+                  // // reset city when state changes
+                  // setFormData((f) => ({ ...f, city: "" }));
+                // }}
                 required
-                className="mt-1 block w-full rounded-md border-gray-300 bg-white py-2 px-3 focus:border-blue-500 focus:outline-none focus:ring-blue-500"
+                className="mt-1 block w-full rounded-md border-gray-300 py-2 px-3"
               >
                 <option value="" disabled>
                   -- Select State --
@@ -347,9 +378,34 @@ const handleSubmit = async (e: React.FormEvent) => {
               </select>
             </div>
 
-            
+            {/* City */}
+            <div>
+              <label
+                htmlFor="city"
+                className="block text-sm font-medium text-gray-700"
+              >
+                City
+              </label>
+              <input
+                id="city"
+                name="city"
+                value={formData.city}
+                onChange={handleChange}
+                required
+                disabled={!formData.state}
+                className="mt-1 block w-full rounded-md border-gray-300 py-2 px-3 bg-white"
+              >
+                
+                {/* {formData.state &&
+                  citiesByState[formData.state].map((city) => (
+                    <option key={city} value={city}>
+                      {city}
+                    </option>
+                  ))} */}
+              </input>
+            </div>
 
-            {/* Submit Button */}
+            {/* Submit */}
             <div className="col-span-full text-center">
               <button
                 type="submit"

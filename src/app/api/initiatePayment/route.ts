@@ -10,7 +10,7 @@ const SALT_KEY    = process.env.PHONEPE_SALT_KEY!;
 const MERCHANT_ID = process.env.PHONEPE_MERCHANT_ID!;
 const SALT_INDEX  = process.env.PHONEPE_SALT_INDEX!;
 // Use sandbox UAT URL for testing
-const PHONEPE_URL = "https://api-preprod.phonepe.com/apis/pg-sandbox/pg/v1/pay";
+const PHONEPE_URL = "https://api.phonepe.com/apis/pg/v1/pay";
 
 export async function POST(req: NextRequest) {
   const { amount, courseId } = (await req.json()) as { amount: number; courseId: string };

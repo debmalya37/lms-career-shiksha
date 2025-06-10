@@ -7,21 +7,23 @@ import dbConnect from "@/lib/db";
 import { User } from "@/models/user";
 import Course from "@/models/courseModel";
 
-const MERCHANT_ID = process.env.PHONEPE_MERCHANT_ID!;
-const SALT_KEY    = process.env.PHONEPE_SALT_KEY!;
-const SALT_INDEX  = process.env.PHONEPE_SALT_INDEX!;
-const PHONEPE_BASE = "https://api-preprod.phonepe.com/apis/pg-sandbox";
+const MERCHANT_ID  = process.env.PHONEPE_MERCHANT_ID!;
+const SALT_KEY     = process.env.PHONEPE_SALT_KEY!;
+const SALT_INDEX   = process.env.PHONEPE_SALT_INDEX!;
+// Production URL
+const PHONEPE_BASE = "https://api.phonepe.com/apis/pg";
 
 async function fetchPhonePeStatus(merchantTxnId: string) {
-  const path = `/pg/v1/status/${MERCHANT_ID}/${merchantTxnId}`;
-  const hash      = crypto.createHash("sha256").update(path + SALT_KEY).digest("hex");
-  const checksum  = `${hash}###${SALT_INDEX}`;
+  const path     = `/v1/status/${MERCHANT_ID}/${merchantTxnId}`;
+  const toHash   = path + SALT_KEY;
+  const hash     = crypto.createHash("sha256").update(toHash).digest("hex");
+  const checksum = `${hash}###${SALT_INDEX}`;
 
   const resp = await axios.get(`${PHONEPE_BASE}${path}`, {
     headers: {
-      "Content-Type":   "application/json",
-      "X-VERIFY":       checksum,
-      "X-MERCHANT-ID":  MERCHANT_ID,
+      "Content-Type":  "application/json",
+      "X-VERIFY":      checksum,
+      "X-MERCHANT-ID": MERCHANT_ID,
     },
   });
   return resp.data;
@@ -43,10 +45,10 @@ async function enrollUser(
     {
       $push: {
         purchaseHistory: {
-          course:         courseId,
-          amount:         amountPaid,
-          transactionId:  txnId,
-          purchasedAt:    new Date(),
+          course:        courseId,
+          amount:        amountPaid,
+          transactionId: txnId,
+          purchasedAt:   new Date(),
         },
       },
     }
@@ -89,9 +91,8 @@ export async function POST(req: NextRequest) {
   // on success
   if (phonePeResp.success && phonePeResp.code === "PAYMENT_SUCCESS") {
     const amountPaid = phonePeResp.data?.amount ?? 0;
-    const sessionToken = searchParams.get("sessionToken");
     if (sessionToken) {
-      console.log("session token:",sessionToken)
+      console.log("session token:", sessionToken);
       await enrollUser(sessionToken, courseId, amountPaid, txnId);
     }
 
@@ -101,7 +102,6 @@ export async function POST(req: NextRequest) {
       ? ""
       : encodeURIComponent(course.title);
 
-    // redirect into admission form
     const admissionUrl = new URL(
       `/admission?courseId=${courseId}&courseName=${courseName}`,
       req.url

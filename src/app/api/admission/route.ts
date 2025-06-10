@@ -1,6 +1,5 @@
 // app/api/admission/route.ts
-import { NextResponse } from 'next/server';
-import { NextRequest } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import connectMongo from '@/lib/db';
 import Admission from '../../../models/admissionModel';
 import { v2 as cloudinary } from 'cloudinary';
@@ -14,67 +13,66 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-// Helper to upload a buffer to Cloudinary
 async function uploadToCloudinary(buffer: Buffer, folder: string): Promise<string> {
   return new Promise((resolve, reject) => {
-    const stream = cloudinary.uploader.upload_stream(
-      { folder },
-      (err, result) => {
-        if (err) return reject(err);
-        resolve(result?.secure_url || '');
-      }
-    );
+    const stream = cloudinary.uploader.upload_stream({ folder }, (err, result) => {
+      if (err) return reject(err);
+      resolve(result?.secure_url || '');
+    });
     streamifier.createReadStream(buffer).pipe(stream);
   });
 }
 
-// POST /api/admission
 export async function POST(req: NextRequest) {
   await connectMongo();
-
   const form = await req.formData();
 
-  // Required fields
-  const courseId = form.get('courseId')?.toString();
-  const name     = form.get('name')?.toString();
-  const fatherName = form.get('fatherName')?.toString();
-  const phone    = form.get('phone')?.toString();
-  const email    = form.get('email')?.toString();
-  const address1 = form.get('address1')?.toString();
-  const address2 = form.get('address2')?.toString() || '';
-  const state    = form.get('state')?.toString();
-  const dobStr   = form.get('dob')?.toString();
-  const aadhaarNumber = form.get('aadhaarNumber')?.toString();
+  // required textual fields
+  const courseId        = form.get('courseId')?.toString();
+  const name            = form.get('name')?.toString();
+  const fatherName      = form.get('fatherName')?.toString();
+  const phone           = form.get('phone')?.toString();
+  const email           = form.get('email')?.toString();
+  const address1        = form.get('address1')?.toString();
+  const address2        = form.get('address2')?.toString() || '';
+  const state           = form.get('state')?.toString();
+  const city            = form.get('city')?.toString();
+  const dobStr          = form.get('dob')?.toString();
 
-  const profileFile = form.get('profileImage') as File | null;
-  const aadhaarFile = form.get('aadhaarImage') as File | null;
+  // required files
+  const photoFile       = form.get('photoOfCandidate') as File | null;
+  const aadhaarFront    = form.get('aadhaarFront')       as File | null;
+  const aadhaarBack     = form.get('aadhaarBack')        as File | null;
 
-  if (!courseId || !name || !fatherName || !phone || !email ||
-      !address1 || !state || !dobStr || !aadhaarNumber ||
-      !profileFile || !aadhaarFile) {
-    return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
+  if (
+    !courseId || !name || !fatherName || !phone || !email ||
+    !address1 || !state || !city || !dobStr ||
+    !photoFile || !aadhaarFront || !aadhaarBack
+  ) {
+    return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
   }
 
-  // Parse date
   const dob = new Date(dobStr);
   if (isNaN(dob.getTime())) {
-    return NextResponse.json({ error: 'Invalid DOB' }, { status: 400 });
+    return NextResponse.json({ error: 'Invalid date of birth' }, { status: 400 });
   }
 
-  // Read the File blobs into buffers
-  const profileBuffer = Buffer.from(await profileFile.arrayBuffer());
-  const aadhaarBuffer = Buffer.from(await aadhaarFile.arrayBuffer());
+  // turn each file into a Buffer
+  const photoBuf    = Buffer.from(await photoFile.arrayBuffer());
+  const frontBuf    = Buffer.from(await aadhaarFront.arrayBuffer());
+  const backBuf     = Buffer.from(await aadhaarBack.arrayBuffer());
 
-  let profileImageUrl: string, aadhaarImageUrl: string;
+  let profileImageUrl: string, aadhaarFrontUrl: string, aadhaarBackUrl: string;
   try {
-    profileImageUrl  = await uploadToCloudinary(profileBuffer, 'admission/profile');
-    aadhaarImageUrl  = await uploadToCloudinary(aadhaarBuffer, 'admission/aadhaar');
+    profileImageUrl  = await uploadToCloudinary(photoBuf,   'admission/profile');
+    aadhaarFrontUrl  = await uploadToCloudinary(frontBuf,   'admission/aadhaar/front');
+    aadhaarBackUrl   = await uploadToCloudinary(backBuf,    'admission/aadhaar/back');
   } catch (err: any) {
-    console.error('Cloudinary upload error', err);
+    console.error("Cloudinary upload failed:", err);
     return NextResponse.json({ error: 'Image upload failed' }, { status: 500 });
   }
 
-  // Identify the user by sessionToken cookie
+  // auth: find user
   const sessionToken = req.cookies.get('sessionToken')?.value;
   if (!sessionToken) {
     return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
@@ -84,10 +82,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'User not found' }, { status: 401 });
   }
 
-  // Create the Admission record
+  // save admission
   try {
     const admission = await Admission.create({
-      userId:           user._id,
+      userId:          user._id,
       courseId,
       name,
       fatherName,
@@ -96,31 +94,26 @@ export async function POST(req: NextRequest) {
       address1,
       address2,
       state,
+      city,
       dob,
       profileImageUrl,
-      aadhaarImageUrl,
-      aadhaarNumber,
+      aadhaarFrontUrl,
+      aadhaarBackUrl,
     });
     return NextResponse.json({ success: true, admissionId: admission._id });
   } catch (err: any) {
-    console.error('DB save error', err);
+    console.error("DB save error:", err);
     return NextResponse.json({ error: 'Could not save admission' }, { status: 500 });
   }
 }
 
-
 export async function GET(_req: NextRequest) {
   await connectMongo();
   try {
-    const admissions = await Admission.find()
-      .sort({ createdAt: -1 })
-      .lean();
+    const admissions = await Admission.find().sort({ createdAt: -1 }).lean();
     return NextResponse.json(admissions);
   } catch (err: any) {
-    console.error('Failed to fetch admissions:', err);
-    return NextResponse.json(
-      { error: 'Could not fetch admissions' },
-      { status: 500 }
-    );
+    console.error("Failed to fetch admissions:", err);
+    return NextResponse.json({ error: 'Could not fetch admissions' }, { status: 500 });
   }
 }
