@@ -16,7 +16,6 @@ declare global {
 }
 
 export default function LiveClassVideoPlayer({ url }: { url: string }) {
-  // Extract 11-character YouTube ID from various URL forms (live, embed, watch?v=, etc.)
   function getYouTubeId(url: string): string | null {
     const regExp =
       /(?:embed\/|v=|live\/|v\/|e\/|watch\?v=|&v=)([^#&?]*).*/;
@@ -27,87 +26,87 @@ export default function LiveClassVideoPlayer({ url }: { url: string }) {
   const videoId = getYouTubeId(url);
   const playerRef = useRef<any | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const outerContainerRef = useRef<HTMLDivElement>(null);
+  const outerRef = useRef<HTMLDivElement>(null);
 
   // UI state
+  const [controlsVisible, setControlsVisible] = useState(false);
+  const hideTimer = useRef<NodeJS.Timeout | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [apiReady, setApiReady] = useState(false);
 
-  // Progress bar state
+  // Progress
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const progressBarRef = useRef<HTMLDivElement>(null);
   const animationRef = useRef<number>();
   const [isDragging, setIsDragging] = useState(false);
 
-  // 1. Load YouTube IFrame API (only once per component mount)
+  // Helper to show controls and reset 2s hide timer
+  function showControls() {
+    setControlsVisible(true);
+    if (hideTimer.current) clearTimeout(hideTimer.current);
+    hideTimer.current = setTimeout(() => {
+      setControlsVisible(false);
+    }, 2000);
+  }
+
+  // 1. load YT API
   useEffect(() => {
     if (!videoId) return;
-
     if (!window.YT) {
-      window.onYouTubeIframeAPIReady = () => {
-        setApiReady(true);
-      };
+      window.onYouTubeIframeAPIReady = () => setApiReady(true);
       const tag = document.createElement("script");
       tag.src = "https://www.youtube.com/iframe_api";
       document.body.appendChild(tag);
     } else {
       setApiReady(true);
     }
-
     return () => {
-      // On unmount, destroy the player to avoid leftover iframes
       if (playerRef.current) {
         playerRef.current.destroy();
         playerRef.current = null;
       }
+      if (hideTimer.current) clearTimeout(hideTimer.current);
     };
   }, [videoId]);
 
-  // 2. Initialize the player once API is ready & videoId is available
+  // 2. init player
   useEffect(() => {
     if (!apiReady || !videoId || !containerRef.current) return;
-    if (playerRef.current) return; // do not re-create if already exists
-
-    const playerVars: YT.PlayerVars = {
-      autoplay: 0,
-      controls: 0,
-      modestbranding: 1,
-      rel: 0,
-      disablekb: 1,
-      fs: 0,
-      iv_load_policy: 3,
-      playsinline: 1,
-    };
-
+    if (playerRef.current) return;
     playerRef.current = new window.YT.Player(containerRef.current, {
       videoId,
       height: "100%",
       width: "100%",
-      playerVars,
+      playerVars: {
+        autoplay: 0,
+        controls: 0,
+        modestbranding: 1,
+        rel: 0,
+        disablekb: 1,
+        fs: 0,
+        iv_load_policy: 3,
+        playsinline: 1,
+      },
       events: {
-        onReady: (event: any) => {
-          const p = event.target as any;
-          const dur = p.getDuration();
-          setDuration(dur);
+        onReady: (e: any) => {
+          setDuration(e.target.getDuration());
+          showControls();
         },
-        onStateChange: (event: any) => {
-          const state = event.data;
-          setIsPlaying(state === window.YT.PlayerState.PLAYING);
-          if (state === window.YT.PlayerState.PLAYING) {
-            startProgressUpdate();
-          } else {
-            cancelAnimationFrame(animationRef.current!);
-          }
+        onStateChange: (e: any) => {
+          const st = e.data;
+          setIsPlaying(st === window.YT.PlayerState.PLAYING);
+          if (st === window.YT.PlayerState.PLAYING) startProgress();
+          else cancelAnimationFrame(animationRef.current!);
+          showControls();
         },
       },
     });
   }, [apiReady, videoId]);
 
-  // 3. Update “currentTime” continuously while playing
-  const startProgressUpdate = () => {
+  const startProgress = () => {
     const step = () => {
-      if (playerRef.current && playerRef.current.getCurrentTime) {
+      if (playerRef.current?.getCurrentTime) {
         setCurrentTime(playerRef.current.getCurrentTime());
       }
       animationRef.current = requestAnimationFrame(step);
@@ -115,111 +114,91 @@ export default function LiveClassVideoPlayer({ url }: { url: string }) {
     animationRef.current = requestAnimationFrame(step);
   };
 
-  // 4. Seek logic (mouse & touch) — only triggers if user directly clicks/drags on the bar
-  const updateSeekFromClientX = (clientX: number) => {
-    if (!progressBarRef.current || !playerRef.current || duration === 0) return;
-    const rect = progressBarRef.current.getBoundingClientRect();
-    let pos = (clientX - rect.left) / rect.width;
-    pos = Math.max(0, Math.min(1, pos));
-    const seekTime = pos * duration;
-    playerRef.current.seekTo(seekTime, true);
-    setCurrentTime(seekTime);
+  // Seek logic
+  const updateSeek = (clientX: number) => {
+    if (!progressBarRef.current || !playerRef.current || !duration) return;
+    const { left, width } = progressBarRef.current.getBoundingClientRect();
+    let ratio = (clientX - left) / width;
+    ratio = Math.max(0, Math.min(1, ratio));
+    const t = ratio * duration;
+    playerRef.current.seekTo(t, true);
+    setCurrentTime(t);
   };
 
-  const handleMouseDown = (e: MouseEvent<HTMLDivElement>) => {
+  // Mouse/touch handlers
+  const onMouseDown = (e: MouseEvent<HTMLDivElement>) => {
     setIsDragging(true);
-    updateSeekFromClientX(e.clientX);
+    updateSeek(e.clientX);
+    showControls();
   };
-
-  const handleMouseMove = (e: globalThis.MouseEvent) => {
+  const onMouseMove = (e: MouseEvent) => {
     if (isDragging) {
-      updateSeekFromClientX(e.clientX);
+      updateSeek(e.clientX);
+      showControls();
     }
   };
-
-  const handleMouseUp = () => {
+  const onMouseUp = () => {
     if (isDragging) {
       setIsDragging(false);
+      showControls();
     }
   };
-
-  const handleTouchStart = (e: TouchEvent<HTMLDivElement>) => {
+  const onTouchStart = (e: TouchEvent<HTMLDivElement>) => {
     setIsDragging(true);
-    updateSeekFromClientX(e.touches[0].clientX);
+    updateSeek(e.touches[0].clientX);
+    showControls();
   };
-
-  const handleTouchMove = (e: TouchEvent<HTMLDivElement>) => {
+  const onTouchMove = (e: TouchEvent<HTMLDivElement>) => {
     if (isDragging) {
-      updateSeekFromClientX(e.touches[0].clientX);
+      updateSeek(e.touches[0].clientX);
+      showControls();
     }
   };
-
-  const handleTouchEnd = () => {
-    setIsDragging(false);
+  const onTouchEnd = () => {
+    if (isDragging) {
+      setIsDragging(false);
+      showControls();
+    }
   };
 
   useEffect(() => {
     if (isDragging) {
-      document.addEventListener("mousemove", handleMouseMove);
-      document.addEventListener("mouseup", handleMouseUp);
+      document.addEventListener("mousemove", onMouseMove as any);
+      document.addEventListener("mouseup", onMouseUp);
     } else {
-      document.removeEventListener("mousemove", handleMouseMove);
-      document.removeEventListener("mouseup", handleMouseUp);
+      document.removeEventListener("mousemove", onMouseMove as any);
+      document.removeEventListener("mouseup", onMouseUp);
     }
     return () => {
-      document.removeEventListener("mousemove", handleMouseMove);
-      document.removeEventListener("mouseup", handleMouseUp);
+      document.removeEventListener("mousemove", onMouseMove as any);
+      document.removeEventListener("mouseup", onMouseUp);
     };
-  }, [handleMouseMove, handleMouseUp, isDragging]);
+  }, [isDragging]);
 
-  // 5. Play / Pause toggle
-  const handlePlayPause = () => {
+  // Play/pause and skip
+  const togglePlay = () => {
     if (!playerRef.current) return;
-    if (isPlaying) {
-      playerRef.current.pauseVideo();
-    } else {
-      playerRef.current.playVideo();
-    }
+    isPlaying
+      ? playerRef.current.pauseVideo()
+      : playerRef.current.playVideo();
+    showControls();
   };
-
-  // 6. Skip forward/back by 10 seconds
   const skip = (offset: number) => {
     if (!playerRef.current) return;
-    const current = playerRef.current.getCurrentTime();
-    playerRef.current.seekTo(current + offset, true);
+    const now = playerRef.current.getCurrentTime();
+    playerRef.current.seekTo(now + offset, true);
+    showControls();
   };
-
-  // 7. “Go Live” button: seek to end of live‐DVR
-  const handleGoLive = () => {
+  const goLive = () => {
     if (!playerRef.current) return;
     const dur = playerRef.current.getDuration();
-    if (dur <= 0) {
-      setTimeout(() => {
-        const d2 = playerRef.current!.getDuration();
-        playerRef.current!.seekTo(d2, true);
-      }, 500);
-    } else {
-      playerRef.current.seekTo(dur, true);
-    }
+    playerRef.current.seekTo(dur, true);
+    showControls();
   };
 
-  // 8. Toggle Full Screen
-  const handleFullScreen = (e: MouseEvent<HTMLButtonElement>) => {
-    e.stopPropagation(); // ensure only button triggers this
-    if (!outerContainerRef.current) return;
-    if (!document.fullscreenElement) {
-      outerContainerRef.current.requestFullscreen().catch((err) => {
-        console.error("Error enabling full screen:", err);
-      });
-    } else {
-      document.exitFullscreen();
-    }
-  };
-
-  // 9. Format seconds as “MM:SS”
-  const formatTime = (seconds: number) => {
-    const m = Math.floor(seconds / 60);
-    const s = Math.floor(seconds % 60);
+  const formatTime = (sec: number) => {
+    const m = Math.floor(sec / 60),
+      s = Math.floor(sec % 60);
     return `${m}:${s.toString().padStart(2, "0")}`;
   };
 
@@ -229,44 +208,51 @@ export default function LiveClassVideoPlayer({ url }: { url: string }) {
 
   return (
     <div
-      ref={outerContainerRef}
+      ref={outerRef}
       className="relative w-full aspect-video bg-black"
-      /* No onClick or hover handlers here—clicking elsewhere does nothing */
+      onMouseEnter={showControls}
+      onMouseMove={showControls}
+      onMouseLeave={() => {
+        if (hideTimer.current) clearTimeout(hideTimer.current);
+        hideTimer.current = setTimeout(() => setControlsVisible(false), 2000);
+      }}
+      onTouchStart={showControls}
     >
-      {/* 1) YouTube iframe container */}
+      {/* 1) YouTube iframe */}
       <div ref={containerRef} className="w-full h-full" />
 
-      {/* 2) Progress Bar (always visible) */}
+      {/* 2) Progress Bar */}
       <div
         ref={progressBarRef}
-        className="absolute bottom-16 left-0 right-0 h-2 bg-gray-600 cursor-pointer z-10"
-        onMouseDown={handleMouseDown}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-        style={{ pointerEvents: "auto" }} // allow seeking only on the bar itself
+        className={`absolute bottom-14 left-0 right-0 h-2 bg-gray-600 cursor-pointer z-10 transition-opacity duration-300 ${
+          controlsVisible ? "opacity-100" : "opacity-0"
+        }`}
+        onMouseDown={onMouseDown}
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
       >
-        {/* Filled portion */}
         <div
           className="absolute top-0 left-0 h-full bg-red-600"
           style={{
-            width:
-              duration > 0 ? `${(currentTime / duration) * 100}%` : "0%",
+            width: duration ? `${(currentTime / duration) * 100}%` : "0%",
           }}
         >
           <div className="absolute right-0 -top-1 h-4 w-4 bg-red-600 rounded-full" />
         </div>
       </div>
 
-      {/* 3) Control Overlay (buttons & timestamps) */}
-      <div className="absolute inset-0 flex flex-col justify-between p-4 z-20">
-        {/* Top: currentTime / duration (pointer-events none, so cannot click) */}
+      {/* 3) Controls Overlay */}
+      <div
+        className={`absolute inset-0 flex flex-col justify-between p-4 z-20 transition-opacity duration-300 ${
+          controlsVisible ? "opacity-100" : "opacity-0"
+        }`}
+      >
         <div className="flex justify-between text-white text-sm pointer-events-none">
           <span>{formatTime(currentTime)}</span>
           <span>{formatTime(duration)}</span>
         </div>
 
-        {/* Center: Play/Pause & Skip (pointer-events auto only on buttons) */}
         <div className="flex justify-center items-center gap-6">
           <button
             onClick={() => skip(-10)}
@@ -275,15 +261,13 @@ export default function LiveClassVideoPlayer({ url }: { url: string }) {
           >
             ⏪ 10s
           </button>
-
           <button
-            onClick={handlePlayPause}
+            onClick={togglePlay}
             className="pointer-events-auto bg-red-600 hover:bg-red-700 text-white p-3 rounded-full"
             title={isPlaying ? "Pause" : "Play"}
           >
             {isPlaying ? "⏸" : "▶"}
           </button>
-
           <button
             onClick={() => skip(10)}
             className="pointer-events-auto text-white bg-black/50 hover:bg-black/70 px-3 py-1 rounded"
@@ -293,18 +277,22 @@ export default function LiveClassVideoPlayer({ url }: { url: string }) {
           </button>
         </div>
 
-        {/* Bottom: Go Live & Fullscreen (pointer-events auto on buttons) */}
         <div className="flex justify-between items-center">
           <button
-            onClick={handleGoLive}
+            onClick={goLive}
             className="pointer-events-auto bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded"
             title="Go Live"
           >
             🔴 Go Live
           </button>
-
           <button
-            onClick={handleFullScreen}
+            onClick={() => {
+              if (outerRef.current) {
+                outerRef.current
+                  .requestFullscreen()
+                  .catch(console.error);
+              }
+            }}
             className="pointer-events-auto bg-gray-800 hover:bg-gray-700 text-white p-2 rounded"
             title="Full Screen"
           >
