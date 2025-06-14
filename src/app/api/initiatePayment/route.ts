@@ -27,9 +27,20 @@ if (
   );
 }
 
-const BASE = "https://api.phonepe.com/apis/pg";
+// const BASE = "https://api.phonepe.com/apis/pg";
+// const OAUTH_URL = `${BASE}/v1/oauth/token`;
+// const PAY_URL   = `${BASE}/checkout/v2/pay`;
+
+const BASE =
+  process.env.PHONEPE_ENV === 'PRODUCTION'
+    ? 'https://api.phonepe.com/apis/identity-manager'
+    : 'https://api-preprod.phonepe.com/apis/pg-sandbox';
+
 const OAUTH_URL = `${BASE}/v1/oauth/token`;
-const PAY_URL   = `${BASE}/checkout/v2/pay`;
+const PAY_URL   = process.env.PHONEPE_ENV === 'PRODUCTION'
+  ? 'https://api.phonepe.com/apis/pg/checkout/v2/pay'
+  : 'https://api-preprod.phonepe.com/apis/pg-sandbox/checkout/v2/pay';
+
 
 export async function POST(req: NextRequest) {
   // 0) parse

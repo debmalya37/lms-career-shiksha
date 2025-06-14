@@ -11,7 +11,6 @@ const {
   PHONEPE_CLIENT_SECRET,
   PHONEPE_CLIENT_VERSION,
   PHONEPE_ENV,
-  PHONEPE_ENV: ENV,
 } = process.env;
 
 if (
@@ -24,18 +23,23 @@ if (
   );
 }
 
-// Base URLs
+// ── 1) Base URLs ────────────────────────────────────────────────────────────────
+// OAuth: identity‑manager in Prod, pg‑sandbox in UAT
+const OAUTH_BASE = PHONEPE_ENV === "PRODUCTION"
+  ? "https://api.phonepe.com/apis/identity-manager"
+  : "https://api-preprod.phonepe.com/apis/pg-sandbox";
 
-const BASE = "https://api.phonepe.com/apis/pg";
-// = ENV === "PRODUCTION"
-  // ? 
-  // : "https://api-preprod.phonepe.com/apis/pg-sandbox";
+// Order‑Status: pg in Prod, pg‑sandbox in UAT
+const STATUS_BASE = PHONEPE_ENV === "PRODUCTION"
+  ? "https://api.phonepe.com/apis/pg"
+  : "https://api-preprod.phonepe.com/apis/pg-sandbox";
 
-const OAUTH_URL  = `${BASE}/v1/oauth/token`;
+// full URLs
+const OAUTH_URL  = `${OAUTH_BASE}/v1/oauth/token`;
 const STATUS_URL = (orderId: string) =>
-  `${BASE}/checkout/v2/order/${orderId}/status?details=false&errorContext=false`;
+  `${STATUS_BASE}/checkout/v2/order/${orderId}/status?details=false&errorContext=false`;
 
-/** Fetch OAuth token */
+// ── 2) OAuth helper ────────────────────────────────────────────────────────────
 async function getAccessToken() {
   const res = await axios.post(
     OAUTH_URL,
@@ -53,7 +57,7 @@ async function getAccessToken() {
   return res.data.access_token as string;
 }
 
-/** Enroll user in the course */
+// ── 3) Enrollment helper ───────────────────────────────────────────────────────
 async function enrollUser(
   sessionToken: string,
   courseId: string,
@@ -80,6 +84,7 @@ async function enrollUser(
   );
 }
 
+// ── 4) GET handler ────────────────────────────────────────────────────────────
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const orderId      = searchParams.get("id");
@@ -97,7 +102,7 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  // 1) Get access token
+  // 4.1) OAuth
   let accessToken: string;
   try {
     accessToken = await getAccessToken();
@@ -106,7 +111,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect("/payment/failure", 303);
   }
 
-  // 2) Call Order‑Status API
+  // 4.2) Order‑Status call
   let statusRes;
   try {
     statusRes = await axios.get(STATUS_URL(orderId), {
@@ -115,6 +120,7 @@ export async function GET(req: NextRequest) {
         Accept:         "application/json",
         Authorization:  `O-Bearer ${accessToken}`,
       },
+      timeout: 5000,
     });
     console.log("Order Status response:", statusRes.data);
   } catch (err: any) {
@@ -122,29 +128,29 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(`/failure/${orderId}?courseId=${courseId}`, 303);
   }
 
-  // 3) Inspect state
+  // 4.3) Inspect state & amount
   const { state, amount } = statusRes.data as {
     state: string;
     amount: number;
   };
 
   if (state === "COMPLETED") {
-    // 4) Enroll & redirect to admission
+    // 4.4) Enroll & redirect to admission
     if (sessionToken) {
       await enrollUser(sessionToken, courseId, amount, orderId);
     }
     const course = await Course.findById(courseId).lean();
     const courseName = Array.isArray(course) || !course?.title
-      ? ""
-      : encodeURIComponent(course.title);
-      const admissionUrl = new URL(
-        `/admission?courseId=${courseId}&courseName=${courseName}`,
-        req.url
-      );
-      return NextResponse.redirect(admissionUrl, 303);
-    }
+    ? ""
+    : encodeURIComponent(course.title);
+    const admissionUrl = new URL(
+      `/admission?courseId=${courseId}&courseName=${courseName}`,
+      req.url
+    );
+    return NextResponse.redirect(admissionUrl, 303);
+  }
 
-  // 5) Pending or failed → redirect to failure
+  // 4.5) Pending/Failed → failure page
   return NextResponse.redirect(
     `/failure/${orderId}?courseId=${courseId}`,
     303
