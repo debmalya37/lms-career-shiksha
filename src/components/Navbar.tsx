@@ -49,6 +49,7 @@ const [adminNotifications, setAdminNotifications] = useState<AdminNotification[]
     { name: "Home", href: "/", icon: <FiHome /> },
     { name: "Courses", href: "/courses", icon: <FiBookOpen /> },
     { name: "Tutorials", href: "/tutorials", icon: <FiVideo /> },
+    { name: "Leaderboard", href: "/leaderboard", icon: <FiVideo /> },
     { name: "Live", href: "/live", icon: <FiLayers /> },
     { name: "Test Series", href: "/test-series", icon: <FiFileText /> },
     { name: "Contact", href: "/contact", icon: <FiPhone /> },
