@@ -182,7 +182,8 @@ const CourseCard = ({
 
     const isFree = !!course?.isFree;
   return (
-    <div className="w-64 h-72 bg-blue-950 rounded shadow hover:shadow-md transition-shadow flex flex-col overflow-hidden">
+    <div className="w-full sm:w-64 h-72 bg-blue-950 rounded shadow hover:shadow-md transition-shadow flex flex-col overflow-hidden">
+
         {/* Course Image */}
         <div className="h-32 w-full bg-gray-700 flex items-center justify-center overflow-hidden rounded-md">
           {course ? (
@@ -252,20 +253,23 @@ const CourseCard = ({
 
       <div className="container mx-auto p-4 rounded-md">
         {/* Banner Ad */}
-        {bannerAds.length > 0 && (
+{bannerAds.length > 0 && (
   <a
     href={bannerAds[currentAdIndex]?.link}
     target="_blank"
     rel="noopener noreferrer"
-    className="block w-full h-0 pb-[37.5%] bg-gray-200 overflow-hidden relative mb-6 rounded-md"
+    className="block w-full relative overflow-hidden mb-0 rounded-md"
   >
-    <img
-      src={bannerAds[currentAdIndex]?.imageUrl}
-      alt={`Banner Ad ${currentAdIndex + 1}`}
-      className="absolute top-0 left-0 w-full h-full object-cover transition-opacity duration-500 rounded-md"
-    />
+    <div className="relative w-full pb-[37.5%] sm:pb-[80%] md:pb-[37.5%] bg-gray-200 rounded-md">
+      <img
+        src={bannerAds[currentAdIndex]?.imageUrl}
+        alt={`Banner Ad ${currentAdIndex + 1}`}
+        className="absolute top-0 left-0 w-full h-full object-cover transition-opacity duration-500 rounded-md"
+      />
+    </div>
   </a>
 )}
+
 
 
         {/* Top Navbar Icons
@@ -298,7 +302,8 @@ const CourseCard = ({
           <h2 className="text-lg sm:text-2xl font-bold text-blue-950 mb-4">
             Your Subscribed Courses
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
+
             {isLoading
               ? Array.from({ length: 5 }).map((_, index) => (
                   <CourseCard key={index} course={null} buttonLabel="" buttonLink="" />
