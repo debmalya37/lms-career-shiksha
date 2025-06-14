@@ -34,20 +34,18 @@ export async function POST(request: Request) {
     await connectMongo();
     const formData = await request.formData();
     const bannerImgFile = formData.get('bannerImg') as File | null;
+    const link = formData.get('link') as string;
 
-    if (!bannerImgFile) {
-      return NextResponse.json({ error: 'Banner image is required' }, { status: 400 });
+    if (!bannerImgFile || !link) {
+      return NextResponse.json({ error: 'Image and link are required' }, { status: 400 });
     }
 
-    // Convert the File object to a Buffer
     const buffer = await bannerImgFile.arrayBuffer();
     const bufferData = Buffer.from(buffer);
 
-    // Upload to Cloudinary
     const imageUrl = await uploadToCloudinary(bufferData);
 
-    // Save to database
-    const newBannerAd = new BannerAd({ imageUrl });
+    const newBannerAd = new BannerAd({ imageUrl, link });
     await newBannerAd.save();
 
     return NextResponse.json({ message: 'Banner ad added successfully!' });

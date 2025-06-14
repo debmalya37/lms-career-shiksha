@@ -74,12 +74,8 @@ export default function ProfilePage() {
           />
         </div> */}
         <Link className="bg-blue-950" href={"/u/purchases"}>Purchases</Link>
-        <Link
-          href="/u/purchases"
-          className="absolute inset-0 w-full h-full transition duration-300 ease-out transform translate-x-1 translate-y-1 bg-blue-700 group-hover:translate-x-0 group-hover:translate-y-0"
-        >Purchases
-        </Link>
-        <Link href={"/u/admissionforms"} className="absolute inset-0 w-full h-full transition duration-300 ease-out transform translate-x-1 translate-y-1 bg-blue-700 group-hover:translate-x-0 group-hover:translate-y-0">Admissions</Link>
+
+        <Link href={"/u/admissionforms"} className="bg-blue-950">Admissions</Link>
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
           <input

@@ -22,7 +22,9 @@ interface Course {
 interface BannerAd {
   _id: string;
   imageUrl: string;
+  link: string; // 👈 Add this line
 }
+
 interface UserProfile {
   name: string;
   email: string;
@@ -251,14 +253,20 @@ const CourseCard = ({
       <div className="container mx-auto p-4 rounded-md">
         {/* Banner Ad */}
         {bannerAds.length > 0 && (
-          <div className="w-full h-0 pb-[37.5%] bg-gray-200 overflow-hidden relative mb-6">
-            <img
-              src={bannerAds[currentAdIndex]?.imageUrl}
-              alt={`Banner Ad ${currentAdIndex + 1}`}
-              className="absolute top-0 left-0 w-full h-full object-cover transition-opacity duration-500 rounded-md"
-            />
-          </div>
-        )}
+  <a
+    href={bannerAds[currentAdIndex]?.link}
+    target="_blank"
+    rel="noopener noreferrer"
+    className="block w-full h-0 pb-[37.5%] bg-gray-200 overflow-hidden relative mb-6 rounded-md"
+  >
+    <img
+      src={bannerAds[currentAdIndex]?.imageUrl}
+      alt={`Banner Ad ${currentAdIndex + 1}`}
+      className="absolute top-0 left-0 w-full h-full object-cover transition-opacity duration-500 rounded-md"
+    />
+  </a>
+)}
+
 
         {/* Top Navbar Icons
         <div className="relative flex justify-end mt-6">
