@@ -1,39 +1,64 @@
 // File: app/api/phonepe/check/route.ts
 
 import { NextRequest, NextResponse } from "next/server";
-import crypto from "crypto";
 import axios from "axios";
 import dbConnect from "@/lib/db";
 import { User } from "@/models/user";
 import Course from "@/models/courseModel";
 
-const MERCHANT_ID  = process.env.PHONEPE_MERCHANT_ID!;
-const SALT_KEY     = process.env.PHONEPE_SALT_KEY!;
-const SALT_INDEX   = process.env.PHONEPE_SALT_INDEX!;
-// Production URL
-const PHONEPE_BASE = "https://api.phonepe.com/apis/pg";
+const {
+  PHONEPE_CLIENT_ID,
+  PHONEPE_CLIENT_SECRET,
+  PHONEPE_CLIENT_VERSION,
+  PHONEPE_ENV,
+  PHONEPE_ENV: ENV,
+} = process.env;
 
-async function fetchPhonePeStatus(merchantTxnId: string) {
-  const path     = `/v1/status/${MERCHANT_ID}/${merchantTxnId}`;
-  const toHash   = path + SALT_KEY;
-  const hash     = crypto.createHash("sha256").update(toHash).digest("hex");
-  const checksum = `${hash}###${SALT_INDEX}`;
-
-  const resp = await axios.get(`${PHONEPE_BASE}${path}`, {
-    headers: {
-      "Content-Type":  "application/json",
-      "X-VERIFY":      checksum,
-      "X-MERCHANT-ID": MERCHANT_ID,
-    },
-  });
-  return resp.data;
+if (
+  !PHONEPE_CLIENT_ID ||
+  !PHONEPE_CLIENT_SECRET ||
+  !PHONEPE_CLIENT_VERSION
+) {
+  throw new Error(
+    "Missing one of PHONEPE_CLIENT_ID, PHONEPE_CLIENT_SECRET, PHONEPE_CLIENT_VERSION"
+  );
 }
 
+// Base URLs
+
+const BASE = "https://api.phonepe.com/apis/pg";
+// = ENV === "PRODUCTION"
+  // ? 
+  // : "https://api-preprod.phonepe.com/apis/pg-sandbox";
+
+const OAUTH_URL  = `${BASE}/v1/oauth/token`;
+const STATUS_URL = (orderId: string) =>
+  `${BASE}/checkout/v2/order/${orderId}/status?details=false&errorContext=false`;
+
+/** Fetch OAuth token */
+async function getAccessToken() {
+  const res = await axios.post(
+    OAUTH_URL,
+    new URLSearchParams({
+      grant_type:     "client_credentials",
+      client_id:      PHONEPE_CLIENT_ID!,
+      client_secret:  PHONEPE_CLIENT_SECRET!,
+      client_version: PHONEPE_CLIENT_VERSION!,
+    } as Record<string, string>),
+    { headers: { "Content-Type": "application/x-www-form-urlencoded" } }
+  );
+  if (!res.data?.access_token) {
+    throw new Error("No access_token in OAuth response");
+  }
+  return res.data.access_token as string;
+}
+
+/** Enroll user in the course */
 async function enrollUser(
   sessionToken: string,
   courseId: string,
   amountPaid: number,
-  txnId: string
+  orderId: string
 ) {
   await dbConnect();
   await User.updateOne(
@@ -47,7 +72,7 @@ async function enrollUser(
         purchaseHistory: {
           course:        courseId,
           amount:        amountPaid,
-          transactionId: txnId,
+          transactionId: orderId,
           purchasedAt:   new Date(),
         },
       },
@@ -55,61 +80,73 @@ async function enrollUser(
   );
 }
 
-export async function POST(req: NextRequest) {
+export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
-  const txnId        = searchParams.get("id");
+  const orderId      = searchParams.get("id");
   const courseId     = searchParams.get("courseId");
   const sessionToken = searchParams.get("sessionToken");
 
-  if (!txnId || !courseId) {
+  if (!orderId || !courseId) {
     return NextResponse.json(
-      { success: false, code: "MISSING_PARAMS", message: "id & courseId required" },
+      {
+        success: false,
+        code:    "MISSING_PARAMS",
+        message: "id & courseId required",
+      },
       { status: 400 }
     );
   }
 
-  // parse PhonePe's POST form-data
+  // 1) Get access token
+  let accessToken: string;
   try {
-    await req.formData();
-  } catch {
-    return NextResponse.json(
-      { success: false, code: "BAD_FORM", message: "Invalid form‐data" },
-      { status: 400 }
-    );
-  }
-
-  // check status
-  let phonePeResp: any;
-  try {
-    phonePeResp = await fetchPhonePeStatus(txnId);
+    accessToken = await getAccessToken();
   } catch (err: any) {
-    console.error("PhonePe Check-Status error:", err.response?.data || err.message);
-    const failureRedirect = new URL(`/failure/${txnId}?courseId=${courseId}`, req.url);
-    return NextResponse.redirect(failureRedirect, 303);
+    console.error("OAuth failed:", err);
+    return NextResponse.redirect("/payment/failure", 303);
   }
 
-  // on success
-  if (phonePeResp.success && phonePeResp.code === "PAYMENT_SUCCESS") {
-    const amountPaid = phonePeResp.data?.amount ?? 0;
-    if (sessionToken) {
-      console.log("session token:", sessionToken);
-      await enrollUser(sessionToken, courseId, amountPaid, txnId);
-    }
+  // 2) Call Order‑Status API
+  let statusRes;
+  try {
+    statusRes = await axios.get(STATUS_URL(orderId), {
+      headers: {
+        "Content-Type": "application/json",
+        Accept:         "application/json",
+        Authorization:  `O-Bearer ${accessToken}`,
+      },
+    });
+    console.log("Order Status response:", statusRes.data);
+  } catch (err: any) {
+    console.error("Order-Status API error:", err.response?.data || err.message);
+    return NextResponse.redirect(`/failure/${orderId}?courseId=${courseId}`, 303);
+  }
 
-    // fetch course title for admission redirect
+  // 3) Inspect state
+  const { state, amount } = statusRes.data as {
+    state: string;
+    amount: number;
+  };
+
+  if (state === "COMPLETED") {
+    // 4) Enroll & redirect to admission
+    if (sessionToken) {
+      await enrollUser(sessionToken, courseId, amount, orderId);
+    }
     const course = await Course.findById(courseId).lean();
     const courseName = Array.isArray(course) || !course?.title
       ? ""
       : encodeURIComponent(course.title);
+      const admissionUrl = new URL(
+        `/admission?courseId=${courseId}&courseName=${courseName}`,
+        req.url
+      );
+      return NextResponse.redirect(admissionUrl, 303);
+    }
 
-    const admissionUrl = new URL(
-      `/admission?courseId=${courseId}&courseName=${courseName}`,
-      req.url
-    );
-    return NextResponse.redirect(admissionUrl, 303);
-  }
-
-  // on failure or pending
-  const failureRedirect = new URL(`/failure/${txnId}?courseId=${courseId}`, req.url);
-  return NextResponse.redirect(failureRedirect, 303);
+  // 5) Pending or failed → redirect to failure
+  return NextResponse.redirect(
+    `/failure/${orderId}?courseId=${courseId}`,
+    303
+  );
 }

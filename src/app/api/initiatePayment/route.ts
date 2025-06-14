@@ -1,123 +1,153 @@
-import axios from "axios";
-import crypto from "crypto";
-import { NextResponse, NextRequest } from "next/server";
-import { v4 as uuidv4 } from "uuid";
-import connectMongo from "@/lib/db";
-import { User } from "@/models/user";
+// app/api/initiatePayment/route.ts
+
+import { NextRequest, NextResponse } from 'next/server';
+import axios from 'axios';
+import { v4 as uuidv4 } from 'uuid';
+import connectMongo from '@/lib/db';
+import { User } from '@/models/user';
 
 const {
-  PHONEPE_CLIENT_ID: CLIENT_ID,
-  PHONEPE_CLIENT_SECRET: CLIENT_SECRET,
-  PHONEPE_CLIENT_VERSION: CLIENT_VERSION,
-  PHONEPE_SALT_KEY: SALT_KEY,
-  PHONEPE_MERCHANT_ID: MERCHANT_ID,
-  PHONEPE_SALT_INDEX: SALT_INDEX,
+  PHONEPE_CLIENT_ID,
+  PHONEPE_CLIENT_SECRET,
+  PHONEPE_CLIENT_VERSION,
 } = process.env;
 
-if (!CLIENT_ID || !CLIENT_SECRET || !CLIENT_VERSION || !SALT_KEY || !MERCHANT_ID || !SALT_INDEX) {
-  throw new Error("Missing required PhonePe credentials in environment variables");
+if (
+  !PHONEPE_CLIENT_ID ||
+  !PHONEPE_CLIENT_SECRET ||
+  !PHONEPE_CLIENT_VERSION
+) {
+  console.error('❌ Missing PhonePe env vars:', {
+    PHONEPE_CLIENT_ID,
+    PHONEPE_CLIENT_SECRET,
+    PHONEPE_CLIENT_VERSION,
+  });
+  throw new Error(
+    'Missing one of PHONEPE_CLIENT_ID, PHONEPE_CLIENT_SECRET, PHONEPE_CLIENT_VERSION'
+  );
 }
 
-// Production endpoints
-const OAUTH_URL   = "https://api.phonepe.com/apis/identity-manager/v1/oauth/token";
-const PAYMENT_URL = "https://api.phonepe.com/apis/pg/checkout/v2/pay";
+const BASE = "https://api.phonepe.com/apis/pg";
+const OAUTH_URL = `${BASE}/v1/oauth/token`;
+const PAY_URL   = `${BASE}/checkout/v2/pay`;
 
 export async function POST(req: NextRequest) {
-  const { amount, courseId } = (await req.json()) as {
-    amount: number;
-    courseId: string;
-  };
+  // 0) parse
+  let payload: { amount?: number; courseId?: string };
+  try {
+    payload = await req.json();
+    console.log('📥 Received payload:', payload);
+  } catch (e) {
+    console.error('❌ Invalid JSON:', e);
+    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
+  }
 
+  const { amount, courseId } = payload!;
   if (!amount || !courseId) {
-    return NextResponse.json({ error: "Missing amount or courseId" }, { status: 400 });
+    console.warn('⚠️ Missing amount/courseId:', { amount, courseId });
+    return NextResponse.json(
+      { error: 'Missing amount or courseId' },
+      { status: 400 }
+    );
   }
 
-  // 1) Ensure user is authenticated
+  // 1) Auth & user
   await connectMongo();
-  const sessionToken = req.cookies.get("sessionToken")?.value;
-  const user = sessionToken ? await User.findOne({ sessionToken }).lean() : null;
+  const sessionToken = req.cookies.get('sessionToken')?.value;
+  console.log('🔑 Session token:', sessionToken);
+  const user = sessionToken
+    ? await User.findOne({ sessionToken }).lean()
+    : null;
+  console.log('👤 User:', user?._id);
   if (!user) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
   }
 
-  // 2) Generate a unique transaction ID
-  const transactionId = `Tr-${uuidv4().slice(-6)}`;
+  // 2) build IDs & URLs
+  const merchantOrderId = `ORD-${uuidv4().slice(-8)}`;
+  const redirectUrl = `https://civilacademyapp.com/api/phonepe/check?id=${merchantOrderId}&courseId=${courseId}&sessionToken=${sessionToken}`;
+  console.log('🆔 merchantOrderId:', merchantOrderId);
+  console.log('🌐 redirectUrl:', redirectUrl);
 
-  // 3) Build the payment payload
-  const payload = {
-    merchantId: MERCHANT_ID,
-    merchantTransactionId: transactionId,
-    amount: Math.round(amount * 100), // in paise
-    redirectUrl: `https://civilacademyapp.com/api/phonepe/check?id=${transactionId}&courseId=${courseId}&sessionToken=${sessionToken}`,
-    redirectMode: "POST",
-    callbackUrl: `https://civilacademyapp.com/api/phonepe/check?id=${transactionId}&courseId=${courseId}&sessionToken=${sessionToken}`,
-    mobileNumber: user.phoneNo || "",
-    paymentInstrument: {
-      type: "PAY_PAGE",
+  // 3) OAuth token
+  let accessToken: string;
+  try {
+    const authRes = await axios.post(
+      OAUTH_URL,
+      new URLSearchParams({
+        grant_type:     'client_credentials',
+        client_id:      PHONEPE_CLIENT_ID,
+        client_secret:  PHONEPE_CLIENT_SECRET,
+        client_version: PHONEPE_CLIENT_VERSION,
+      } as Record<string, string>),
+      { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+    );
+    console.log('📣 OAuth response:', authRes.data);
+    accessToken = authRes.data.access_token;
+    if (!accessToken) throw new Error('No access_token');
+  } catch (e: any) {
+    console.error('❌ OAuth error:', e.response?.data || e.message);
+    return NextResponse.json(
+      { error: 'Auth failed', details: e.response?.data || e.message },
+      { status: 502 }
+    );
+  }
+
+  // 4) build v2 body
+  const body = {
+    merchantOrderId,
+    amount:      Math.round(amount * 100),
+    expireAfter: 1200,
+    metaInfo: {
+      udf1: `course-${courseId}`,
+      udf2: `user-${user._id}`,
+    },
+    paymentFlow: {
+      type:         'PG_CHECKOUT',
+      message:      'Please complete your payment on PhonePe',
+      merchantUrls: { redirectUrl },
     },
   };
+  console.log('📤 Pay body:', body);
 
-  // 4) Encode and sign the payload
-  const base64 = Buffer.from(JSON.stringify(payload)).toString("base64");
-  const toSign = base64 + "/pg/checkout/v2/pay" + SALT_KEY;
-  const hash = crypto.createHash("sha256").update(toSign).digest("hex");
-  const checksum = `${hash}###${SALT_INDEX}`;
-
+  // 5) call Pay endpoint
   try {
-    // 5) Get OAuth access token
-    const tokenRes = await axios.post(
-      OAUTH_URL,
-      new URLSearchParams(
-        Object.entries({
-          grant_type: "client_credentials",
-          client_id: CLIENT_ID,
-          client_secret: CLIENT_SECRET,
-          client_version: CLIENT_VERSION, // This should be set in your env
-        }).reduce((acc, [key, value]) => {
-          if (value !== undefined) acc[key] = value;
-          return acc;
-        }, {} as Record<string, string>)
-      ),
-      {
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-      }
-    );
+    const resp = await axios.post(PAY_URL, body, {
+      headers: {
+        'Content-Type': 'application/json',
+        Accept:         'application/json',
+        Authorization:  `O-Bearer ${accessToken}`,
+      },
+    });
+    console.log('✅ Pay raw response:', resp.data);
 
-    const accessToken = tokenRes.data.access_token;
-    console.log("PhonePe access token received:", accessToken);
-    if (!accessToken) {
-      throw new Error("PhonePe access token not received.");
+    // handle both possible shapes:
+    const top = resp.data;
+    const nested = top.data;
+    const orderId =
+      (nested && nested.orderId) ||
+      top.orderId ||
+      top.data?.orderId;
+    const redirect =
+      (nested &&
+        nested.instrumentResponse?.redirectInfo?.url) ||
+      top.redirectUrl ||
+      top.data?.redirectUrl;
+
+    console.log('🔀 Parsed orderId:', orderId);
+    console.log('🔀 Parsed redirectUrl:', redirect);
+
+    if (!orderId || !redirect) {
+      console.error('❌ Unexpected response shape:', resp.data);
+      throw new Error('Malformed pay response');
     }
 
-    // 6) Call Create Payment API
-    const payRes = await axios.post(
-      PAYMENT_URL,
-      { request: base64 },
-      {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          Accept: "application/json",
-          "Content-Type": "application/json",
-          "X-VERIFY": checksum,
-          "X-MERCHANT-ID": MERCHANT_ID,
-        },
-      }
-    );
-
-    const redirectUrl = payRes.data.data?.instrumentResponse?.redirectInfo?.url;
-    if (!redirectUrl) {
-      throw new Error("PhonePe payment URL not returned.");
-    }
-
-    return NextResponse.json({ redirectUrl, transactionId });
-
-  } catch (err: any) {
-    console.error("PhonePe initiation error:", err.response?.data || err.message);
+    return NextResponse.json({ orderId, redirectUrl: redirect });
+  } catch (e: any) {
+    console.error('❌ Pay API error:', e.response?.data || e.message);
     return NextResponse.json(
-      { error: "Payment initiation failed", details: err.response?.data || err.message },
-      { status: 500 }
+      { error: 'Payment initiation failed', details: e.response?.data || e.message },
+      { status: 502 }
     );
   }
 }
