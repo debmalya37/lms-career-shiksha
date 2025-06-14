@@ -1,95 +1,168 @@
 "use client";
 
-import React, { useState } from "react";
-import { FiMenu, FiX, FiHome, FiBookOpen, FiVideo, FiLayers, FiFileText, FiPhone } from "react-icons/fi";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { usePathname } from "next/navigation";
+import {
+  FiMenu,
+  FiX,
+  FiHome,
+  FiBookOpen,
+  FiVideo,
+  FiLayers,
+  FiFileText,
+  FiPhone,
+} from "react-icons/fi";
+import { BellIcon, UserIcon } from "@heroicons/react/24/solid";
 import Logo from "../../public/image/logo.jpeg";
+import NotificationPopup from "@/components/NotificationPopup";
 
-const Navbar: React.FC = () => {
-  const [isOpen, setIsOpen] = useState(false);
+interface AdminNotification {
+  _id: string;
+  text: string;
+  createdAt: string;
+}
+interface Props {
+  latestLiveClasses: any[];
+  latestTutorial: any;
+  latestCourse: any;
+  adminNotifications: AdminNotification[];
+}
 
-  const toggleNavbar = () => {
-    setIsOpen((prev) => !prev);
-  };
+const Navbar: React.FC = () => 
+  {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+  const pathname = usePathname();
+  const sidebarRef = useRef<HTMLDivElement>(null);
+  const [latestLiveClasses, setLatestLiveClasses] = useState<any[]>([]);
+const [latestTutorial, setLatestTutorial] = useState<any>(null);
+const [latestCourse, setLatestCourse] = useState<any>(null);
+const [adminNotifications, setAdminNotifications] = useState<AdminNotification[]>([]);
+
+
+  const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
+  const toggleNotification = () => setIsNotificationOpen(!isNotificationOpen);
+
+  const navLinks = [
+    { name: "Home", href: "/", icon: <FiHome /> },
+    { name: "Courses", href: "/courses", icon: <FiBookOpen /> },
+    { name: "Tutorials", href: "/tutorials", icon: <FiVideo /> },
+    { name: "Live", href: "/live", icon: <FiLayers /> },
+    { name: "Test Series", href: "/test-series", icon: <FiFileText /> },
+    { name: "Contact", href: "/contact", icon: <FiPhone /> },
+  ];
+
+
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      try {
+        const res = await fetch("/api/notifications");
+        const data = await res.json();
+  
+        setLatestLiveClasses(data.latestLiveClasses || []);
+        setLatestTutorial(data.latestTutorial || null);
+        setLatestCourse(data.latestCourse || null);
+        setAdminNotifications(data.adminNotifications || []);
+      } catch (err) {
+        console.error("Failed to fetch notification data:", err);
+      }
+    };
+  
+    fetchNotifications();
+  }, []);
+  
+
+  // Close sidebar when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        sidebarRef.current &&
+        !sidebarRef.current.contains(event.target as Node)
+      ) {
+        setSidebarOpen(false);
+      }
+    }
+    if (sidebarOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    } else {
+      document.removeEventListener("mousedown", handleClickOutside);
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [sidebarOpen]);
 
   return (
-    <>
-      {/* Sidebar */}
-      <div
-        className={`fixed top-0 left-0 h-full bg-gray-900 text-white w-64 p-5 z-50 transform ${
-          isOpen ? "translate-x-0" : "-translate-x-64"
-        } transition-transform duration-300 ease-in-out`}
-      >
-        {/* Logo and Close Button */}
-        <div className="flex items-center justify-between mb-6">
-          <Link href="/" className="flex items-center space-x-3">
-            <Image src={Logo} alt="Career Shiksha Logo" width={40} height={40} className="rounded-full" />
-            <span className="text-xl font-bold tracking-wide">Career Shiksha</span>
-          </Link>
-          <button title="close" onClick={toggleNavbar} className="text-blue focus:outline-none">
-            <FiX className="h-6 w-6" />
+    <div className="relative z-50">
+      {/* Top Navbar */}
+      <header className="bg-white shadow-md fixed w-full z-50 h-16">
+
+        <div className="flex items-center justify-between px-4 py-3 md:px-6">
+          {/* Menu Toggle */}
+          <button onClick={toggleSidebar} className="text-blue-700">
+            {sidebarOpen ? <FiX size={24} /> : <FiMenu size={24} />}
           </button>
+
+          {/* Logo */}
+          <Link href="/" className="flex items-center space-x-2">
+            <Image src={Logo} alt="Logo" width={40} height={40} className="rounded-full" />
+            <span className="font-bold text-lg text-blue-900">Career Shiksha</span>
+          </Link>
+
+          {/* Notification & Profile */}
+          <div className="flex items-center space-x-4">
+            <BellIcon
+              className="h-6 w-6 text-blue-600 cursor-pointer"
+              onClick={toggleNotification}
+            />
+            <Link href="/profile">
+              <UserIcon className="h-6 w-6 text-blue-600 cursor-pointer" />
+            </Link>
+          </div>
         </div>
+      </header>
 
-        {/* Navigation Links */}
-        <nav className="space-y-4">
-          <Link href="/" className="flex items-center space-x-3 p-2 rounded hover:bg-blue-700">
-            <FiHome className="h-5 w-5" />
-            <span>Home</span>
-          </Link>
-          <Link href="/tutorials" className="flex items-center space-x-3 p-2 rounded hover:bg-blue-700">
-            <FiBookOpen className="h-5 w-5" />
-            <span>Tutorials</span>
-          </Link>
-          <Link href="/live-classes" className="flex items-center space-x-3 p-2 rounded hover:bg-blue-700">
-            <FiVideo className="h-5 w-5" />
-            <span>Live Classes</span>
-          </Link>
-          <Link href="/courses" className="flex items-center space-x-3 p-2 rounded hover:bg-blue-700">
-            <FiLayers className="h-5 w-5" />
-            <span>Courses</span>
-          </Link>
-          <Link href="/notes" className="flex items-center space-x-3 p-2 rounded hover:bg-blue-700">
-            <FiFileText className="h-5 w-5" />
-            <span>Notes</span>
-          </Link>
-          <Link href="/leaderboard" className="flex items-center space-x-3 p-2 rounded hover:bg-blue-700">
-            <FiFileText className="h-5 w-5" />
-            <span>Leaderboard</span>
-          </Link>
-          <Link href="/contact" className="flex items-center space-x-3 p-2 rounded hover:bg-blue-700">
-            <FiPhone className="h-5 w-5" />
-            <span>Contact</span>
-          </Link>
-        </nav>
-      </div>
-
-      {/* Toggle Button */}
-      {!isOpen && (
-        <button
-        title="menu"
-        onClick={toggleNavbar}
-        className="fixed top-11 left-5 bg-gray-900 text-white p-2 rounded z-[51] focus:outline-none"
-      >
-         <FiMenu className="h-6 w-6" />
-      </button>
+      {/* Sidebar Overlay */}
+      {sidebarOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 z-40 transition-opacity md:hidden" />
       )}
-      {/* <button
-        onClick={toggleNavbar}
-        className="fixed top-5 left-5 bg-gray-900 text-white p-2 rounded z-[51] focus:outline-none"
-      >
-        {isOpen ? <FiX className="h-0 w-0 md:hidden" /> : <FiMenu className="h-6 w-6" />}
-      </button> */}
 
-      {/* Overlay when sidebar is open */}
-      {isOpen && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-40"
-          onClick={toggleNavbar}
-        />
-      )}
-    </>
+      {/* Sidebar */}
+      <aside
+        ref={sidebarRef}
+        className={`fixed top-0 left-0 h-full w-64 bg-white shadow-lg z-50 transform transition-transform duration-300 ease-in-out ${
+          sidebarOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
+        <div className="mt-16 p-4 space-y-4">
+          {navLinks.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              onClick={() => setSidebarOpen(false)}
+              className={`flex items-center space-x-3 text-gray-700 hover:text-blue-700 font-medium ${
+                pathname === link.href ? "text-blue-700" : ""
+              }`}
+            >
+              <span className="text-lg">{link.icon}</span>
+              <span>{link.name}</span>
+            </Link>
+          ))}
+        </div>
+      </aside>
+
+      {/* Notification Popup */}
+      {isNotificationOpen && (
+  <NotificationPopup
+    close={() => setIsNotificationOpen(false)}
+    latestLiveClasses={latestLiveClasses}
+    latestTutorial={latestTutorial}
+    latestCourse={latestCourse}
+    adminNotifications={adminNotifications}
+  />
+)}
+
+    </div>
   );
 };
 

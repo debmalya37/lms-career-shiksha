@@ -1,16 +1,18 @@
+// app/layout.tsx
+
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+
 import Navbar from "@/components/Navbar";
-import 'stream-chat-react/dist/css/v2/index.css';   // ← v2 stylesheet
 import "./globals.css";
-import { Toaster } from "@/components/ui/toaster";
+import 'stream-chat-react/dist/css/v2/index.css';
 import '../lib/subscriptionCron';
-// import './globals.css'; 
 
 import AuthProvider from "@/context/AuthProvider";
-// import { startSubscriptionCron } from "../lib/subscriptionCron";
+import DisableRightClick from "@/components/DisableRightClick";
+import { Toaster } from "@/components/ui/toaster";
 import Footer from "@/components/Footer";
-import DisableRightClick from "@/components/DisableRightClick"; // Import the client component
+
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -18,10 +20,6 @@ export const metadata: Metadata = {
   title: "Career Shiksha Learning Portal",
   description: "Learning Management System",
 };
-
-// if (typeof window === "undefined") {
-//   startSubscriptionCron(); // Ensure this runs only on the server
-// }
 
 export default function RootLayout({
   children,
@@ -31,10 +29,21 @@ export default function RootLayout({
   return (
     <html lang="en">
       <AuthProvider>
-        <body className={`${inter.className} bg-gradient-to-b from-gray-100 to-blue-100`} >
+        <body
+          className={`${inter.className} bg-gradient-to-b from-gray-100 to-blue-100`}
+        >
+          {/* Fixed Navbar */}
           <Navbar />
+
+          {/* Prevent right‑click */}
           <DisableRightClick />
-          {children}
+
+          {/* Main content pushed below the 64px navbar */}
+          <main className="pt-16">
+            {children}
+          </main>
+
+          {/* Global UI */}
           <Toaster />
           <Footer />
         </body>

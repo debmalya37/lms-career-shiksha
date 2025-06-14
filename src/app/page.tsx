@@ -260,7 +260,7 @@ const CourseCard = ({
           </div>
         )}
 
-        {/* Top Navbar Icons */}
+        {/* Top Navbar Icons
         <div className="relative flex justify-end mt-6">
           <div className="flex items-center space-x-4 absolute right-0">
             <BellIcon
@@ -271,9 +271,9 @@ const CourseCard = ({
               <UserIcon className="h-8 w-8 text-blue-600 cursor-pointer" />
             </Link>
           </div>
-        </div>
+        </div> */}
 
-        {isNotificationOpen && (
+        {/* {isNotificationOpen && (
           <NotificationPopup
             close={() => setIsNotificationOpen(false)}
             latestLiveClasses={latestLiveClasses}
@@ -281,7 +281,7 @@ const CourseCard = ({
             latestCourse={latestCourse}
             adminNotifications={adminNotifications}
           />
-        )}
+        )} */}
 
         {/* Main Body */}
         <div className="p-4 flex-1 overflow-auto">
