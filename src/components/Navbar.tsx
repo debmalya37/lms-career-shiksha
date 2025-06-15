@@ -47,11 +47,10 @@ const [adminNotifications, setAdminNotifications] = useState<AdminNotification[]
 
   const navLinks = [
     { name: "Home", href: "/", icon: <FiHome /> },
-    { name: "Courses", href: "/courses", icon: <FiBookOpen /> },
-    { name: "Tutorials", href: "/tutorials", icon: <FiVideo /> },
-    { name: "Leaderboard", href: "/leaderboard", icon: <FiVideo /> },
-    { name: "Live", href: "/live", icon: <FiLayers /> },
-    { name: "Test Series", href: "/test-series", icon: <FiFileText /> },
+    { name: "My Courses", href: "/courses", icon: <FiBookOpen /> },
+    { name: "My Tutorials", href: "/tutorials", icon: <FiVideo /> },
+    { name: "My Leaderboard", href: "/leaderboard", icon: <FiVideo /> },
+    { name: "My Live Classes", href: "/live-classes", icon: <FiLayers /> },
     { name: "Contact", href: "/contact", icon: <FiPhone /> },
   ];
 
