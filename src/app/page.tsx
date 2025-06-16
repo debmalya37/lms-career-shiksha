@@ -162,7 +162,7 @@ export default function Home() {
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentAdIndex((prevIndex) => (prevIndex + 1) % bannerAds.length);
-    }, 10000);
+    }, 4000);
     return () => clearInterval(interval);
   }, [bannerAds]);
 
