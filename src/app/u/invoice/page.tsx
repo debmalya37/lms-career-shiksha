@@ -51,6 +51,26 @@ export default function UserInvoicePage() {
     fetchUserInvoices();
   }, [status, router]);
 
+  const handleDownload = async (invoiceId: string) => {
+    try {
+      const res = await fetch(`/api/invoices/${invoiceId}/download`);
+      if (!res.ok) throw new Error('Failed to download invoice');
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${invoiceId}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Download error:', error);
+      alert('Failed to download invoice. Please try again.');
+    }
+  };
+
   if (loading) return <p className="text-center mt-10">Loading invoices...</p>;
   if (invoices.length === 0) return <p className="text-center mt-10">No invoices found for your account.</p>;
 
@@ -82,14 +102,12 @@ export default function UserInvoicePage() {
                   {new Date(inv.createdAt).toLocaleDateString()}
                 </td>
                 <td className="px-3 py-2 border text-center">
-                  <a
-                    href={`/api/invoices/${inv.invoiceId}/download`}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  <button
+                    onClick={() => handleDownload(inv.invoiceId)}
                     className="text-indigo-600 hover:underline"
                   >
                     PDF
-                  </a>
+                  </button>
                 </td>
               </tr>
             ))}
