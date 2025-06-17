@@ -184,7 +184,7 @@ const handlePurchase = useCallback(async () => {
  // inside handlePurchase()
 if (redirect) {
   // open PhonePe in external browser window
-  window.open(redirect, '_blank', 'noopener,noreferrer');
+  window.location.href = redirect;
 } else {
   console.error("No redirect URL in response:", data);
   alert("Could not initiate payment. Please try again.");
