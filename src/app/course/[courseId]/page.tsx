@@ -181,12 +181,15 @@ const handlePurchase = useCallback(async () => {
    data.redirect ??
    data.data?.instrumentResponse?.redirectInfo?.url;
 
- if (redirect) {
-   window.location.href = redirect;
- } else {
-   console.error("No redirect URL in response:", data);
-   alert("Could not initiate payment. Please try again.");
- }
+ // inside handlePurchase()
+if (redirect) {
+  // open PhonePe in external browser window
+  window.open(redirect, '_blank', 'noopener,noreferrer');
+} else {
+  console.error("No redirect URL in response:", data);
+  alert("Could not initiate payment. Please try again.");
+}
+
 } catch (err: any) {
  console.error("Payment initiation error:", err.response?.data || err.message);
  alert("Error initiating payment. Please try again.");
