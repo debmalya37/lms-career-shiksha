@@ -144,9 +144,10 @@ export async function GET(req: NextRequest) {
     ? ""
     : encodeURIComponent(course.title);
     const admissionUrl = new URL(
-      `/admission?courseId=${courseId}&courseName=${courseName}`,
+      `/admission?courseId=${courseId}&courseName=${courseName}&transactionId=${orderId}`,
       req.url
     );
+    
     return NextResponse.redirect(admissionUrl, 303);
   }
 

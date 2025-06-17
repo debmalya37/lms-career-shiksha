@@ -15,6 +15,7 @@ export interface IAdmission extends Document {
   dob:               Date;
   profileImageUrl:   string;
   aadhaarFrontUrl:   string;
+  transactionId:     string;
   aadhaarBackUrl:    string;
   createdAt:         Date;
   updatedAt:         Date;
@@ -35,6 +36,7 @@ const AdmissionSchema = new Schema<IAdmission>(
     dob:             { type: Date,   required: true },
     profileImageUrl: { type: String, required: true },
     aadhaarFrontUrl: { type: String, required: true },
+    transactionId:   { type: String, required: true },
     aadhaarBackUrl:  { type: String, required: true },
   },
   { timestamps: true }

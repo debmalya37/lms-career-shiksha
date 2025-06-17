@@ -32,7 +32,7 @@ export default function AdmissionForm() {
     "Maharashtra": ["Mumbai","Pune","Nagpur"],
     // …etc
   };
-
+  
   const indianStates = [
     "Andhra Pradesh",
     "Arunachal Pradesh",
@@ -87,42 +87,85 @@ export default function AdmissionForm() {
     const file = e.target.files?.[0] || null;
     setFormData((f) => ({ ...f, [field]: file }));
   };
-
+  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+  
+    // Step 1: Prepare admission form data
     const payload = new FormData();
-    payload.append("courseId",   formData.courseId);
-    payload.append("name",       formData.name);
+    payload.append("courseId", formData.courseId);
+    payload.append("name", formData.name);
     payload.append("fatherName", formData.fatherName);
-    payload.append("phone",      formData.phone);
-    payload.append("email",      formData.email);
-    payload.append("address1",   formData.address1);
-    payload.append("address2",   formData.address2);
-    payload.append("state",      formData.state);
-    payload.append("city",       formData.city);
-    payload.append("dob",        formData.dob);
-    if (formData.photoOfCandidate) 
+    payload.append("phone", formData.phone);
+    payload.append("email", formData.email);
+    payload.append("address1", formData.address1);
+    payload.append("address2", formData.address2);
+    payload.append("state", formData.state);
+    payload.append("city", formData.city);
+    payload.append("dob", formData.dob);
+  
+    if (formData.photoOfCandidate)
       payload.append("photoOfCandidate", formData.photoOfCandidate);
-    if (formData.aadhaarFront) 
+    if (formData.aadhaarFront)
       payload.append("aadhaarFront", formData.aadhaarFront);
-    if (formData.aadhaarBack) 
+    if (formData.aadhaarBack)
       payload.append("aadhaarBack", formData.aadhaarBack);
-
+  
     try {
-      const res = await fetch("/api/admission", {
+      // Step 2: Submit admission
+      const transactionId = searchParams.get("transactionId") || "";
+const admissionRes = await fetch(`/api/admission?transactionId=${transactionId}`, {
+
         method: "POST",
         body: payload,
       });
-      const data = await res.json();
-      if (res.ok) {
-        router.push("/");
-      } else {
-        alert(data.error || "Submission failed");
+      const admissionData = await admissionRes.json();
+      console.log("admissionData:", admissionData);
+      const admissionFormId = admissionData.admissionId;
+
+      if(admissionData.ok) {
+        alert("Admission submitted successfully!");
+        console.log("Admission successful:", admissionData);
       }
+      if (!admissionRes.ok) {
+        alert(admissionData.error || "Admission submission failed");
+        return;
+      }
+      
+      console.log("admissionData:", admissionData);
+      // Step 3: Generate invoice after admission
+      const invoiceRes = await fetch("/api/invoices", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          admissionFormId,
+          studentName: admissionData.name,
+          phone: admissionData.phone,
+          email: admissionData.email,
+          courseId: admissionData.courseId,
+          transactionId: searchParams.get("transactionId") || "",
+        }),
+
+        
+      });
+  
+      const invoiceData = await invoiceRes.json();
+  
+      if (!invoiceRes.ok) {
+        alert(invoiceData.error || "Invoice generation failed");
+        return;
+      }
+  
+      // Step 4: All successful — redirect
+      router.push("/");
     } catch (err: any) {
-      alert(err.message || "Unknown error");
+      console.error("Error:", err);
+      alert(err.message || "Something went wrong");
     }
   };
+  
 
   return (
     <div className="max-w-3xl mx-auto p-6">

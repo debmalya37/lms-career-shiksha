@@ -25,6 +25,14 @@ async function uploadToCloudinary(buffer: Buffer, folder: string): Promise<strin
 
 export async function POST(req: NextRequest) {
   await connectMongo();
+  // Get transactionId from search params
+  const { searchParams } = new URL(req.url);
+  const transactionId = searchParams.get("transactionId");
+
+  if (!transactionId) {
+    return NextResponse.json({ error: 'Missing transactionId' }, { status: 400 });
+  }
+
   const form = await req.formData();
 
   // required textual fields
@@ -99,6 +107,7 @@ export async function POST(req: NextRequest) {
       profileImageUrl,
       aadhaarFrontUrl,
       aadhaarBackUrl,
+      transactionId,
     });
     return NextResponse.json({ success: true, admissionId: admission._id });
   } catch (err: any) {
