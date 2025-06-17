@@ -90,6 +90,9 @@ const AdminPanel = () => {
         <Link href="/admin/bannerAds" className="bg-blue-950 text-white p-6 rounded-lg shadow-md text-center">
           <h2 className="text-xl font-semibold">Manage Ads Banner</h2>
         </Link>
+        <Link href="/admin/admissionData" className="bg-blue-950 text-white p-6 rounded-lg shadow-md text-center">
+          <h2 className="text-xl font-semibold">Manage Admission data</h2>
+        </Link>
         <Link href="/admin/promocodes" className="bg-blue-950 text-white p-6 rounded-lg shadow-md text-center">
           <h2 className="text-xl font-semibold">Manage Promocodes</h2>
         </Link>
