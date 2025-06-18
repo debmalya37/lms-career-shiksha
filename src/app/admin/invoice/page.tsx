@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { FiPlus, FiX } from "react-icons/fi";
-import { pdf } from "@react-pdf/renderer";
+// import { pdf } from "@react-pdf/renderer";
 import { InvoiceDocument } from "@/components/InvoiceDocument";
 
 interface CourseOption {
@@ -229,6 +229,7 @@ const filteredInvoices = invoices.filter(inv => {
   // Download PDF
   const handleDownload = async (inv: Invoice) => {
     try {
+      const { pdf } = await import('@react-pdf/renderer');
       const blob = await pdf(<InvoiceDocument invoice={{ ...inv, studentAddress: `${inv.address1} ${inv.address2 || ""}` }} />).toBlob();
       // const blob = await pdf(<InvoiceDocument invoice={inv} />).toBlob();
       const url = URL.createObjectURL(blob);

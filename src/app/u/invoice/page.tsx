@@ -2,22 +2,16 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { pdf } from '@react-pdf/renderer';
+// import { pdf } from '@react-pdf/renderer';
 import { InvoiceDocument } from '@/components/InvoiceDocument';
-import { Font } from '@react-pdf/renderer';
+// import { Font } from '@react-pdf/renderer';
 
 // // ✅ Correct way to register a TTF font
 // Font.register({
 //   family: 'Roboto',
 //   src: '/fonts/Roboto-Regular.ttf'  // must be a local file served correctly
 // });
-Font.register({
-  family: 'Poppins',
-  fonts: [
-    { src: '/fonts/Poppins-Regular.ttf' },
-    { src: '/fonts/Poppins-Bold.ttf', fontWeight: 'bold' },
-  ],
-});
+
 
 
 interface Invoice {
@@ -62,6 +56,15 @@ export default function UserInvoicePage() {
   const handleDownload = async (inv: Invoice) => {
     try {
       setBusyId(inv._id);
+
+      const { pdf, Font } = await import('@react-pdf/renderer');
+      Font.register({
+        family: 'Poppins',
+        fonts: [
+          { src: '/fonts/Poppins-Regular.ttf' },
+          { src: '/fonts/Poppins-Bold.ttf', fontWeight: 'bold' },
+        ],
+      });
       // 1) Create a PDF instance from our React PDF document
       const blob = await pdf(<InvoiceDocument invoice={inv} />).toBlob();
       // 2) Turn it into a downloadable URL

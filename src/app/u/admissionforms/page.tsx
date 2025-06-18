@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from "react";
-import { pdf } from '@react-pdf/renderer';
+// import { pdf } from '@react-pdf/renderer';
 import { AdmissionDocument } from "@/components/AdmissionDocument";
 import { AdmissionFormPreview } from "@/components/AdmissionFormPreview";
 import Image from "next/image";
@@ -60,6 +60,7 @@ export default function UserAdmissionListPage() {
   const handleDownload = async (adm: Admission) => {
     setBusyId(adm._id);
     try {
+      const { pdf } = await import('@react-pdf/renderer');
       const [profileBase64, frontBase64, backBase64] = await Promise.all([
         adm.profileImageUrl ? getBase64ImageFromUrl(adm.profileImageUrl) : null,
         adm.aadhaarFrontUrl ? getBase64ImageFromUrl(adm.aadhaarFrontUrl) : null,
