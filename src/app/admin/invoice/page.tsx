@@ -1,10 +1,14 @@
 "use client";
-export const dynamic = "force-dynamic";
+// export const dynamic = "force-dynamic";
 
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { FiPlus, FiX } from "react-icons/fi";
-import InvoiceTable from "@/components/InvoiceTable";
+// import InvoiceTable from "@/components/InvoiceTable";
+import dynamic from "next/dynamic";
+const InvoiceTable = dynamic(() => import("@/components/InvoiceTable"), {
+  ssr: false,
+});
 
 
 interface CourseOption {
