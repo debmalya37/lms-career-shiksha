@@ -5,29 +5,44 @@ import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
 import Image from "next/image";
 import logo from "../../public/image/logo.jpeg";
+import { IDCardPreview } from "./IDCardPreview";
+
+import dayjs from "dayjs";
 
 interface AdmissionData {
+  _id: string;
   name: string;
+  email: string;
   profileImageUrl?: string;
   createdAt: string;
+  gender: string;
+  phone: string;
+  studentid: string;
+  course: string[]; // course names
 }
 
 interface ProfileData {
+  _id?: string;
+  profileImageUrl?: string;
   name: string;
   email: string;
-  subscription: number;   // number of days of subscription
+  subscription: number;
+  courses: Array<{ title: string }>; 
 }
+
 
 export default function IDCard() {
   const [admission, setAdmission] = useState<AdmissionData | null>(null);
-  const [profile, setProfile]     = useState<ProfileData | null>(null);
-  const [error, setError]         = useState<string | null>(null);
-  const [flipped, setFlipped]     = useState(false);
+  const [profile, setProfile] = useState<ProfileData | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [flipped, setFlipped] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [userProfile, setUserprofile] = useState<ProfileData | null>(null);
 
   const frontRef = useRef<HTMLDivElement>(null);
-  const backRef  = useRef<HTMLDivElement>(null);
+  const backRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  // 1) Try to fetch admission; fallback to profile
   useEffect(() => {
     fetch("/api/admission/me")
       .then(async (res) => {
@@ -45,9 +60,12 @@ export default function IDCard() {
             setError(prof.error);
           } else {
             setProfile({
-              name:         prof.name,
-              email:        prof.email,
-              subscription: prof.subscription, // days
+              name: prof.name,
+              email: prof.email,
+              subscription: prof.subscription,
+              courses: prof.courses || [],
+              _id: prof._id,
+
             });
           }
         } else {
@@ -55,6 +73,64 @@ export default function IDCard() {
         }
       });
   }, []);
+
+  useEffect(() => {
+    async function fetchProfile() {
+      try {
+        const res = await fetch(`/api/profile`, {
+          method: "GET",
+          credentials: "include", // Ensure cookies are sent
+        });
+        const profile = await res.json();
+        if (!profile.error) {
+          setUserprofile(profile);
+          setProfile({
+            name: profile.name,
+            email: profile.email,
+            subscription: profile.subscription,
+            courses: profile.courses || [],
+           
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching profile:", error);
+      }
+    }
+    fetchProfile();
+  }, []);
+
+  // snapshot helper
+  async function snapshotElement(el: HTMLDivElement) {
+    const canvas = await html2canvas(el, {
+      scale: 3,
+      useCORS: true,
+      backgroundColor: null,
+    });
+    return canvas.toDataURL("image/png");
+  }
+
+  const downloadCardAsPdf = async () => {
+    if (!containerRef.current) return;
+    try {
+      const imgData = await snapshotElement(containerRef.current);
+      // Create a4 jsPDF
+      const pdf = new jsPDF({
+        orientation: "landscape",
+        unit: "pt",
+        format: "a4",
+      });
+      const pageWidth  = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      // draw image full page
+      pdf.addImage(imgData, "PNG", 0, 0, pageWidth, pageHeight);
+      // filename
+      const id = admission?._id || profile?._id || "idcard";
+      pdf.save(`IDCard_${id}.pdf`);
+    } catch (e) {
+      console.error("Error generating PDF", e);
+      alert("Failed to download ID card. Please try again.");
+    }
+  };
 
   if (error) {
     return (
@@ -73,16 +149,20 @@ export default function IDCard() {
   }
 
   // Source data
-  const name       = admission?.name || profile!.name;
-  const email      = profile?.email;
-  const profileImg = admission?.profileImageUrl;
+  const name       = admission?.name || profile?.name || "Student";
+const email      = profile?.email || admission?.email || "—";
+const profileImg = admission?.profileImageUrl || profile?.profileImageUrl;
+const imgUrl     = admission?.profileImageUrl || profile?.profileImageUrl;
+// const courses    = admission?.course?.length ? admission.course : profile?.courses?.map(c => c.title) || [];
+
   const issueDate  = admission
     ? new Date(admission.createdAt)
     : new Date();
   // expiry = issue + subscription days
   const expiryDate = profile
-    ? new Date(issueDate.getTime() + profile.subscription * 24 * 60 * 60 * 1000)
+    ? new Date(issueDate.getTime() + (userProfile?.subscription || 0) * 24 * 60 * 60 * 1000)
     : new Date(issueDate.setFullYear(issueDate.getFullYear() + 1));
+   
 
   const fmt = (d: Date) =>
     d.toLocaleDateString(undefined, {
@@ -120,73 +200,45 @@ export default function IDCard() {
   }
 
   // Data‐only PDF
-  const downloadDataPdf = async () => {
-    const doc = new jsPDF({ unit: "px", format: "a4" });
-    let y = 60;
-    doc.setFontSize(22).text("Student ID Card Data", 40, y);
-    y += 30;
-    doc.setFontSize(12).text(`Name: ${name}`, 40, y);
-    y += 20;
-    if (email) {
-      doc.text(`Email: ${email}`, 40, y);
-      y += 20;
-    }
-    doc.text(`Issue Date: ${fmt(issueDate)}`, 40, y);
-    y += 20;
-    doc.text(`Expiry Date: ${fmt(expiryDate)}`, 40, y);
-
-    if (profileImg) {
-      const img = document.createElement("img");
-      img.crossOrigin = "anonymous";
-      img.src         = profileImg;
-      img.onload      = () => {
-        doc.addImage(img, "JPEG", 400, 60, 100, 100);
-        doc.addPage();
-        doc.setFontSize(16).text("Terms & Conditions", 40, 60);
-        doc.setFontSize(10);
-        let ty = 90;
-        [
-          "1. This ID card is non-transferable.",
-          "2. Valid only for the enrolled course and duration.",
-          "3. Carry at every class or session.",
-          "4. Report loss immediately to administration.",
-          "5. Use implies acceptance of all policies.",
-        ].forEach((line) => {
-          doc.text(line, 40, ty);
-          ty += 20;
-        });
-        doc.save(`IDCard_${name.replace(/\s+/g, "_")}.pdf`);
-      };
-    } else {
-      doc.addPage();
-      doc.setFontSize(16).text("Terms & Conditions", 40, 60);
-      doc.setFontSize(10);
-      let ty = 90;
-      [
-        "1. This ID card is non-transferable.",
-        "2. Valid only for the enrolled course and duration.",
-        "3. Carry at every class or session.",
-        "4. Report loss immediately to administration.",
-        "5. Use implies acceptance of all policies.",
-      ].forEach((line) => {
-        doc.text(line, 40, ty);
-        ty += 20;
-      });
-      doc.save(`IDCard_${name.replace(/\s+/g, "_")}.pdf`);
-    }
+  const downloadIDCardPdf = () => {
+    const id = admission?._id || profile?._id;
+    if (!id) return;
+  
+    const link = document.createElement("a");
+    link.href = `/api/idcard/pdf/${id}`;
+    link.target = "_blank";
+    link.click();
   };
+  
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-indigo-900 to-black flex flex-col items-center justify-center p-6 space-y-4">
-      <button
-        onClick={downloadDataPdf}
+      {/* <button
+        onClick={downloadCardAsPdf}
         className="bg-teal-400 hover:bg-teal-500 text-black font-semibold px-6 py-2 rounded-full shadow-xl transition"
       >
         📥 Download Data‐Only PDF
+      </button> */}
+      <button
+        onClick={() => setPreviewOpen(true)}
+        className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded"
+      >
+        Preview ID Card
       </button>
 
+      {previewOpen && (
+        <IDCardPreview
+          name={name}
+          email={email}
+          profileImageUrl={imgUrl}
+          issueDate={issueDate}
+          expiryDate={expiryDate}
+          onClose={() => setPreviewOpen(false)}
+        />
+      )}
+
       {/* 3D Flip Card */}
-      <div className="relative w-full max-w-sm aspect-[420/260] perspective">
+      <div ref={containerRef} className="relative w-full max-w-sm aspect-[420/260] perspective">
         <div
           className={`relative w-full h-full transform-style preserve-3d transition-transform duration-700 ${
             flipped ? "rotate-y-180" : ""
@@ -232,6 +284,13 @@ export default function IDCard() {
                       {email}
                     </p>
                   )}
+                  {/* {courses.length > 0 && (
+  <p>
+    <span className="opacity-75">Course:</span> {courses.join(", ")}
+  </p>
+)} */}
+
+
                   <div className="flex justify-between text-xs mt-2">
                     <div>
                       <span className="opacity-75">Issue:</span>
@@ -243,7 +302,7 @@ export default function IDCard() {
                       <br />
                       {fmt(expiryDate as unknown as Date)}
                     </div>
-                  </div>
+                  </div> 
                 </div>
               </div>
             </div>

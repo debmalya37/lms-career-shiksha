@@ -73,9 +73,12 @@ export default function ProfilePage() {
             readOnly
           />
         </div> */}
-        <Link className="bg-blue-950" href={"/u/purchases"}>Purchases</Link>
-
-        <Link href={"/u/admissionforms"} className="bg-blue-950">Admissions</Link>
+        {/* <Link className="bg-blue-950" href={"/u/purchases"}>Purchases</Link> */}
+<br />
+<div>
+        <Link href={"/u/admissionforms"} className="bg-blue-950 text-gray-50 p-2 rounded-md m-2">Admissions</Link>
+        </div>
+        <br />
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
           <input

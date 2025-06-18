@@ -16,6 +16,8 @@
     "@radix-ui/react-label": "^2.1.0",
     "@radix-ui/react-slot": "^1.1.0",
     "@radix-ui/react-toast": "^1.2.2",
+    "@react-pdf/renderer": "^4.3.0",
+    "@sparticuz/chromium-min": "^137.0.1",
     "@types/jspdf": "^2.0.0",
     "@types/youtube": "^0.1.0",
     "axios": "^1.7.7",

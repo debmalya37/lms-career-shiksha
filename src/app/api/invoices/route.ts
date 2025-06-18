@@ -11,113 +11,113 @@ import { v4 as uuidv4 } from 'uuid';
 export async function POST(req: NextRequest) {
   await connectMongo();
   const body = await req.json();
-  
+
   const {
-    
-    admissionFormId,   // may be undefined
+    admissionFormId,
     studentName: manualName,
     fatherName: manualFather,
-    studentAddress: manualAddress,
+    address1: manualAddress1,
+    address2: manualAddress2,
+    phone: manualPhone,
+    email: manualEmail,
     state: manualState,
     transactionId: manualTxn,
     courseId: manualCourseId,
-    originalPrice: manualOriginal,       // ← NEW
+    originalPrice: manualOriginal,
     discountedPrice: manualDiscounted,
-    email: manualEmail,   // ← NEW
   } = body;
+
   console.log("Incoming body:", body);
-  console.log("admissionFormId:", admissionFormId);
+
   let studentName: string,
       fatherName: string,
-      studentAddress: string,
+      address1: string,
+      address2: string | undefined,
+      phone: string,
+      email: string,
       state: string,
-      email: string, // Default to empty if not provided
       transactionId: string,
       course: ICourse;
 
-  // If admin passes a valid admissionFormId, pull defaults from that form:
+  // If admin passes a valid admissionFormId, pull from that form:
   if (admissionFormId && mongoose.isValidObjectId(admissionFormId)) {
     const form = await AdmissionForm.findById(admissionFormId).lean<IAdmission>();
     if (!form) {
       return NextResponse.json({ error: 'Admission form not found' }, { status: 404 });
     }
-    studentName    = form.name;
-    fatherName     = form.fatherName;
-    studentAddress = `${form.address1}${form.address2 ? ', ' + form.address2 : ''}, ${form.city}, ${form.state}`;
-    state          = form.state;
-    transactionId  = form.transactionId || manualTxn || '';
-    email = form.email || manualEmail || '';
+    studentName   = form.name;
+    fatherName    = form.fatherName;
+    address1      = form.address1;
+    address2      = form.address2;
+    phone         = form.phone;        // if your Admission model stores it
+    email         = form.email;
+    state         = form.state;
+    transactionId = form.transactionId || manualTxn || '';
 
-
-    // fetch course via form.courseId
-    const c = await Course.findById(form.courseId).lean<ICourse>();
-    if (!c) {
+    course = await Course.findById(form.courseId).lean<ICourse>() as ICourse;
+    if (!course) {
       return NextResponse.json({ error: 'Course not found' }, { status: 404 });
     }
-    course = c;
+
   } else {
     // No formId → require all manual fields plus a valid courseId
     if (
       !manualName ||
       !manualFather ||
-      !manualAddress ||
+      !manualAddress1 ||
+      !manualPhone ||
+      !manualEmail ||
       !manualState ||
       !manualCourseId ||
       !mongoose.isValidObjectId(manualCourseId)
     ) {
       return NextResponse.json(
-        { error: 'Provide either a valid admissionFormId or all student fields plus a valid courseId' },
+        {
+          error:
+            'Provide either a valid admissionFormId or all fields: studentName, fatherName, address1, phone, email, state, and a valid courseId'
+        },
         { status: 400 }
       );
     }
-    studentName    = manualName;
-    fatherName     = manualFather;
-    studentAddress = manualAddress;
-    state          = manualState;
-    transactionId  = manualTxn || '';
-    email          = manualEmail || '';
-    const c = await Course.findById(manualCourseId).lean<ICourse>();
-    if (!c) {
+    studentName   = manualName;
+    fatherName    = manualFather;
+    address1      = manualAddress1;
+    address2      = manualAddress2;
+    phone         = manualPhone;
+    email         = manualEmail;
+    state         = manualState;
+    transactionId = manualTxn || '';
+
+    course = await Course.findById(manualCourseId).lean<ICourse>() as ICourse;
+    if (!course) {
       return NextResponse.json({ error: 'Course not found' }, { status: 404 });
     }
-    course = c;
   }
 
   // Pricing & discount
-  // const originalPrice   = course.price;
-  // const discountedPrice = course.discountedPrice;
-  // const discount        = originalPrice - discountedPrice;
-
   const originalPrice = typeof manualOriginal === 'number'
     ? manualOriginal
     : course.price;
-
   const discountedPrice = typeof manualDiscounted === 'number'
     ? manualDiscounted
     : course.discountedPrice;
-
   const discount = originalPrice - discountedPrice;
 
+  // Tax breakdown (GST included)
+  const taxRate   = 0.18;
+  const baseAmt   = discountedPrice / (1 + taxRate);
+  let cgst = 0, sgst = 0, igst = 0;
+  if (state.trim().toUpperCase() === 'UP') {
+    cgst = baseAmt * 0.09;
+    sgst = baseAmt * 0.09;
+  } else {
+    igst = baseAmt * 0.18;
+  }
+  const taxAmount   = cgst + sgst + igst;
+  const totalAmount = discountedPrice;
 
-  // GST is included in discountedPrice
-const taxRate = 0.18;
-const baseAmount = discountedPrice / (1 + taxRate);
-
-let cgst = 0, sgst = 0, igst = 0;
-
-if (state.trim().toUpperCase() === 'UP') {
-  cgst = baseAmount * 0.09;
-  sgst = baseAmount * 0.09;
-} else {
-  igst = baseAmount * 0.18;
-}
-
-const taxAmount = cgst + sgst + igst;
-const totalAmount = discountedPrice; // No additional tax added
-
-
-  // Build invoice document
-   const invoiceId = `${new Date().toISOString().slice(0,10)}-${uuidv4().slice(-6)}`;
+  // Build and save invoice
+  const invoiceId = `${new Date().toISOString().slice(0,10)}-${uuidv4().slice(-6)}`;
   const inv = new Invoice({
     invoiceId,
     ...(admissionFormId && mongoose.isValidObjectId(admissionFormId)
@@ -125,17 +125,18 @@ const totalAmount = discountedPrice; // No additional tax added
       : {}),
     studentName,
     fatherName,
-    studentAddress,
+    address1,
+    address2,
+    phone,
     email,
+    state,
     course: {
       id:               course._id,
       title:            course.title,
-      originalPrice,   // ← now uses manual or default
+      originalPrice,
       discount,
-      discountedPrice, // ← now uses manual or default
+      discountedPrice,
     },
-    state,
- 
     cgst,
     sgst,
     igst,
@@ -149,11 +150,11 @@ const totalAmount = discountedPrice; // No additional tax added
   return NextResponse.json({ invoice: inv });
 }
 
+
 export async function GET(req: NextRequest) {
   await connectMongo();
-
   const { searchParams } = new URL(req.url);
-  const month = searchParams.get('month'); // e.g. '2025-06'
+  const month = searchParams.get('month');
 
   const query: any = {};
   if (month) {

@@ -6,7 +6,9 @@ export interface IInvoice extends Document {
   admissionFormId?: Types.ObjectId;
   studentName: string;
   fatherName: string;
-  studentAddress: string;
+  address1: string;
+  address2?: string;
+  phone?: string;
   course: {
     id: Types.ObjectId;
     title: string;
@@ -15,8 +17,7 @@ export interface IInvoice extends Document {
     discountedPrice: number;
   };
   state: string;
-  // Add this to the interface
-email?: string;
+  email?: string;
   cgst: number;
   sgst: number;
   igst: number;
@@ -30,27 +31,29 @@ email?: string;
 
 const InvoiceSchema = new Schema<IInvoice>(
   {
-    invoiceId:        { type: String, required: true, unique: true },
-    admissionFormId:  { type: Schema.Types.ObjectId, ref: 'Admission' },  // <- optional now
-    studentName:      { type: String, required: true },
-    fatherName:       { type: String, required: true },
-    studentAddress:   { type: String, required: true },
+    invoiceId:       { type: String, required: true, unique: true },
+    admissionFormId: { type: Schema.Types.ObjectId, ref: 'Admission' },  // optional
+    studentName:     { type: String, required: true },
+    fatherName:      { type: String, required: true },
+    address1:        { type: String, required: true },
+    address2:        { type: String },                                 // new
+    phone:           { type: String },                                 // new
     course: {
-      id:               { type: Schema.Types.ObjectId, ref: 'Course', required: true },
-      title:            { type: String, required: true },
-      originalPrice:    { type: Number, required: true },
-      discount:         { type: Number, required: true },
-      discountedPrice:  { type: Number, required: true },
+      id:              { type: Schema.Types.ObjectId, ref: 'Course', required: true },
+      title:           { type: String, required: true },
+      originalPrice:   { type: Number, required: true },
+      discount:        { type: Number, required: true },
+      discountedPrice: { type: Number, required: true },
     },
-    state:            { type: String, required: true },
-    email: { type: String, required: false }, // New field
-    cgst:             { type: Number, required: true },
-    sgst:             { type: Number, required: true },
-    igst:             { type: Number, required: true },
-    taxAmount:        { type: Number, required: true },
-    totalAmount:      { type: Number, required: true },
-    transactionId:    { type: String, required: true },
-    paymentMethod:    { type: String, required: true },
+    state:           { type: String, required: true },
+    email:           { type: String },                                 // optional
+    cgst:            { type: Number, required: true },
+    sgst:            { type: Number, required: true },
+    igst:            { type: Number, required: true },
+    taxAmount:       { type: Number, required: true },
+    totalAmount:     { type: Number, required: true },
+    transactionId:   { type: String, required: true },
+    paymentMethod:   { type: String, required: true },
   },
   { timestamps: true }
 );
