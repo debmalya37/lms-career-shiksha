@@ -45,52 +45,52 @@ export default function UserAdmissionListPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  const getBase64ImageFromUrl = async (url: string): Promise<string> => {
-    const res = await fetch(url);
-    const blob = await res.blob();
+  // const getBase64ImageFromUrl = async (url: string): Promise<string> => {
+  //   const res = await fetch(url);
+  //   const blob = await res.blob();
 
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result as string);
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
-    });
-  };
+  //   return new Promise((resolve, reject) => {
+  //     const reader = new FileReader();
+  //     reader.onloadend = () => resolve(reader.result as string);
+  //     reader.onerror = reject;
+  //     reader.readAsDataURL(blob);
+  //   });
+  // };
 
-  const handleDownload = async (adm: Admission) => {
-    setBusyId(adm._id);
-    try {
-      const { pdf } = await import('@react-pdf/renderer');
-      const [profileBase64, frontBase64, backBase64] = await Promise.all([
-        adm.profileImageUrl ? getBase64ImageFromUrl(adm.profileImageUrl) : null,
-        adm.aadhaarFrontUrl ? getBase64ImageFromUrl(adm.aadhaarFrontUrl) : null,
-        adm.aadhaarBackUrl ? getBase64ImageFromUrl(adm.aadhaarBackUrl) : null,
-      ]);
+  // const handleDownload = async (adm: Admission) => {
+  //   setBusyId(adm._id);
+  //   try {
+  //     const { pdf } = await import('@react-pdf/renderer');
+  //     const [profileBase64, frontBase64, backBase64] = await Promise.all([
+  //       adm.profileImageUrl ? getBase64ImageFromUrl(adm.profileImageUrl) : null,
+  //       adm.aadhaarFrontUrl ? getBase64ImageFromUrl(adm.aadhaarFrontUrl) : null,
+  //       adm.aadhaarBackUrl ? getBase64ImageFromUrl(adm.aadhaarBackUrl) : null,
+  //     ]);
 
-      const enrichedAdmission = {
-        ...adm,
-        profileImageUrl: profileBase64 || "",
-        aadhaarFrontUrl: frontBase64 || "",
-        aadhaarBackUrl: backBase64 || "",
-      };
+  //     const enrichedAdmission = {
+  //       ...adm,
+  //       profileImageUrl: profileBase64 || "",
+  //       aadhaarFrontUrl: frontBase64 || "",
+  //       aadhaarBackUrl: backBase64 || "",
+  //     };
 
-      const blob = await pdf(<AdmissionDocument admission={enrichedAdmission} />).toBlob();
+  //     const blob = await pdf(<AdmissionDocument admission={enrichedAdmission} />).toBlob();
 
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `Admission_${adm._id}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-    } catch (err) {
-      console.error(err);
-      alert("Failed to generate PDF");
-    } finally {
-      setBusyId(null);
-    }
-  };
+  //     const url = URL.createObjectURL(blob);
+  //     const a = document.createElement("a");
+  //     a.href = url;
+  //     a.download = `Admission_${adm._id}.pdf`;
+  //     document.body.appendChild(a);
+  //     a.click();
+  //     a.remove();
+  //     URL.revokeObjectURL(url);
+  //   } catch (err) {
+  //     console.error(err);
+  //     alert("Failed to generate PDF");
+  //   } finally {
+  //     setBusyId(null);
+  //   }
+  // };
 
   if (loading) return <div className="p-8 text-center">Loading…</div>;
   if (admissions.length === 0)

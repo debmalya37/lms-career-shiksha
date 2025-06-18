@@ -5,6 +5,7 @@ import axios from "axios";
 import { FiPlus, FiX } from "react-icons/fi";
 // import { pdf } from "@react-pdf/renderer";
 import { InvoiceDocument } from "@/components/InvoiceDocument";
+import InvoiceTable from "@/components/InvoiceTable";
 
 interface CourseOption {
   _id: string;
@@ -226,27 +227,27 @@ const filteredInvoices = invoices.filter(inv => {
     }
   };
 
-  // Download PDF
-  const handleDownload = async (inv: Invoice) => {
-    try {
-      const { pdf } = await import('@react-pdf/renderer');
-      const blob = await pdf(<InvoiceDocument invoice={{ ...inv, studentAddress: `${inv.address1} ${inv.address2 || ""}` }} />).toBlob();
-      // const blob = await pdf(<InvoiceDocument invoice={inv} />).toBlob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${inv.invoiceId}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-    } catch (e) {
-      console.error("PDF generation error", e);
-      alert("Failed to generate PDF. Please try again.");
-    } finally {
-      setBusyId(null);
-    }
-  };
+  // // Download PDF
+  // const handleDownload = async (inv: Invoice) => {
+  //   try {
+  //     const { pdf } = await import('@react-pdf/renderer');
+  //     const blob = await pdf(<InvoiceDocument invoice={{ ...inv, studentAddress: `${inv.address1} ${inv.address2 || ""}` }} />).toBlob();
+  //     // const blob = await pdf(<InvoiceDocument invoice={inv} />).toBlob();
+  //     const url = URL.createObjectURL(blob);
+  //     const a = document.createElement("a");
+  //     a.href = url;
+  //     a.download = `${inv.invoiceId}.pdf`;
+  //     document.body.appendChild(a);
+  //     a.click();
+  //     a.remove();
+  //     URL.revokeObjectURL(url);
+  //   } catch (e) {
+  //     console.error("PDF generation error", e);
+  //     alert("Failed to generate PDF. Please try again.");
+  //   } finally {
+  //     setBusyId(null);
+  //   }
+  // };
 
   return (
     <div className="p-6">
@@ -302,37 +303,7 @@ const filteredInvoices = invoices.filter(inv => {
         </button>
 
           
-          
-          {/* <select
-          title="Filter by Quarter"
-            value={quarterFilter}
-            onChange={e => {
-              setQuarterFilter(e.target.value);
-              setMonthFilter("");
-            }}
-            className="border px-3 py-2 rounded"
-          >
-            <option value="">Filter by Quarter</option>
-            {["Q1","Q2","Q3","Q4"].map(q => (
-              <option key={q} value={q}>{q}</option>
-            ))}
-          </select>
-          <input
-            type="month"
-            value={monthFilter}
-            onChange={e => {
-              setMonthFilter(e.target.value);
-              setQuarterFilter("");
-            }}
-            className="border px-3 py-2 rounded"
-            title="Filter by Month"
-          />
-          <button
-            onClick={fetchInvoices}
-            className="px-4 py-2 bg-gray-800 hover:bg-gray-900 text-white rounded"
-          >
-            Filter
-          </button> */}
+         
         </div>
         
 
@@ -386,73 +357,7 @@ const filteredInvoices = invoices.filter(inv => {
 
 
       {/* Invoice Table */}
-      <div className="overflow-x-auto bg-white rounded shadow">
-        <table className="min-w-full">
-          <thead className="bg-gray-100">
-            <tr>
-              {[
-                "Invoice ID",
-                "Student",
-                "Course",
-                "Amount",
-                "Tax",
-                "Total",
-                "Date",
-                "PDF",
-              ].map((h) => (
-                <th
-                  key={h}
-                  className="px-4 py-2 text-left text-sm font-medium text-gray-600"
-                >
-                  {h}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-          {filteredInvoices.map(inv => (
-              <tr key={inv._id} className="hover:bg-gray-50">
-                <td className="px-4 py-2">{inv.invoiceId}</td>
-                <td className="px-4 py-2">{inv.studentName}</td>
-                <td className="px-4 py-2">{inv.course.title}</td>
-                <td className="px-4 py-2">
-                  ₹{inv.course.discountedPrice.toFixed(2)}
-                </td>
-                <td className="px-4 py-2">₹{inv.taxAmount.toFixed(2)}</td>
-                <td className="px-4 py-2 font-semibold text-indigo-600">
-                  ₹{inv.totalAmount.toFixed(2)}
-                </td>
-                <td className="px-4 py-2">
-                  {new Date(inv.createdAt).toLocaleDateString()}
-                </td>
-                <td className="px-4 py-2">
-                  <button
-                    onClick={() => handleDownload(inv)}
-                    disabled={busyId === inv._id}
-                    className={`inline-block px-2 py-1 rounded text-sm ${
-                      busyId === inv._id
-                        ? "bg-gray-300 text-gray-600 cursor-not-allowed"
-                        : "bg-indigo-600 text-white hover:bg-indigo-700"
-                    }`}
-                  >
-                    {busyId === inv._id ? "Generating…" : "Download"}
-                  </button>
-                </td>
-              </tr>
-            ))}
-            {filteredInvoices.length === 0 && (
-              <tr>
-                <td
-                  colSpan={8}
-                  className="px-4 py-6 text-center text-gray-500"
-                >
-                  No invoices found.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+      <InvoiceTable filteredInvoices={filteredInvoices} />
 
       {/* Create Invoice Modal */}
       {modalOpen && (
