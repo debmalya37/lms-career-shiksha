@@ -10,18 +10,18 @@ import {
 } from '@react-pdf/renderer';
 
 
-Font.register({
-    family: 'Poppins',
-    fonts: [
-      { src: '/fonts/Poppins-Regular.ttf' },
-      { src: '/fonts/Poppins-Bold.ttf', fontWeight: 'bold' },
-    ],
-  });
+// Font.register({
+//     family: 'Helvetica',
+//     fonts: [
+//         { src: 'Helvetica' } // use built-in font
+//     ]
+// });
+  
   
 
 const styles = StyleSheet.create({
   page: {
-    fontFamily: 'Poppins',
+    fontFamily: 'Helvetica',
     fontSize: 12,
     padding: 30,
     lineHeight: 1.5,

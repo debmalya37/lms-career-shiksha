@@ -1,13 +1,12 @@
 'use client';
 
 import React, { useState } from 'react';
-// adjust this path to where your Invoice type is defined
 import { pdf } from '@react-pdf/renderer';
-import { InvoiceDocument } from './InvoiceDocument'; // adjust as per your actual component path
+import { InvoiceDocument } from './InvoiceDocument';
 
 interface Invoice {
-    _id: string;
-    invoiceId: string;
+  _id: string;
+  invoiceId: string;
   createdAt: string;
   studentName: string;
   studentAddress?: string;
@@ -30,11 +29,11 @@ interface Invoice {
   igst: number;
   taxAmount: number;
   totalAmount: number;
-  }
-  
-  interface InvoiceTableProps {
-    filteredInvoices: Invoice[];
-  }
+}
+
+interface InvoiceTableProps {
+  filteredInvoices: Invoice[];
+}
 
 const InvoiceTable: React.FC<InvoiceTableProps> = ({ filteredInvoices }) => {
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -46,20 +45,25 @@ const InvoiceTable: React.FC<InvoiceTableProps> = ({ filteredInvoices }) => {
         <InvoiceDocument
           invoice={{
             ...inv,
-            studentAddress: `${inv.address1} ${inv.address2 || ''}`,
+            studentAddress: `${inv.address1}${inv.address2 ? ' ' + inv.address2 : ''}`,
           }}
         />
       ).toBlob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${inv.invoiceId}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
+
+      if (blob) {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${inv.invoiceId}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      } else {
+        alert('Failed to generate PDF blob.');
+      }
     } catch (e) {
-      console.error('PDF generation error', e);
+      console.error('PDF generation error:', e);
       alert('Failed to generate PDF. Please try again.');
     } finally {
       setBusyId(null);
@@ -96,9 +100,7 @@ const InvoiceTable: React.FC<InvoiceTableProps> = ({ filteredInvoices }) => {
               <td className="px-4 py-2">{inv.invoiceId}</td>
               <td className="px-4 py-2">{inv.studentName}</td>
               <td className="px-4 py-2">{inv.course.title}</td>
-              <td className="px-4 py-2">
-                ₹{inv.course.discountedPrice.toFixed(2)}
-              </td>
+              <td className="px-4 py-2">₹{inv.course.discountedPrice.toFixed(2)}</td>
               <td className="px-4 py-2">₹{inv.taxAmount.toFixed(2)}</td>
               <td className="px-4 py-2 font-semibold text-indigo-600">
                 ₹{inv.totalAmount.toFixed(2)}
