@@ -3,9 +3,8 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { FiPlus, FiX } from "react-icons/fi";
-// import { pdf } from "@react-pdf/renderer";
-import { InvoiceDocument } from "@/components/InvoiceDocument";
 import InvoiceTable from "@/components/InvoiceTable";
+
 
 interface CourseOption {
   _id: string;
@@ -227,27 +226,7 @@ const filteredInvoices = invoices.filter(inv => {
     }
   };
 
-  // // Download PDF
-  // const handleDownload = async (inv: Invoice) => {
-  //   try {
-  //     const { pdf } = await import('@react-pdf/renderer');
-  //     const blob = await pdf(<InvoiceDocument invoice={{ ...inv, studentAddress: `${inv.address1} ${inv.address2 || ""}` }} />).toBlob();
-  //     // const blob = await pdf(<InvoiceDocument invoice={inv} />).toBlob();
-  //     const url = URL.createObjectURL(blob);
-  //     const a = document.createElement("a");
-  //     a.href = url;
-  //     a.download = `${inv.invoiceId}.pdf`;
-  //     document.body.appendChild(a);
-  //     a.click();
-  //     a.remove();
-  //     URL.revokeObjectURL(url);
-  //   } catch (e) {
-  //     console.error("PDF generation error", e);
-  //     alert("Failed to generate PDF. Please try again.");
-  //   } finally {
-  //     setBusyId(null);
-  //   }
-  // };
+ 
 
   return (
     <div className="p-6">
