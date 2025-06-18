@@ -17,6 +17,7 @@ import {
   UserGroupIcon,
 } from "@heroicons/react/24/solid";
 import IntroVideoPlayer from "@/components/IntroVideoPlayer";
+import { isRunningInStandaloneMode } from "@/lib/utils";
 
 interface Subject {
   _id: string;
@@ -180,6 +181,14 @@ const handlePurchase = useCallback(async () => {
    data.redirectUrl ??
    data.redirect ??
    data.data?.instrumentResponse?.redirectInfo?.url;
+
+   const intentUrl = `intent://upi/pay?pa=xxx@upi&pn=Career%20Shiksha&mc=xxxx&tid=xxxx&tr=xxxx&tn=Course%20Payment&am=999.00&cu=INR#Intent;scheme=upi;package=com.phonepe.app;end`;
+
+if (isRunningInStandaloneMode()) {
+  window.location.href = intentUrl;
+} else {
+  window.location.href = redirect; // Normal redirection
+}
 
  // inside handlePurchase()
 if (redirect) {
@@ -405,19 +414,7 @@ if (redirect) {
                 </motion.button>
               </Link>
           </div>
-          {/* <div className="p-6 bg-white rounded-lg shadow text-gray-700 space-y-2">
-            <h3 className="font-semibold">Course Details</h3>
-            <p>
-              <span className="font-medium">Duration:</span> Self‑paced
-            </p>
-            <p>
-              <span className="font-medium">Lessons:</span>{" "}
-              {course.subjects.length}
-            </p>
-            <p>
-               <span className="font-medium">Level:</span> Beginner 
-            </p>
-          </div> */}
+         
         </aside>
       </div>
     </motion.main>
