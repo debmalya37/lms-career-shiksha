@@ -1,7 +1,9 @@
 'use client';
 
+export const dynamic = "force-dynamic";
+
 import React, { useState } from 'react';
-import { pdf } from '@react-pdf/renderer';
+
 import { InvoiceDocument } from './InvoiceDocument';
 
 interface Invoice {
@@ -40,6 +42,7 @@ const InvoiceTable: React.FC<InvoiceTableProps> = ({ filteredInvoices }) => {
 
   const handleDownload = async (inv: Invoice) => {
     try {
+        const { pdf } = await import('@react-pdf/renderer');
       setBusyId(inv._id);
       const blob = await pdf(
         <InvoiceDocument
