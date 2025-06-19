@@ -62,20 +62,18 @@ const [adminNotifications, setAdminNotifications] = useState<AdminNotification[]
       try {
         const res = await fetch("/api/notifications");
         const data = await res.json();
-  
-        setLatestLiveClasses(data.latestLiveClasses || []);
-        setLatestTutorial(data.latestTutorial || null);
-        setLatestCourse(data.latestCourse || null);
-        setAdminNotifications(data.adminNotifications || []);
+        setAdminNotifications(data); // Because API returns a plain array
       } catch (err) {
-        console.error("Failed to fetch notification data:", err);
+        console.error("Failed to fetch notifications:", err);
       }
     };
   
     fetchNotifications();
   }, []);
   
+  
 
+  
   // Close sidebar when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
