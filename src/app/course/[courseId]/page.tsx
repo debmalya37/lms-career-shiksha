@@ -400,17 +400,28 @@ if (redirect) {
                 : "Buy now"}
             </button> */}
             <button
-                onClick={() => {
-                  const url = `https://civilacademyapp.com/course/${courseId}/preadmission?` +
-                    `coursePrice=${course.isFree ? 0 : finalPrice}` +
-                    `&promoCode=${encodeURIComponent(promoCode)}`;
-                  // open in new tab/window
-                  window.open(url, "_blank", "noopener,noreferrer");
-                }}
-                className="w-full py-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold transition"
-              >
-                Buy Now
-              </button>
+  onClick={() => {
+    const url =
+      `https://civilacademyapp.com/course/${courseId}/preadmission?` +
+      `coursePrice=${course.isFree ? 0 : finalPrice}` +
+      `&promoCode=${encodeURIComponent(promoCode)}`;
+
+    // Get full screen dimensions
+    const width = window.screen.availWidth;
+    const height = window.screen.availHeight;
+
+    window.open(
+      url,
+      "_blank",
+      `noopener,noreferrer,width=${width},height=${height},left=0,top=0`
+    );
+  }}
+  className="w-full py-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold transition"
+>
+  Buy Now
+</button>
+
+
 
             <Link href="/contact">
                 <motion.button
