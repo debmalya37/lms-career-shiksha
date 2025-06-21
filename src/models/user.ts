@@ -20,6 +20,7 @@ export interface PurchaseRecord {
   amount: number;
   transactionId: string;
   purchasedAt: Date;
+  promoCode?: string;  
 }
 
 const purchaseSchema = new Schema<PurchaseRecord>(
@@ -28,6 +29,7 @@ const purchaseSchema = new Schema<PurchaseRecord>(
     amount:         { type: Number, required: true },
     transactionId:  { type: String, required: true },
     purchasedAt:    { type: Date,   default: Date.now },
+    promoCode:      { type: String, required: false, default: null },
   },
   { _id: false }
 );

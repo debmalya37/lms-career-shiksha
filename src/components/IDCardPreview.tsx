@@ -58,7 +58,7 @@ pdf.addImage(imgData, "PNG", x, y, imgWidth, imgHeight);
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 p-4 overflow-y-auto m-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 p-4 overflow-y-auto">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-lg p-6 space-y-4">
         <div className="flex justify-between items-center">
           <h2 className="text-xl font-bold">ID Card Preview</h2>
@@ -67,25 +67,34 @@ pdf.addImage(imgData, "PNG", x, y, imgWidth, imgHeight);
           </button>
         </div>
 
-        {/* ID Card + Terms Container */}
+        {/* card + terms */}
         <div ref={containerRef} className="space-y-4">
           {/* Student ID Card */}
-          <div className="w-full aspect-[420/260] rounded-lg overflow-hidden border border-gray-300 shadow">
-            <div className="flex h-full">
-              <div className="w-1/3 flex items-center justify-center bg-gradient-to-br from-indigo-600 to-indigo-800">
+          <div
+            className="
+              w-full max-w-md
+              md:aspect-[420/260] aspect-auto
+              rounded-lg overflow-hidden border border-gray-300 shadow
+            "
+          >
+            <div className="flex flex-col md:flex-row h-full">
+              {/* photo */}
+              <div className="w-full md:w-1/3 flex items-center justify-center bg-gradient-to-br from-indigo-600 to-indigo-800 p-4">
                 {profileImageUrl ? (
                   <img
                     src={profileImageUrl}
                     alt="Profile"
-                    className="w-24 h-24 rounded-full border-4 border-white object-cover"
+                    className="w-20 h-20 md:w-24 md:h-24 rounded-full border-4 border-white object-cover"
                   />
                 ) : (
-                  <div className="w-24 h-24 bg-gray-200 rounded-full flex items-center justify-center text-gray-500">
+                  <div className="w-20 h-20 md:w-24 md:h-24 bg-gray-200 rounded-full flex items-center justify-center text-gray-500">
                     No Photo
                   </div>
                 )}
               </div>
-              <div className="w-2/3 p-4 text-sm">
+
+              {/* details */}
+              <div className="w-full md:w-2/3 p-3 md:p-4 text-xs md:text-sm">
                 <h3 className="font-bold mb-2">STUDENT CARD</h3>
                 <p>
                   <strong>Name:</strong> {name}
@@ -95,8 +104,8 @@ pdf.addImage(imgData, "PNG", x, y, imgWidth, imgHeight);
                     <strong>Email:</strong> {email}
                   </p>
                 )}
-                <div className="mt-4 flex justify-between text-xs">
-                  <div>
+                <div className="mt-4 flex flex-col md:flex-row justify-between text-xs">
+                  <div className="mb-2 md:mb-0">
                     <strong>Issue:</strong>
                     <br />
                     {fmt(issueDate)}
@@ -124,7 +133,7 @@ pdf.addImage(imgData, "PNG", x, y, imgWidth, imgHeight);
           </div>
         </div>
 
-        {/* Buttons */}
+        {/* Download */}
         <div className="flex justify-end">
           <button
             onClick={downloadPdf}
