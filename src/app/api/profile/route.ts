@@ -55,6 +55,7 @@ export async function GET(request: NextRequest) {
 
     // Construct the response
     return NextResponse.json({
+      userId: user._id.toString(),
       email: user.email,
       name: user.name,
       courses: enrichedCourses, // Enriched course details

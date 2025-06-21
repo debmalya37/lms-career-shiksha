@@ -104,52 +104,68 @@ export default function AdmissionForm() {
   }, [form.pincode]);
 
   // 3️⃣ Submit Admission
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const payload = new FormData();
-    // text fields
-    [
-      "courseId","name","fatherName","phone","email",
-      "address1","address2","pincode","state","city","dob"
-    ].forEach(key => {
-      payload.append(key, (form as any)[key]);
-    });
-    // file fields
-    if (form.photoOfCandidate) payload.append("photoOfCandidate", form.photoOfCandidate);
-    if (form.aadhaarFront)     payload.append("aadhaarFront",     form.aadhaarFront);
-    if (form.aadhaarBack)      payload.append("aadhaarBack",      form.aadhaarBack);
+ // inside your component…
 
-    try {
-      const res = await fetch(`/api/admission?transactionId=${transactionId}`, {
-        method: "POST",
-        body: payload,
-      });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error || "Submission failed");
-      // then invoice
-      const invRes = await fetch("/api/invoices", {
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  const payload = new FormData();
+  // append all fields…
+  [ "courseId","name","fatherName","phone","email",
+    "address1","address2","pincode","state","city","dob"
+  ].forEach(key => {
+    payload.append(key, (form as any)[key]);
+  });
+  if (form.photoOfCandidate) payload.append("photoOfCandidate", form.photoOfCandidate);
+  if (form.aadhaarFront)     payload.append("aadhaarFront",     form.aadhaarFront);
+  if (form.aadhaarBack)      payload.append("aadhaarBack",      form.aadhaarBack);
+
+  try {
+    // 1️⃣ admission
+    const res = await fetch(`/api/admission?transactionId=${transactionId}`, {
+      method: "POST",
+      body: payload,
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error || "Admission failed");
+
+    // 2️⃣ invoice
+    const invRes = await fetch("/api/invoices", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        admissionFormId: json.admissionId,
+        studentName:     json.name,
+        phone:           json.phone,
+        email:           json.email,
+        courseId:        json.courseId,
+        transactionId,
+      }),
+    });
+    if (!invRes.ok) {
+      const err = await invRes.json();
+      throw new Error(err.error || "Invoice failed");
+    }
+
+    // 3️⃣ only *after* both succeeded, fire cleanup calls in parallel:
+    await Promise.all([
+      // clear deviceIdentifier in your /api/usercreation/deleteDeviceIdentifier
+      fetch("/api/usercreation/deleteDeviceIdentifier", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          admissionFormId: json.admissionId,
-          studentName:     json.name,
-          phone:           json.phone,
-          email:           json.email,
-          courseId:        json.courseId,
-          transactionId,
-        })
-      });
-      if (!invRes.ok) {
-        const err = await invRes.json();
-        throw new Error(err.error || "Invoice failed");
-      }
-      alert("Admission & Invoice successful!");
-      router.push("/");
-    } catch (err:any) {
-      console.error(err);
-      alert(err.message);
-    }
-  };
+        body: JSON.stringify({ userId: json.userId }), // make sure json.userId is returned from /api/admission
+      }),
+      // clear sessionToken cookie + server side
+      fetch("/api/logout", { method: "POST" }),
+    ]);
+
+    alert("Admission & Invoice successful! You have been logged out. now you can continue on App or Desktop after login again.");
+    router.push("/login");
+  } catch (err: any) {
+    console.error(err);
+    alert(err.message);
+  }
+};
+
 
   // render
   return (

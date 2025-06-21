@@ -1,4 +1,4 @@
-// /api/user/deleteDeviceIdentifier.ts
+// /api/usercreation/deleteDeviceIdentifier.ts
 import { NextRequest, NextResponse } from 'next/server';
 import connectMongo from '@/lib/db';
 import { User } from '@/models/user';

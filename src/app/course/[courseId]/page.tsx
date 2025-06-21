@@ -74,6 +74,7 @@ export default function CourseDetailsPage() {
 const [promoMsg, setPromoMsg] = useState<string|null>(null);
 const [finalPrice, setFinalPrice] = useState<number>(0);
 const [showIntro, setShowIntro] = useState(false);
+const [userId, setUserId] = useState<string | null>(null);
 
 const router = useRouter();
 
@@ -102,20 +103,25 @@ const router = useRouter();
     return m ? `https://www.youtube.com/embed/${m[1]}?controls=0&modestbranding=1&rel=0` : url;
   }
   
+  // 2️⃣ Fetch profile → set purchased & userId
   useEffect(() => {
-    async function fetchProfile() {
+    (async () => {
       try {
-        const res = await axios.get<{ courses: Course[] }>(`/api/profile`);
-        
+        const { data } = await axios.get<{
+          email: string;
+          name: string;
+          courses: Course[];
+          userId: string;        // <-- assume you add userId in profile response
+        }>("/api/profile");
         setPurchased(
-          Array.isArray(res.data.courses) &&
-            res.data.courses.some((c) => c._id === courseId)
+          Array.isArray(data.courses) &&
+            data.courses.some((c) => c._id === courseId)
         );
-      } catch (err) {
-        console.error("Error fetching profile:", err);
+        setUserId(data.userId);
+      } catch (e) {
+        console.error("Error fetching profile:", e);
       }
-    }
-    fetchProfile();
+    })();
   }, [courseId]);
 
   
@@ -400,33 +406,55 @@ if (redirect) {
                 : "Buy now"}
             </button> */}
             <button
-  onClick={() => {
+  onClick={async () => {
     const path = `/course/${courseId}/preadmission?coursePrice=${
       course.isFree ? 0 : finalPrice
     }&promoCode=${encodeURIComponent(promoCode)}`;
-    const url = `https://civilacademyapp.com${path}`;
+    const fullUrl = `https://civilacademyapp.com${path}`;
 
-    const ua = navigator.userAgent;
-    const isAndroid = /Android/i.test(ua);
-    const isIOS     = /iPhone|iPad|iPod/i.test(ua);
+    try {
+      // 1️⃣ Delete deviceIdentifier
+      await fetch("/api/usercreation/deleteDeviceIdentifier", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        // you'll need the userId; if you don't have it in state, fetch it from profile API first
+        body: JSON.stringify({ userId: userId }),
+      }).then((res) => {
+        if (!res.ok) {
+          throw new Error("Failed to delete device identifier");
+        }
+      });
 
-    if (isAndroid) {
-      // Android: fire an intent:// link to open in Chrome if installed
-      const payload = `intent://${window.location.host}${path}#Intent;scheme=https;package=com.android.chrome;end`;
-      window.location.href = payload;
-    } else if (isIOS) {
-      // iOS PWA: target="_blank" in an <a> is usually enough, but
-      // fall back to opening in a new tab:
-      window.open(url, "_blank", "noopener,noreferrer");
-    } else {
-      // Desktop: full‑screen pop‑up
-      const width  = window.screen.availWidth;
-      const height = window.screen.availHeight;
-      window.open(
-        url,
-        "_blank",
-        `noopener,noreferrer,width=${width},height=${height},left=0,top=0`
-      );
+      // 2️⃣ Logout (clears sessionToken cookie & server record)
+      await fetch("/api/logout", { method: "POST" });
+
+      // 3️⃣ Open new window/tab
+      const ua = navigator.userAgent;
+      const isAndroid = /Android/i.test(ua);
+      const isIOS     = /iPhone|iPad|iPod/i.test(ua);
+
+      if (isAndroid) {
+        // fire a Chrome intent (if Chrome installed)
+        const intentLink =
+          `intent://${window.location.host}${path}` +
+          `#Intent;scheme=https;package=com.android.chrome;end`;
+        window.location.href = intentLink;
+      } else if (isIOS) {
+        // iOS PWA: open external browser tab
+        window.open(fullUrl, "_blank", "noopener,noreferrer");
+      } else {
+        // Desktop: full-screen pop‑up
+        const w = window.screen.availWidth;
+        const h = window.screen.availHeight;
+        window.open(
+          fullUrl,
+          "_blank",
+          `noopener,noreferrer,width=${w},height=${h},left=0,top=0`
+        );
+      }
+    } catch (err) {
+      console.error("Cleanup+redirect failed:", err);
+      alert("Could not start pre‑admission. Please try again.");
     }
   }}
   className="w-full py-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold transition"
@@ -434,7 +462,8 @@ if (redirect) {
   Buy Now
 </button>
 
-<a href="https://civilacademyapp.com/">click</a>
+
+
 
 
 
