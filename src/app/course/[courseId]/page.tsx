@@ -401,25 +401,40 @@ if (redirect) {
             </button> */}
             <button
   onClick={() => {
-    const url =
-      `https://civilacademyapp.com/course/${courseId}/preadmission?` +
-      `coursePrice=${course.isFree ? 0 : finalPrice}` +
-      `&promoCode=${encodeURIComponent(promoCode)}`;
+    const path = `/course/${courseId}/preadmission?coursePrice=${
+      course.isFree ? 0 : finalPrice
+    }&promoCode=${encodeURIComponent(promoCode)}`;
+    const url = `https://civilacademyapp.com${path}`;
 
-    // Get full screen dimensions
-    const width = window.screen.availWidth;
-    const height = window.screen.availHeight;
+    const ua = navigator.userAgent;
+    const isAndroid = /Android/i.test(ua);
+    const isIOS     = /iPhone|iPad|iPod/i.test(ua);
 
-    window.open(
-      url,
-      "_blank",
-      `noopener,noreferrer,width=${width},height=${height},left=0,top=0`
-    );
+    if (isAndroid) {
+      // Android: fire an intent:// link to open in Chrome if installed
+      const payload = `intent://${window.location.host}${path}#Intent;scheme=https;package=com.android.chrome;end`;
+      window.location.href = payload;
+    } else if (isIOS) {
+      // iOS PWA: target="_blank" in an <a> is usually enough, but
+      // fall back to opening in a new tab:
+      window.open(url, "_blank", "noopener,noreferrer");
+    } else {
+      // Desktop: full‑screen pop‑up
+      const width  = window.screen.availWidth;
+      const height = window.screen.availHeight;
+      window.open(
+        url,
+        "_blank",
+        `noopener,noreferrer,width=${width},height=${height},left=0,top=0`
+      );
+    }
   }}
   className="w-full py-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold transition"
 >
   Buy Now
 </button>
+
+<a href="https://civilacademyapp.com/">click</a>
 
 
 
