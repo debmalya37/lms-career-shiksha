@@ -27,9 +27,7 @@ if (
   );
 }
 
-// const BASE = "https://api.phonepe.com/apis/pg";
-// const OAUTH_URL = `${BASE}/v1/oauth/token`;
-// const PAY_URL   = `${BASE}/checkout/v2/pay`;
+
 
 const BASE =
   process.env.PHONEPE_ENV === 'PRODUCTION'
@@ -44,7 +42,7 @@ const PAY_URL   = process.env.PHONEPE_ENV === 'PRODUCTION'
 
 export async function POST(req: NextRequest) {
   // 0) parse
-  let payload: { amount?: number; courseId?: string };
+  let payload: { amount?: number; courseId?: string; promoCode?: string };
   try {
     payload = await req.json();
     console.log('📥 Received payload:', payload);
@@ -53,7 +51,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
   }
 
-  const { amount, courseId } = payload!;
+  const { amount, courseId, promoCode } = payload!;
   if (!amount || !courseId) {
     console.warn('⚠️ Missing amount/courseId:', { amount, courseId });
     return NextResponse.json(
@@ -112,6 +110,7 @@ export async function POST(req: NextRequest) {
     metaInfo: {
       udf1: `course-${courseId}`,
       udf2: `user-${user._id}`,
+      udf3: promoCode || '', 
     },
     paymentFlow: {
       type:         'PG_CHECKOUT',

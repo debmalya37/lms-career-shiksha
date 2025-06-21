@@ -42,7 +42,8 @@ export async function POST(req: NextRequest) {
   const phone           = form.get('phone')?.toString();
   const email           = form.get('email')?.toString();
   const address1        = form.get('address1')?.toString();
-  const address2        = form.get('address2')?.toString() || '';
+  const address2        = form.get('address2')?.toString() || '';   
+  const pincode         = form.get('pincode')?.toString() || '';   
   const state           = form.get('state')?.toString();
   const city            = form.get('city')?.toString();
   const dobStr          = form.get('dob')?.toString();
@@ -54,7 +55,7 @@ export async function POST(req: NextRequest) {
 
   if (
     !courseId || !name || !fatherName || !phone || !email ||
-    !address1 || !state || !city || !dobStr ||
+    !address1 || !state || !city || !dobStr || !pincode ||
     !photoFile || !aadhaarFront || !aadhaarBack
   ) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -101,6 +102,7 @@ export async function POST(req: NextRequest) {
       email,
       address1,
       address2,
+      pincode,
       state,
       city,
       dob,

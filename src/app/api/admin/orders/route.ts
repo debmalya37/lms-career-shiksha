@@ -1,7 +1,6 @@
 // app/api/admin/orders/route.ts
 
-export const dynamic = "force-dynamic"; // 🚀 disables static caching for this route
-
+export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import connectMongo from "@/lib/db";
 import { User } from "@/models/user";
@@ -28,6 +27,7 @@ export async function GET() {
       amount: purchase.amount,
       transactionId: purchase.transactionId,
       purchasedAt: purchase.purchasedAt,
+      promoCode: purchase.promoCode || "", // ✅ include promoCode
     }))
   );
 

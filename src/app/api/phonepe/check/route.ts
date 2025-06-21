@@ -62,7 +62,8 @@ async function enrollUser(
   sessionToken: string,
   courseId: string,
   amountPaid: number,
-  orderId: string
+  orderId: string,
+  promoCode?: string,
 ) {
   await dbConnect();
   await User.updateOne(
@@ -78,19 +79,20 @@ async function enrollUser(
           amount:        amountPaid,
           transactionId: orderId,
           purchasedAt:   new Date(),
+          promoCode:     promoCode || null,
         },
       },
     }
   );
 }
-
+  
 // ── 4) GET handler ────────────────────────────────────────────────────────────
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const orderId      = searchParams.get("id");
   const courseId     = searchParams.get("courseId");
   const sessionToken = searchParams.get("sessionToken");
-
+  
   if (!orderId || !courseId) {
     return NextResponse.json(
       {
@@ -101,7 +103,7 @@ export async function GET(req: NextRequest) {
       { status: 400 }
     );
   }
-
+  
   // 4.1) OAuth
   let accessToken: string;
   try {
@@ -110,7 +112,7 @@ export async function GET(req: NextRequest) {
     console.error("OAuth failed:", err);
     return NextResponse.redirect("/payment/failure", 303);
   }
-
+  
   // 4.2) Order‑Status call
   let statusRes;
   try {
@@ -127,33 +129,33 @@ export async function GET(req: NextRequest) {
     console.error("Order-Status API error:", err.response?.data || err.message);
     return NextResponse.redirect(`/failure/${orderId}?courseId=${courseId}`, 303);
   }
-
-  // 4.3) Inspect state & amount
-  const { state, amount } = statusRes.data as {
-    state: string;
-    amount: number;
-  };
+  
+  // 4.3) Inspect state, amount & metaInfo
+  const payload = statusRes.data.data || statusRes.data;
+  const { state, amount, metaInfo } = payload;
+  const promoCode = metaInfo?.udf3 || null;   // ← grab your promoCode
 
   if (state === "COMPLETED") {
     // 4.4) Enroll & redirect to admission
     if (sessionToken) {
-      await enrollUser(sessionToken, courseId, amount, orderId);
+      await enrollUser(sessionToken, courseId, amount, orderId, promoCode);
     }
+    // build admission URL
     const course = await Course.findById(courseId).lean();
-    const courseName = Array.isArray(course) || !course?.title
-    ? ""
-    : encodeURIComponent(course.title);
+    const name  = Array.isArray(course) || !course?.title ? "" : encodeURIComponent(course.title);
     const admissionUrl = new URL(
-      `/admission?courseId=${courseId}&courseName=${courseName}&transactionId=${orderId}`,
+      `/admission?courseId=${courseId}&courseName=${name}&transactionId=${orderId}`,
       req.url
     );
-    
     return NextResponse.redirect(admissionUrl, 303);
   }
-
-  // 4.5) Pending/Failed → failure page
-  return NextResponse.redirect(
-    `/failure/${orderId}?courseId=${courseId}`,
-    303
-  );
+  
+  // 4.5) Pending/Failed → failure
+  return NextResponse.redirect(`/failure/${orderId}?courseId=${courseId}`, 303);
 }
+  
+  
+  
+  
+  
+  // ── 5) POST handler (not used in this case) ────────────────────────────────────

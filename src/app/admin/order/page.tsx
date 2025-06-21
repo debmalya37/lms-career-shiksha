@@ -8,7 +8,9 @@ type Order = {
   amount: number;
   transactionId: string;
   purchasedAt: string;
+  promoCode?: string; // ✅ add this
 };
+
 
 export default function OrderPage() {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -61,6 +63,7 @@ export default function OrderPage() {
               <th className="p-3">Course</th>
               <th className="p-3">Amount</th>
               <th className="p-3">Transaction ID</th>
+              <th className="p-3">Promo Code</th>
               <th className="p-3">Date</th>
             </tr>
           </thead>
@@ -76,6 +79,7 @@ export default function OrderPage() {
                   <td className="p-3">{order.course.title}</td>
                   <td className="p-3">₹{(order.amount / 100).toFixed(2)}</td>
                   <td className="p-3">{order.transactionId}</td>
+                  <td className="p-3">{order.promoCode || "—"}</td>
                   <td className="p-3">{new Date(order.purchasedAt).toLocaleString()}</td>
                 </tr>
               ))

@@ -11,7 +11,10 @@ export async function GET(request: NextRequest) {
 
   try {
     await connectMongo();
-
+    if(!sessionToken) {
+      return NextResponse.json({ error: 'Session token is missing' }, { status: 401 });
+    }
+    
     // Find the user by session token
     const user = await User.findOne({ sessionToken }).lean();
     if (!user) {

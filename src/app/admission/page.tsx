@@ -3,457 +3,250 @@
 import React, { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { format } from "date-fns";
+import axios from "axios";
+
+interface AdmissionState {
+  courseId:         string;
+  photoOfCandidate: File | null;
+  aadhaarFront:     File | null;
+  aadhaarBack:      File | null;
+  name:             string;
+  fatherName:       string;
+  phone:            string;
+  email:            string;
+  address1:         string;
+  address2:         string;
+  pincode:          string;
+  state:            string;
+  city:             string;
+  dob:              string;
+}
 
 export default function AdmissionForm() {
-  const router = useRouter();
+  const router       = useRouter();
   const searchParams = useSearchParams();
-  const courseId   = searchParams.get("courseId")   || "";
-  const courseName = searchParams.get("courseName") || "";
+  const courseId     = searchParams.get("courseId")   || "";
+  const courseName   = searchParams.get("courseName") || "";
+  const transactionId= searchParams.get("transactionId") || "";
 
-  const [formData, setFormData] = useState({
-    photoOfCandidate:  null as File | null,
-    aadhaarFront:      null as File | null,
-    aadhaarBack:       null as File | null,
-    name:              "",
-    fatherName:        "",
-    phone:             "",
-    email:             "",
-    address1:          "",
-    address2:          "",
-    state:             "",
-    city:              "",
-    dob:               "",
+  const [form, setForm] = useState<AdmissionState>({
     courseId,
+    photoOfCandidate: null,
+    aadhaarFront:     null,
+    aadhaarBack:      null,
+    name:             "",
+    fatherName:       "",
+    phone:            "",
+    email:            "",
+    address1:         "",
+    address2:         "",
+    pincode:          "",
+    state:            "",
+    city:             "",
+    dob:              "",
   });
 
-  // Minimal sample of cities per state; expand as needed
-  const citiesByState: Record<string,string[]> = {
-    "West Bengal": ["Kolkata","Howrah","Durgapur"],
-    "Maharashtra": ["Mumbai","Pune","Nagpur"],
-    // …etc
-  };
-  
-  const indianStates = [
-    "Andhra Pradesh",
-    "Arunachal Pradesh",
-    "Assam",
-    "Bihar",
-    "Chhattisgarh",
-    "Goa",
-    "Gujarat",
-    "Haryana",
-    "Himachal Pradesh",
-    "Jharkhand",
-    "Karnataka",
-    "Kerala",
-    "Madhya Pradesh",
-    "Maharashtra",
-    "Manipur",
-    "Meghalaya",
-    "Mizoram",
-    "Nagaland",
-    "Odisha",
-    "Punjab",
-    "Rajasthan",
-    "Sikkim",
-    "Tamil Nadu",
-    "Telangana",
-    "Tripura",
-    "Uttar Pradesh",
-    "Uttarakhand",
-    "West Bengal",
-    "Andaman and Nicobar Islands",
-    "Chandigarh",
-    "Dadra and Nagar Haveli and Daman and Diu",
-    "Delhi",
-    "Jammu and Kashmir",
-    "Ladakh",
-    "Lakshadweep",
-    "Puducherry",
-  ];
+  // 1️⃣ On mount: fetch pre‑admission and prefill
+  useEffect(() => {
+    (async () => {
+      try {
+        const { data } = await axios.get("/api/pre-admission");
+        const all = data as any[];
+        // match by courseId && email if known
+        const me = all.find(item =>
+          item.courseId === courseId &&
+          (!form.email || item.email === form.email)
+        );
+        if (me) {
+          setForm(f => ({
+            ...f,
+            email:      me.email,
+            fatherName: me.fatherName,
+            phone:      me.phone,
+            address1:   me.address1,
+            pincode:    me.pincode,
+            state:      me.state,
+            city:       me.city,
+          }));
+        }
+      } catch (e) {
+        console.error("Failed to load pre‑admission:", e);
+      }
+    })();
+  }, [courseId, form.email]);
 
-  const handleChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >
-  ) => {
+  const handleChange = (e: React.ChangeEvent<any>) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+    setForm(f => ({ ...f, [name]: value }));
   };
 
-  const handleFileChange = (field: keyof typeof formData) => (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const file = e.target.files?.[0] || null;
-    setFormData((f) => ({ ...f, [field]: file }));
+  const handleFile = (field: keyof AdmissionState) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    setForm(f => ({ ...f, [field]: e.target.files?.[0] || null }));
   };
-  
+
+  // 2️⃣ When PIN updates, auto‑fill state+city
+  useEffect(() => {
+    if (form.pincode.length === 6) {
+      fetch(`https://api.postalpincode.in/pincode/${form.pincode}`)
+        .then(r => r.json())
+        .then((arr: any[]) => {
+          const po = arr[0]?.PostOffice?.[0];
+          if (po) {
+            setForm(f => ({
+              ...f,
+              state: po.State,
+              city:  po.District,
+            }));
+          }
+        })
+        .catch(console.error);
+    }
+  }, [form.pincode]);
+
+  // 3️⃣ Submit Admission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-  
-    // Step 1: Prepare admission form data
     const payload = new FormData();
-    payload.append("courseId", formData.courseId);
-    payload.append("name", formData.name);
-    payload.append("fatherName", formData.fatherName);
-    payload.append("phone", formData.phone);
-    payload.append("email", formData.email);
-    payload.append("address1", formData.address1);
-    payload.append("address2", formData.address2);
-    payload.append("state", formData.state);
-    payload.append("city", formData.city);
-    payload.append("dob", formData.dob);
-  
-    if (formData.photoOfCandidate)
-      payload.append("photoOfCandidate", formData.photoOfCandidate);
-    if (formData.aadhaarFront)
-      payload.append("aadhaarFront", formData.aadhaarFront);
-    if (formData.aadhaarBack)
-      payload.append("aadhaarBack", formData.aadhaarBack);
-  
-    try {
-      // Step 2: Submit admission
-      const transactionId = searchParams.get("transactionId") || "";
-const admissionRes = await fetch(`/api/admission?transactionId=${transactionId}`, {
+    // text fields
+    [
+      "courseId","name","fatherName","phone","email",
+      "address1","address2","pincode","state","city","dob"
+    ].forEach(key => {
+      payload.append(key, (form as any)[key]);
+    });
+    // file fields
+    if (form.photoOfCandidate) payload.append("photoOfCandidate", form.photoOfCandidate);
+    if (form.aadhaarFront)     payload.append("aadhaarFront",     form.aadhaarFront);
+    if (form.aadhaarBack)      payload.append("aadhaarBack",      form.aadhaarBack);
 
+    try {
+      const res = await fetch(`/api/admission?transactionId=${transactionId}`, {
         method: "POST",
         body: payload,
       });
-      const admissionData = await admissionRes.json();
-      console.log("admissionData:", admissionData);
-      const admissionFormId = admissionData.admissionId;
-
-      if(admissionData.ok) {
-        alert("Admission submitted successfully!");
-        console.log("Admission successful:", admissionData);
-      }
-      if (!admissionRes.ok) {
-        alert(admissionData.error || "Admission submission failed");
-        return;
-      }
-      
-      console.log("admissionData:", admissionData);
-      // Step 3: Generate invoice after admission
-      const invoiceRes = await fetch("/api/invoices", {
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Submission failed");
+      // then invoice
+      const invRes = await fetch("/api/invoices", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          admissionFormId,
-          studentName: admissionData.name,
-          phone: admissionData.phone,
-          email: admissionData.email,
-          courseId: admissionData.courseId,
-          transactionId: searchParams.get("transactionId") || "",
-        }),
-
-        
+          admissionFormId: json.admissionId,
+          studentName:     json.name,
+          phone:           json.phone,
+          email:           json.email,
+          courseId:        json.courseId,
+          transactionId,
+        })
       });
-  
-      const invoiceData = await invoiceRes.json();
-  
-      if (!invoiceRes.ok) {
-        alert(invoiceData.error || "Invoice generation failed");
-        return;
+      if (!invRes.ok) {
+        const err = await invRes.json();
+        throw new Error(err.error || "Invoice failed");
       }
-  
-      // Step 4: All successful — redirect
+      alert("Admission & Invoice successful!");
       router.push("/");
-    } catch (err: any) {
-      console.error("Error:", err);
-      alert(err.message || "Something went wrong");
+    } catch (err:any) {
+      console.error(err);
+      alert(err.message);
     }
   };
-  
 
+  // render
   return (
     <div className="max-w-3xl mx-auto p-6">
       <div className="bg-white rounded-2xl shadow-md overflow-hidden">
         <div className="p-6">
-          <h2 className="text-2xl font-bold mb-6 text-center">
-            Student Admission Form
-          </h2>
-          <form
-            onSubmit={handleSubmit}
-            className="grid grid-cols-1 md:grid-cols-2 gap-6"
-          >
-            {/* Hidden Course ID */}
-            <input type="hidden" name="courseId" value={courseId} />
-
-            {/* Course Name */}
+          <h2 className="text-2xl font-bold mb-6 text-center">Student Admission Form</h2>
+          <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* courseName */}
+            <input type="hidden" name="courseId" value={form.courseId} />
             <div className="col-span-full">
-              <label
-                htmlFor="courseName"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Course Enrolling In
-              </label>
-              <input
-                id="courseName"
-                name="courseName"
-                value={courseName}
-                readOnly
-                className="mt-1 block w-full rounded-md border-gray-300 bg-gray-100 py-2 px-3 text-gray-700"
-              />
+              <label className="block text-sm font-medium">Course Enrolling In</label>
+              <input readOnly value={courseName} className="mt-1 w-full rounded-md border-gray-300 bg-gray-100 px-3 py-2" />
             </div>
 
-            {/* Photo of Candidate */}
+            {/* file uploads */}
             <div className="col-span-full">
-              <label
-                htmlFor="photoOfCandidate"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Photo of Candidate
-              </label>
-              <input
-                type="file"
-                id="photoOfCandidate"
-                name="photoOfCandidate"
-                accept="image/*"
-                onChange={handleFileChange("photoOfCandidate")}
-                className="mt-1 block w-full text-sm text-gray-600"
-              />
+              <label className="block text-sm font-medium">Photo of Candidate</label>
+              <input type="file" accept="image/*" onChange={handleFile("photoOfCandidate")} title="Upload Photo of Candidate" placeholder="Upload a clear photo of the candidate" className="mt-1 w-full" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium">Aadhaar Front</label>
+              <input type="file" accept="image/*" onChange={handleFile("aadhaarFront")} required title="Upload Aadhaar Front" placeholder="Upload the front side of Aadhaar card" className="mt-1 w-full" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium">Aadhaar Back</label>
+              <input type="file" accept="image/*" onChange={handleFile("aadhaarBack")} required title="Upload Aadhaar Back" placeholder="Upload the back side of Aadhaar card" className="mt-1 w-full" />
             </div>
 
-            {/* Aadhaar Front */}
+            {/* text inputs */}
             <div>
-              <label
-                htmlFor="aadhaarFront"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Aadhaar Card (Front)
-              </label>
-              <input
-                type="file"
-                id="aadhaarFront"
-                name="aadhaarFront"
-                accept="image/*"
-                onChange={handleFileChange("aadhaarFront")}
-                required
-                className="mt-1 block w-full text-sm text-gray-600"
-              />
+              <label className="block text-sm font-medium">Name</label>
+              <input title="Full Name" type="text" autoComplete="name" autoFocus
+               name="name" value={form.name} onChange={handleChange} required className="mt-1 w-full rounded-md border-gray-300 px-3 py-2" />
             </div>
-
-            {/* Aadhaar Back */}
             <div>
-              <label
-                htmlFor="aadhaarBack"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Aadhaar Card (Back)
-              </label>
-              <input
-                type="file"
-                id="aadhaarBack"
-                name="aadhaarBack"
-                accept="image/*"
-                onChange={handleFileChange("aadhaarBack")}
-                required
-                className="mt-1 block w-full text-sm text-gray-600"
-              />
+              <label htmlFor="FatherName" className="block text-sm font-medium">Father’s Name</label>
+              <input title="Father's Name" type="text" autoComplete="name"	
+             name="fatherName" value={form.fatherName} onChange={handleChange} required className="mt-1 w-full rounded-md border-gray-300 px-3 py-2" />
             </div>
-
-            {/* Name */}
             <div>
-              <label
-                htmlFor="name"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Name
-              </label>
-              <input
-                id="name"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                required
-                className="mt-1 block w-full rounded-md border-gray-300 py-2 px-3"
-              />
+              <label className="block text-sm font-medium">Phone</label>
+              <input title="Phone Number" type="tel" autoComplete="tel"
+               name="phone" value={form.phone} onChange={handleChange} required className="mt-1 w-full rounded-md border-gray-300 px-3 py-2" />
             </div>
-
-            {/* Father’s Name */}
             <div>
-              <label
-                htmlFor="fatherName"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Father’s Name
-              </label>
-              <input
-                id="fatherName"
-                name="fatherName"
-                value={formData.fatherName}
-                onChange={handleChange}
-                required
-                className="mt-1 block w-full rounded-md border-gray-300 py-2 px-3"
-              />
-            </div>
-
-            {/* Phone */}
-            <div>
-              <label
-                htmlFor="phone"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Phone Number
-              </label>
-              <input
-                id="phone"
-                name="phone"
-                type="tel"
-                value={formData.phone}
-                onChange={handleChange}
-                required
-                className="mt-1 block w-full rounded-md border-gray-300 py-2 px-3"
-              />
-            </div>
-
-            {/* Email */}
-            <div>
-              <label
-                htmlFor="email"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Email ID
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                value={formData.email}
-                onChange={handleChange}
-                required
-                className="mt-1 block w-full rounded-md border-gray-300 py-2 px-3"
-              />
+              <label className="block text-sm font-medium">Email</label>
+              <input readOnly title="Email Address" autoComplete="email"
+               name="email" type="email" value={form.email} onChange={handleChange} required className="mt-1 w-full rounded-md border-gray-300 px-3 py-2" />
             </div>
 
             {/* DOB */}
             <div>
-              <label
-                htmlFor="dob"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Date of Birth
-              </label>
-              <input
-                type="date"
-                id="dob"
-                name="dob"
-                value={formData.dob}
-                onChange={handleChange}
-                required
-                className="mt-1 block w-full rounded-md border-gray-300 py-2 px-3"
-              />
-              {formData.dob && (
+              <label className="block text-sm font-medium">Date of Birth</label>
+              <input title="Date of Birth" autoComplete="bday"
+               type="date" name="dob" value={form.dob} onChange={handleChange} required className="mt-1 w-full rounded-md border-gray-300 px-3 py-2" />
+              {form.dob && (
                 <p className="text-sm text-gray-600 mt-1">
-                  Selected: {format(new Date(formData.dob), "MMMM d, yyyy")}
+                  Selected: {format(new Date(form.dob), "MMMM d, yyyy")}
                 </p>
               )}
             </div>
 
-            {/* Address 1 */}
+            {/* address */}
             <div className="col-span-full">
-              <label
-                htmlFor="address1"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Residential Address
-              </label>
-              <textarea
-                id="address1"
-                name="address1"
-                value={formData.address1}
-                onChange={handleChange}
-                required
-                rows={2}
-                className="mt-1 block w-full rounded-md border-gray-300 py-2 px-3"
-              />
+              <label className="block text-sm font-medium">Residential Address</label>
+              <textarea title="Residential Address" autoComplete="address-line1"
+              
+              name="address1" value={form.address1} onChange={handleChange} rows={2} required className="mt-1 w-full rounded-md border-gray-300 px-3 py-2" />
             </div>
-
-            {/* Address 2 */}
             <div className="col-span-full">
-              <label
-                htmlFor="address2"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Address Line 2 (optional)
-              </label>
-              <textarea
-                id="address2"
-                name="address2"
-                value={formData.address2}
-                onChange={handleChange}
-                rows={2}
-                className="mt-1 block w-full rounded-md border-gray-300 py-2 px-3"
-              />
+              <label className="block text-sm font-medium">Address Line 2 (optional)</label>
+              <textarea title="Address Line 2" autoComplete="address-line2"
+              
+              name="address2" value={form.address2} onChange={handleChange} rows={2} className="mt-1 w-full rounded-md border-gray-300 px-3 py-2" />
             </div>
 
-            {/* State */}
+            {/* PIN → state/city */}
             <div>
-              <label
-                htmlFor="state"
-                className="block text-sm font-medium text-gray-700"
-              >
-                State
-              </label>
-              <select
-                id="state"
-                name="state"
-                value={formData.state}
-                onChange={handleChange}
-                // onChange={(e) => {
-                //   handleChange(e);
-                  // // reset city when state changes
-                  // setFormData((f) => ({ ...f, city: "" }));
-                // }}
-                required
-                className="mt-1 block w-full rounded-md border-gray-300 py-2 px-3"
-              >
-                <option value="" disabled>
-                  -- Select State --
-                </option>
-                {indianStates.map((st) => (
-                  <option key={st} value={st}>
-                    {st}
-                  </option>
-                ))}
-              </select>
+              <label className="block text-sm font-medium">Pincode</label>
+              <input title="Pincode" type="text" autoComplete="postal-code"
+               name="pincode" value={form.pincode} onChange={handleChange} maxLength={6} required className="mt-1 w-full rounded-md border-gray-300 px-3 py-2" />
             </div>
-
-            {/* City */}
             <div>
-              <label
-                htmlFor="city"
-                className="block text-sm font-medium text-gray-700"
-              >
-                City
-              </label>
-              <input
-                id="city"
-                name="city"
-                value={formData.city}
-                onChange={handleChange}
-                required
-                disabled={!formData.state}
-                className="mt-1 block w-full rounded-md border-gray-300 py-2 px-3 bg-white"
-              >
-                
-                {/* {formData.state &&
-                  citiesByState[formData.state].map((city) => (
-                    <option key={city} value={city}>
-                      {city}
-                    </option>
-                  ))} */}
-              </input>
+              <label className="block text-sm font-medium">State</label>
+              <input title="State" type="text" autoComplete="address-level1"
+               name="state" readOnly value={form.state} required className="mt-1 w-full rounded-md border-gray-300 px-3 py-2 bg-gray-100" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium">City</label>
+              <input title="City" type="text" autoComplete="address-level2"
+               name="city" readOnly value={form.city} required className="mt-1 w-full rounded-md border-gray-300 px-3 py-2 bg-gray-100" />
             </div>
 
-            {/* Submit */}
+            {/* submit */}
             <div className="col-span-full text-center">
-              <button
-                type="submit"
-                className="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl transition"
-              >
+              <button type="submit" className="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl">
                 SUBMIT TO ADMISSION
               </button>
             </div>

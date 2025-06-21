@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-
+import { useSearchParams } from "next/navigation";
 const generateDeviceIdentifier = () => {
   return "device-" + Math.random().toString(36).substring(2, 15);
 };
@@ -26,7 +26,8 @@ const LoginPage = () => {
   const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const router = useRouter();
-
+  const searchParams = useSearchParams();
+  const returnTo = searchParams.get("returnTo") || "/";
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -45,7 +46,7 @@ const LoginPage = () => {
       if (response.ok) {
         const data = await response.json();
         localStorage.setItem("sessionToken", data.sessionToken);
-        router.push("/");
+        router.push(returnTo);
       } else {
         const errorData = await response.json();
         setErrorMessage(errorData.error || "Failed to log in");

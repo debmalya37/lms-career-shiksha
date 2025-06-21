@@ -20,6 +20,8 @@
     "@sparticuz/chromium-min": "^137.0.1",
     "@types/jspdf": "^2.0.0",
     "@types/youtube": "^0.1.0",
+    "@upstash/ratelimit": "^2.0.5",
+    "@upstash/redis": "^1.35.0",
     "axios": "^1.7.7",
     "bcrypt": "^5.1.1",
     "bcryptjs": "^2.4.3",

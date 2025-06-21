@@ -10,6 +10,7 @@ export interface IAdmission extends Document {
   email:             string;
   address1:          string;
   address2?:         string;
+  pincode:           string;
   state:             string;
   city:              string;
   dob:               Date;
@@ -31,6 +32,7 @@ const AdmissionSchema = new Schema<IAdmission>(
     email:           { type: String, required: true },
     address1:        { type: String, required: true },
     address2:        { type: String },
+    pincode:         { type: String, required: true },
     state:           { type: String, required: true },
     city:            { type: String, required: true },
     dob:             { type: Date,   required: true },

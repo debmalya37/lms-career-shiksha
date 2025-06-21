@@ -182,13 +182,7 @@ const handlePurchase = useCallback(async () => {
    data.redirect ??
    data.data?.instrumentResponse?.redirectInfo?.url;
 
-   const intentUrl = `intent://upi/pay?pa=xxx@upi&pn=Career%20Shiksha&mc=xxxx&tid=xxxx&tr=xxxx&tn=Course%20Payment&am=999.00&cu=INR#Intent;scheme=upi;package=com.phonepe.app;end`;
 
-if (isRunningInStandaloneMode()) {
-  window.location.href = intentUrl;
-} else {
-  window.location.href = redirect; // Normal redirection
-}
 
  // inside handlePurchase()
 if (redirect) {
@@ -388,7 +382,7 @@ if (redirect) {
             {/* Purchase button */}
 
             {/* ← UPDATED: Instead of directly enrolling/purchasing, navigate to AdmissionForm */}
-            <button
+            {/* <button
               onClick={course.isFree ? handleEnrollFree : handlePurchase}
               disabled={purchased || payLoading}
               className={`mt-4 w-full py-3 rounded-lg font-semibold transition ${
@@ -404,7 +398,20 @@ if (redirect) {
                 : course.isFree
                 ? "Enroll for free"
                 : "Buy now"}
-            </button>
+            </button> */}
+            <button
+                onClick={() => {
+                  const url = `/course/${courseId}/preadmission?` +
+                    `coursePrice=${course.isFree ? 0 : finalPrice}` +
+                    `&promoCode=${encodeURIComponent(promoCode)}`;
+                  // open in new tab/window
+                  window.open(url, "_blank", "noopener,noreferrer");
+                }}
+                className="w-full py-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold transition"
+              >
+                Buy Now
+              </button>
+
             <Link href="/contact">
                 <motion.button
                   className="bg-blue-950 text-white px-6  shadow-md hover:bg-blue-800  mt-4 w-full py-3 rounded-lg font-semibold transition"
