@@ -401,7 +401,7 @@ if (redirect) {
             </button> */}
             <button
                 onClick={() => {
-                  const url = `/course/${courseId}/preadmission?` +
+                  const url = `https://civilacademyapp.com/course/${courseId}/preadmission?` +
                     `coursePrice=${course.isFree ? 0 : finalPrice}` +
                     `&promoCode=${encodeURIComponent(promoCode)}`;
                   // open in new tab/window
