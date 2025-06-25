@@ -14,10 +14,10 @@ export interface IAdmission extends Document {
   state:             string;
   city:              string;
   dob:               Date;
-  profileImageUrl:   string;
-  aadhaarFrontUrl:   string;
+  // profileImageUrl:   string;
+  // aadhaarFrontUrl:   string;
   transactionId:     string;
-  aadhaarBackUrl:    string;
+  // aadhaarBackUrl:    string;
   createdAt:         Date;
   updatedAt:         Date;
 }
@@ -36,10 +36,10 @@ const AdmissionSchema = new Schema<IAdmission>(
     state:           { type: String, required: true },
     city:            { type: String, required: true },
     dob:             { type: Date,   required: true },
-    profileImageUrl: { type: String, required: true },
-    aadhaarFrontUrl: { type: String, required: true },
+    // profileImageUrl: { type: String},
+    // aadhaarFrontUrl: { type: String },
     transactionId:   { type: String, required: true },
-    aadhaarBackUrl:  { type: String, required: true },
+    // aadhaarBackUrl:  { type: String},
   },
   { timestamps: true }
 );

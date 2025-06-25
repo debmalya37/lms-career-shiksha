@@ -25,8 +25,10 @@ export interface IInvoice extends Document {
   totalAmount: number;
   transactionId: string;
   paymentMethod: string;
+  pincode?: number; // optional field for pincode
   createdAt: Date;
   updatedAt: Date;
+
 }
 
 const InvoiceSchema = new Schema<IInvoice>(
@@ -54,6 +56,7 @@ const InvoiceSchema = new Schema<IInvoice>(
     totalAmount:     { type: Number, required: true },
     transactionId:   { type: String, required: true },
     paymentMethod:   { type: String, required: true },
+    pincode:       { type: Number, required:true },                                   // optional
   },
   { timestamps: true }
 );

@@ -9,6 +9,7 @@ import { ClockIcon } from "@heroicons/react/24/solid";
 
 interface PreAdmissionForm {
   email:       string;
+  name:       string;
   gender:      "male" | "female" | "other" | "";
   phone:       string;
   fatherName:  string;
@@ -83,6 +84,7 @@ export default function PreAdmissionPage() {
 
   const [formData, setFormData] = useState<PreAdmissionForm>({
     email:      "",
+    name:      "",
     gender:     "",
     phone:      "",
     fatherName: "",
@@ -194,6 +196,20 @@ useEffect(() => {
                 name="email"
                 type="email"
                 value={formData.email}
+                onChange={handleChange}
+                required
+                className="mt-1 block w-full rounded-md border-gray-300 py-2 px-3"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Name:
+              </label>
+              <input
+              title="Name is mandatory"
+                name="name"
+                type="text"
+                value={formData.name}
                 onChange={handleChange}
                 required
                 className="mt-1 block w-full rounded-md border-gray-300 py-2 px-3"

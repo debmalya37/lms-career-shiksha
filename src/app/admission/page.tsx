@@ -7,9 +7,6 @@ import axios from "axios";
 
 interface AdmissionState {
   courseId:         string;
-  photoOfCandidate: File | null;
-  aadhaarFront:     File | null;
-  aadhaarBack:      File | null;
   name:             string;
   fatherName:       string;
   phone:            string;
@@ -31,9 +28,6 @@ export default function AdmissionForm() {
 
   const [form, setForm] = useState<AdmissionState>({
     courseId,
-    photoOfCandidate: null,
-    aadhaarFront:     null,
-    aadhaarBack:      null,
     name:             "",
     fatherName:       "",
     phone:            "",
@@ -46,34 +40,56 @@ export default function AdmissionForm() {
     dob:              "",
   });
 
-  // 1️⃣ On mount: fetch pre‑admission and prefill
+  const [invoiceCreated, setInvoiceCreated] = useState(false);
+
+  // 1️⃣ Prefill from pre-admission and generate invoice on mount
   useEffect(() => {
     (async () => {
+      if (!courseId || !transactionId || invoiceCreated) return;
       try {
-        const { data } = await axios.get("/api/pre-admission");
-        const all = data as any[];
-        // match by courseId && email if known
-        const me = all.find(item =>
-          item.courseId === courseId &&
-          (!form.email || item.email === form.email)
+        // fetch all pre-admissions
+        const { data: all } = await axios.get("/api/pre-admission");
+        // find mine
+        const me = (all as any[]).find(rec =>
+          rec.courseId === courseId &&
+          (!form.email || rec.email === form.email)
         );
         if (me) {
+          // prefill form
           setForm(f => ({
             ...f,
-            email:      me.email,
+            name:       me.name,
             fatherName: me.fatherName,
             phone:      me.phone,
+            email:      me.email,
             address1:   me.address1,
+            address2:   me.address2,
             pincode:    me.pincode,
             state:      me.state,
             city:       me.city,
+            dob:        me.dob || "",
           }));
+
+          // immediately generate the invoice
+          await fetch("/api/invoices", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              admissionFormId: me._id,        // use your pre-admission record ID
+              studentName:     me.name,
+              phone:           me.phone,
+              email:           me.email,
+              courseId,
+              transactionId,
+            }),
+          });
+          setInvoiceCreated(true);
         }
       } catch (e) {
-        console.error("Failed to load pre‑admission:", e);
+        console.error("Invoice creation on load failed:", e);
       }
     })();
-  }, [courseId, form.email]);
+  }, [courseId, transactionId, form.email, invoiceCreated]);
 
   const handleChange = (e: React.ChangeEvent<any>) => {
     const { name, value } = e.target;
@@ -115,9 +131,9 @@ const handleSubmit = async (e: React.FormEvent) => {
   ].forEach(key => {
     payload.append(key, (form as any)[key]);
   });
-  if (form.photoOfCandidate) payload.append("photoOfCandidate", form.photoOfCandidate);
-  if (form.aadhaarFront)     payload.append("aadhaarFront",     form.aadhaarFront);
-  if (form.aadhaarBack)      payload.append("aadhaarBack",      form.aadhaarBack);
+  // if (form.photoOfCandidate) payload.append("photoOfCandidate", form.photoOfCandidate);
+  // if (form.aadhaarFront)     payload.append("aadhaarFront",     form.aadhaarFront);
+  // if (form.aadhaarBack)      payload.append("aadhaarBack",      form.aadhaarBack);
 
   try {
     // 1️⃣ admission
@@ -182,7 +198,7 @@ const handleSubmit = async (e: React.FormEvent) => {
             </div>
 
             {/* file uploads */}
-            <div className="col-span-full">
+            {/* <div className="col-span-full">
               <label className="block text-sm font-medium">Photo of Candidate</label>
               <input type="file" accept="image/*" onChange={handleFile("photoOfCandidate")} title="Upload Photo of Candidate" placeholder="Upload a clear photo of the candidate" className="mt-1 w-full" />
             </div>
@@ -193,7 +209,7 @@ const handleSubmit = async (e: React.FormEvent) => {
             <div>
               <label className="block text-sm font-medium">Aadhaar Back</label>
               <input type="file" accept="image/*" onChange={handleFile("aadhaarBack")} required title="Upload Aadhaar Back" placeholder="Upload the back side of Aadhaar card" className="mt-1 w-full" />
-            </div>
+            </div> */}
 
             {/* text inputs */}
             <div>

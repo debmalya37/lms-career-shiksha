@@ -4,9 +4,11 @@ import mongoose from 'mongoose';
 import { NextRequest, NextResponse } from 'next/server';
 import connectMongo from '@/lib/db';
 import Invoice from '@/models/invoiceModel';
-import AdmissionForm, { IAdmission } from '@/models/admissionModel';
+// import AdmissionForm, { IAdmission } from '@/models/admissionModel';
 import Course, { ICourse } from '@/models/courseModel';
 import { v4 as uuidv4 } from 'uuid';
+import { IPreAdmission } from '@/models/preAdmissionModel';
+import preAdmissionModel from '@/models/preAdmissionModel';
 
 export async function POST(req: NextRequest) {
   await connectMongo();
@@ -18,6 +20,7 @@ export async function POST(req: NextRequest) {
     fatherName: manualFather,
     address1: manualAddress1,
     address2: manualAddress2,
+    pincode: manualPincode,
     phone: manualPhone,
     email: manualEmail,
     state: manualState,
@@ -33,6 +36,7 @@ export async function POST(req: NextRequest) {
       fatherName: string,
       address1: string,
       address2: string | undefined,
+      pincode: number | undefined = undefined, // optional
       phone: string,
       email: string,
       state: string,
@@ -41,7 +45,7 @@ export async function POST(req: NextRequest) {
 
   // If admin passes a valid admissionFormId, pull from that form:
   if (admissionFormId && mongoose.isValidObjectId(admissionFormId)) {
-    const form = await AdmissionForm.findById(admissionFormId).lean<IAdmission>();
+    const form = await preAdmissionModel.findById(admissionFormId).lean<IPreAdmission>();
     if (!form) {
       return NextResponse.json({ error: 'Admission form not found' }, { status: 404 });
     }
@@ -49,6 +53,7 @@ export async function POST(req: NextRequest) {
     fatherName    = form.fatherName;
     address1      = form.address1;
     address2      = form.address2;
+    pincode       = form.pincode ? Number(form.pincode) : undefined; // optional
     phone         = form.phone;        // if your Admission model stores it
     email         = form.email;
     state         = form.state;
@@ -65,6 +70,7 @@ export async function POST(req: NextRequest) {
       !manualName ||
       !manualFather ||
       !manualAddress1 ||
+      !manualPincode ||
       !manualPhone ||
       !manualEmail ||
       !manualState ||
@@ -83,6 +89,7 @@ export async function POST(req: NextRequest) {
     fatherName    = manualFather;
     address1      = manualAddress1;
     address2      = manualAddress2;
+    pincode       = manualPincode ? Number(manualPincode) : undefined; // optional
     phone         = manualPhone;
     email         = manualEmail;
     state         = manualState;
@@ -127,6 +134,7 @@ export async function POST(req: NextRequest) {
     fatherName,
     address1,
     address2,
+    pincode: pincode, // optional
     phone,
     email,
     state,

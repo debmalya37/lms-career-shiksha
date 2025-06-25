@@ -35,6 +35,7 @@ interface Course {
   isFree: boolean;
   introVideo?: string;
   discountedPrice: number; // New field
+  duration: number; 
 }
 
 
@@ -77,6 +78,22 @@ const [showIntro, setShowIntro] = useState(false);
 const [userId, setUserId] = useState<string | null>(null);
 
 const router = useRouter();
+
+
+function formatDuration(daysTotal: number) {
+  const years  = Math.floor(daysTotal / 365);
+  const daysR1 = daysTotal % 365;
+  const months = Math.floor(daysR1 / 30);
+  const days   = daysR1 % 30;
+
+  const parts = [];
+  if (years)  parts.push(`${years} yr${years > 1 ? 's' : ''}`);
+  if (months) parts.push(`${months} mo${months > 1 ? 's' : ''}`);
+  if (days)   parts.push(`${days} d`);
+  // if all zero, show lifetime
+  if (!parts.length) return 'Lifetime';
+  return parts.join(' ');
+}
 
 
   // fetch course + profile
@@ -346,6 +363,11 @@ if (redirect) {
         </span>
       )}
 
+{/* NEW: show course.duration */}
+<p className="mt-2 text-sm text-gray-800">
+  ⏳ Duration: {formatDuration(course.duration)}
+</p>
+
       {/* Final / Discounted Price */}
       <div className="flex items-center space-x-2">
         <span className="text-4xl font-extrabold text-green-600">
@@ -410,7 +432,7 @@ if (redirect) {
     const path = `/course/${courseId}/preadmission?coursePrice=${
       course.isFree ? 0 : finalPrice
     }&promoCode=${encodeURIComponent(promoCode)}`;
-    const fullUrl = `https://civilacademyapp.com${path}`;
+    const fullUrl = `http://localhost:3000${path}`;
 
     try {
       // 1️⃣ Delete deviceIdentifier

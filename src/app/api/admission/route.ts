@@ -49,15 +49,13 @@ export async function POST(req: NextRequest) {
   const dobStr          = form.get('dob')?.toString();
 
   // required files
-  const photoFile       = form.get('photoOfCandidate') as File | null;
-  const aadhaarFront    = form.get('aadhaarFront')       as File | null;
-  const aadhaarBack     = form.get('aadhaarBack')        as File | null;
+  // const photoFile       = form.get('photoOfCandidate') as File | null;
+  // const aadhaarFront    = form.get('aadhaarFront')       as File | null;
+  // const aadhaarBack     = form.get('aadhaarBack')        as File | null;
 
   if (
     !courseId || !name || !fatherName || !phone || !email ||
-    !address1 || !state || !city || !dobStr || !pincode ||
-    !photoFile || !aadhaarFront || !aadhaarBack
-  ) {
+    !address1 || !state || !city || !dobStr || !pincode) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
   }
 
@@ -67,19 +65,19 @@ export async function POST(req: NextRequest) {
   }
 
   // turn each file into a Buffer
-  const photoBuf    = Buffer.from(await photoFile.arrayBuffer());
-  const frontBuf    = Buffer.from(await aadhaarFront.arrayBuffer());
-  const backBuf     = Buffer.from(await aadhaarBack.arrayBuffer());
+  // const photoBuf    = Buffer.from(await photoFile.arrayBuffer());
+  // const frontBuf    = Buffer.from(await aadhaarFront.arrayBuffer());
+  // const backBuf     = Buffer.from(await aadhaarBack.arrayBuffer());
 
-  let profileImageUrl: string, aadhaarFrontUrl: string, aadhaarBackUrl: string;
-  try {
-    profileImageUrl  = await uploadToCloudinary(photoBuf,   'admission/profile');
-    aadhaarFrontUrl  = await uploadToCloudinary(frontBuf,   'admission/aadhaar/front');
-    aadhaarBackUrl   = await uploadToCloudinary(backBuf,    'admission/aadhaar/back');
-  } catch (err: any) {
-    console.error("Cloudinary upload failed:", err);
-    return NextResponse.json({ error: 'Image upload failed' }, { status: 500 });
-  }
+  // let profileImageUrl: string, aadhaarFrontUrl: string, aadhaarBackUrl: string;
+  // try {
+  //   profileImageUrl  = await uploadToCloudinary(photoBuf,   'admission/profile');
+  //   aadhaarFrontUrl  = await uploadToCloudinary(frontBuf,   'admission/aadhaar/front');
+  //   aadhaarBackUrl   = await uploadToCloudinary(backBuf,    'admission/aadhaar/back');
+  // } catch (err: any) {
+  //   console.error("Cloudinary upload failed:", err);
+  //   return NextResponse.json({ error: 'Image upload failed' }, { status: 500 });
+  // }
 
   // auth: find user
   const sessionToken = req.cookies.get('sessionToken')?.value;
@@ -106,9 +104,9 @@ export async function POST(req: NextRequest) {
       state,
       city,
       dob,
-      profileImageUrl,
-      aadhaarFrontUrl,
-      aadhaarBackUrl,
+      // profileImageUrl,
+      // aadhaarFrontUrl,
+      // aadhaarBackUrl,
       transactionId,
     });
     return NextResponse.json({ success: true, admissionId: admission._id });

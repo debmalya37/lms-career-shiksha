@@ -26,19 +26,23 @@ export async function POST(request: Request) {
     const {
       courseId,
       email,
+      name,
       gender,
       phone,
       fatherName,
       address1,
+      address2,
       pincode,
       state,
       city,
     } = body;
 
+    console.log('POST /api/pre-admission body:', body);
     // simple validation
     if (
       !courseId ||
       !email ||
+      !name ||
       !gender ||
       !phone ||
       !fatherName ||
@@ -57,10 +61,12 @@ export async function POST(request: Request) {
     const doc = await PreAdmission.create({
       courseId,
       email,
+      name,
       gender,
       phone,
       fatherName,
       address1,
+      address2: address2 || '', // optional, default to empty string
       pincode,
       state,
       city,

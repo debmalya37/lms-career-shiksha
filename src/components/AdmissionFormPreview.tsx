@@ -3,7 +3,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
-
+import logo from '../../public/image/logo.jpeg'; // Adjust the path as needed
+import Image from 'next/image';
 interface Admission {
   name: string;
   fatherName: string;
@@ -85,18 +86,25 @@ export const AdmissionFormPreview = ({ admission }: { admission: Admission }) =>
         <div className="flex justify-between items-start mb-4">
           <div>
             <h1 className="text-2xl font-bold text-blue-600">ADMISSION FORM</h1>
-            <p className="text-sm mt-1">Career Shiksha</p>
+            <div className="flex items-center gap-2">
+  <Image
+    src={logo} // 🔁 Update this to the actual path of your logo
+    alt="Career Shiksha Logo"
+    className="object-contain w-28 h-28 border mt-2"
+  />
+  <p className="text-base font-semibold text-gray-800">Career Shiksha</p>
+</div>
             <p className="text-sm">A‑79, Ganga Vatika, Meerut, UP 250001</p>
             <p className="text-sm">Email: affordablecareersolutions@gmail.com</p>
           </div>
           <div className="text-right text-sm space-y-1">
             <p><strong>ID:</strong> {admission.transactionId}</p>
             <p><strong>Date:</strong> {fmt(admission.createdAt)}</p>
-            <img
+            {/* <img
               src={admission.profileImageUrl}
               alt="Profile"
               className="w-28 h-28 object-cover border mt-2"
-            />
+            /> */}
           </div>
         </div>
 

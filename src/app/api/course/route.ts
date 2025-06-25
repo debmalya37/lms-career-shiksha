@@ -46,6 +46,7 @@ export async function POST(request: Request) {
     const isHidden        = formData.get("isHidden") === "true";
     const courseImgFile   = formData.get("courseImg") as File | null;
     const introVideo = formData.get("introVideo") as string || "";
+    const duration        = parseInt(formData.get("duration") as string, 10) || 0; 
 
 
     if (!courseId && (!title || !description || subjects.length === 0)) {
@@ -57,7 +58,7 @@ export async function POST(request: Request) {
     }
 
     // Log the incoming data for debugging
-    console.log("Incoming Data:", { courseId, title, description, subjects, isHidden, price,
+    console.log("Incoming Data:", { courseId, title, description, subjects, isHidden, duration, price,
       isFree, courseImgFile });
 
     // Handle image upload
@@ -76,6 +77,7 @@ export async function POST(request: Request) {
       price,
       isFree,
       discountedPrice,
+      duration,
       introVideo, // <-- NEW
       subjects: uniqueSubjects,
     };
@@ -97,6 +99,7 @@ export async function POST(request: Request) {
         price,
         isFree,
         discountedPrice,
+        duration,
         introVideo, // <-- NEW
         courseImg: courseImgUrl,
       });

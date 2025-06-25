@@ -70,6 +70,7 @@ interface Invoice {
   igst: number;
   taxAmount: number;
   totalAmount: number;
+  pincode:number;
 }
 
 export const InvoiceDocument: React.FC<{ invoice: Invoice }> = ({ invoice }) => (
@@ -96,6 +97,7 @@ export const InvoiceDocument: React.FC<{ invoice: Invoice }> = ({ invoice }) => 
         <Text>Address:</Text>
         <Text>  {invoice.address1}</Text>
   { <Text>  {invoice.address2}</Text>}
+  { <Text>  {invoice.pincode}</Text>}
   <Text>State: {invoice.state}</Text>
   {invoice.phone && <Text>Phone: {invoice.phone}</Text>}
   {invoice.email && <Text>Email: {invoice.email}</Text>}

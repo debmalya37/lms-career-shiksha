@@ -11,7 +11,8 @@ export interface ICourse extends Document {
   isHidden: boolean;
   price: number;
   isFree: boolean;
-  discountedPrice: number;    // <-- new
+  discountedPrice: number;  
+  duration:  number; // in days, default is 20 years (20 * 365 days)
   introVideo: string;
 }
 
@@ -25,6 +26,7 @@ const CourseSchema = new Schema({
   price:            { type: Number,  required: true, default: 0 },
   isFree:           { type: Boolean, required: true, default: false },
   discountedPrice:  { type: Number,  required: true, default: 0 },   // <-- new
+  duration:         { type: Number, required: true, default: 20 * 365 },
   introVideo:       { type: String, default: "" },
 });
 

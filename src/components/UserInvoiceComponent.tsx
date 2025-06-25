@@ -11,6 +11,7 @@ interface Invoice {
   fatherName: string;
   address1: string;
   address2?: string;
+  pincode?: number;
   phone?: string;
   email?: string;
   state: string;
@@ -54,7 +55,9 @@ export default function UserInvoiceComponent() {
         ],
       });
 
-      const blob = await pdf(<InvoiceDocument invoice={inv} />).toBlob();
+      const blob = await pdf(
+        <InvoiceDocument invoice={{ ...inv, pincode: inv.pincode ?? 0 }} />
+      ).toBlob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;

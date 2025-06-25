@@ -41,7 +41,17 @@ const ManageCourses = () => {
   const [discountedPrice, setDiscountedPrice] = useState(0); // <-- new
   const [introVideo, setIntroVideo] = useState("");
   const [introError, setIntroError] = useState<string | null>(null);
+  const [days, setDays]     = useState(0);
+const [months, setMonths] = useState(0);
+const [years, setYears]   = useState(20);
+const [duration, setDuration] = useState(days + months*30 + years*365);
 
+function updateDuration(d: number, m: number, y: number) {
+  setDays(d);
+  setMonths(m);
+  setYears(y);
+  setDuration(d + m * 30 + y * 365);
+}
 
 
   // courses list + editing
@@ -108,6 +118,7 @@ const ManageCourses = () => {
     ]));
     formData.append("isHidden", String(isHidden));
     formData.append("introVideo", introVideo);
+    formData.append("duration", String(duration));
 
     formData.append("isFree", String(isFree));
     formData.append("price", String(price));
@@ -289,6 +300,45 @@ const ManageCourses = () => {
             Hide this course
           </label>
         </div>
+
+        <div>
+    <label className="block text-sm font-medium">Course Duration ( days - months - year )</label>
+    <div className="grid grid-cols-3 gap-4 mt-1">
+      <div>
+        <input
+          type="number"
+          min={0}
+          value={days}
+          onChange={e => updateDuration(+e.target.value, months, years)}
+          className="w-full border rounded px-2 py-1"
+          placeholder="Days"
+          required
+        />
+      </div>
+      <div>
+        <input
+          type="number"
+          min={0}
+          value={months}
+          onChange={e => updateDuration(days, +e.target.value, years)}
+          className="w-full border rounded px-2 py-1"
+          placeholder="Months"
+          required
+        />
+      </div>
+      <div>
+        <input
+          type="number"
+          min={0}
+          value={years}
+          onChange={e => updateDuration(days, months, +e.target.value)}
+          className="w-full border rounded px-2 py-1"
+          placeholder="Years"
+          required
+        />
+      </div>
+    </div>
+  </div>
 
 
         {/* Free */}
