@@ -432,7 +432,7 @@ if (redirect) {
     const path = `/course/${courseId}/preadmission?coursePrice=${
       course.isFree ? 0 : finalPrice
     }&promoCode=${encodeURIComponent(promoCode)}`;
-    const fullUrl = `http://localhost:3000${path}`;
+    const fullUrl = `https://civilacademyapp.com${path}`;
 
     try {
       // 1️⃣ Delete deviceIdentifier
