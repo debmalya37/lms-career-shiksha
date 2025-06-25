@@ -54,6 +54,7 @@ interface Invoice {
   fatherName: string;
   address1: string;
   address2?: string;
+  pincode:number;
   phone?: string;
   email?: string;
   state: string;
@@ -70,7 +71,6 @@ interface Invoice {
   igst: number;
   taxAmount: number;
   totalAmount: number;
-  pincode:number;
 }
 
 export const InvoiceDocument: React.FC<{ invoice: Invoice }> = ({ invoice }) => (

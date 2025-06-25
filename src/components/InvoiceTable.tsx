@@ -18,6 +18,7 @@ interface Invoice {
   phone?: string;
   email?: string;
   state: string;
+  pincode: number;
   paymentMethod: string;
   transactionId: string;
   course: {
@@ -46,10 +47,7 @@ const InvoiceTable: React.FC<InvoiceTableProps> = ({ filteredInvoices }) => {
       setBusyId(inv._id);
       const blob = await pdf(
         <InvoiceDocument
-          invoice={{
-            ...inv,
-            studentAddress: `${inv.address1}${inv.address2 ? ' ' + inv.address2 : ''}`,
-          }}
+          invoice={inv}
         />
       ).toBlob();
 
