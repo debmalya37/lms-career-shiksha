@@ -27,6 +27,7 @@ interface Invoice {
   studentAddress?: string; // combined address
   address1: string;
   address2?: string;
+  pincode: number; // optional field for pincode
   phone?: string;
   email?: string;
   course: {
