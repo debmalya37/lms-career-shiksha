@@ -47,6 +47,8 @@ export default function UserInvoiceComponent() {
     try {
       setBusyId(inv._id);
       const { pdf, Font } = await import('@react-pdf/renderer');
+  
+      // Register fonts
       Font.register({
         family: 'Poppins',
         fonts: [
@@ -54,18 +56,34 @@ export default function UserInvoiceComponent() {
           { src: '/fonts/Poppins-Bold.ttf', fontWeight: 'bold' },
         ],
       });
-
+  
+      // Generate PDF as Blob
       const blob = await pdf(
         <InvoiceDocument invoice={{ ...inv, pincode: inv.pincode ?? 0 }} />
       ).toBlob();
+  
       const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${inv.invoiceId}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
+  
+      // Detect if running in PWA mode
+      const isPWA =
+        window.matchMedia('(display-mode: standalone)').matches ||
+        (window.navigator as any).standalone === true;
+  
+      if (isPWA) {
+        // ✅ For PWAs: open in new tab (download fails silently otherwise)
+        window.open(url, '_blank');
+      } else {
+        // ✅ For normal browsers: trigger download
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${inv.invoiceId}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      }
+  
+      // Revoke URL after short delay (avoid premature cleanup in PWA)
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
     } catch (e) {
       console.error('PDF generation error', e);
       alert('Failed to generate PDF. Please try again.');
@@ -73,6 +91,7 @@ export default function UserInvoiceComponent() {
       setBusyId(null);
     }
   };
+  
 
   if (loading) return <p className="text-center mt-10">Loading invoices…</p>;
   if (!invoices.length)
