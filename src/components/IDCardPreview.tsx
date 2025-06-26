@@ -5,6 +5,8 @@ import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
 import Image from "next/image";
 import logo from "../../public/image/logo.jpeg";
+import Avatars from '@dicebear/avatars';
+import sprites from '@dicebear/avatars-avataaars-sprites';
 
 interface PreviewProps {
   name: string;
@@ -81,15 +83,21 @@ pdf.addImage(imgData, "PNG", x, y, imgWidth, imgHeight);
               {/* photo */}
               <div className="w-full md:w-1/3 flex items-center justify-center bg-gradient-to-br from-indigo-600 to-indigo-800 p-4">
                 {profileImageUrl ? (
-                  <img
-                    src={profileImageUrl}
+                  <Image
+                    src={logo}
                     alt="Profile"
+                    width={96}
+                    height={96}
                     className="w-20 h-20 md:w-24 md:h-24 rounded-full border-4 border-white object-cover"
                   />
                 ) : (
-                  <div className="w-20 h-20 md:w-24 md:h-24 bg-gray-200 rounded-full flex items-center justify-center text-gray-500">
-                    No Photo
-                  </div>
+                  <Image
+                    src={logo}
+                    alt="Profile"
+                    width={96}
+                    height={96}
+                    className="w-20 h-20 md:w-24 md:h-24 rounded-full border-4 border-white object-cover"
+                  />
                 )}
               </div>
 

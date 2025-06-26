@@ -5,6 +5,7 @@ import React, { useState, useCallback, useEffect } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import axios from "axios";
 import { ClockIcon } from "@heroicons/react/24/solid";
+import { format } from "date-fns";
 // import type { InitiatePaymentResponse } from "@/path/to/your/types";
 
 interface PreAdmissionForm {
@@ -18,6 +19,7 @@ interface PreAdmissionForm {
   pincode:     string;
   state:       string;
   city:        string;
+  dob:         string; // Added date of birth field
 }
 interface PhonePeRedirectInfo {
     url: string;
@@ -93,6 +95,7 @@ export default function PreAdmissionPage() {
     pincode:    "",
     state:      "",
     city:       "",
+    dob:        "", // Default to today
   });
   const [loading, setLoading] = useState(false);
 
@@ -185,6 +188,11 @@ useEffect(() => {
           <h2 className="text-2xl font-bold mb-6 text-center">
             Pre‑Admission Form
           </h2>
+          <div className="p-4 bg-red-100 border-l-4 border-red-600 text-red-800">
+  <strong>⚠️ IMPORTANT:</strong> Do NOT go back, cancel, or switch to another app until you’ve completed the admission step after payment.  
+  Interrupting the flow may cause your payment to get stuck. After successful payment you will be redirected automatically—please be patient!
+</div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Email */}
             <div>
@@ -193,6 +201,7 @@ useEffect(() => {
               </label>
               <input
               title="Email ID is mandatory"
+              readOnly
                 name="email"
                 type="email"
                 value={formData.email}
@@ -354,6 +363,16 @@ useEffect(() => {
                 className="mt-1 block w-full rounded-md border-gray-300 py-2 px-3 bg-gray-100"
               />
             </div>
+            <div>
+                          <label className="block text-sm font-medium">Date of Birth</label>
+                          <input title="Date of Birth" autoComplete="bday"
+                           type="date" name="dob" value={formData.dob} onChange={handleChange} required className="mt-1 w-full rounded-md border-gray-300 px-3 py-2" />
+                          {formData.dob && (
+                            <p className="text-sm text-gray-600 mt-1">
+                              Selected: {format(new Date(formData.dob), "MMMM d, yyyy")}
+                            </p>
+                          )}
+              </div>
 
             {/* Buy Now Button spans full width */}
             <div className="col-span-full text-center">

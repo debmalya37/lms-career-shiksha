@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import connectMongo from '@/lib/db';
 import EBook from '@/models/ebookModel';
 import { v2 as cloudinary } from 'cloudinary';
@@ -76,5 +76,26 @@ export async function GET(request: Request) {
   } catch (error) {
     console.error("GET /api/ebook Error:", error);
     return NextResponse.json({ error: 'Failed to fetch eBooks' }, { status: 500 });
+  }
+}
+
+
+export async function DELETE(req: NextRequest) {
+  await connectMongo();
+  const { searchParams } = new URL(req.url);
+  const id = searchParams.get('id');
+  if (!id) {
+    return NextResponse.json({ error: 'Missing eBook id' }, { status: 400 });
+  }
+
+  try {
+    const deleted = await EBook.findByIdAndDelete(id);
+    if (!deleted) {
+      return NextResponse.json({ error: 'eBook not found' }, { status: 404 });
+    }
+    return NextResponse.json({ message: 'eBook deleted' });
+  } catch (err) {
+    console.error('DELETE /api/ebook error:', err);
+    return NextResponse.json({ error: 'Delete failed' }, { status: 500 });
   }
 }

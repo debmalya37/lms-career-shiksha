@@ -187,6 +187,61 @@ const filteredInvoices = invoices.filter(inv => {
     setTotalAmount(amt + _taxAmount);
   }, [discountedPrice, stateName]);
 
+ // Utility: convert the filteredInvoices array to CSV
+ const downloadCSV = () => {
+  if (!filteredInvoices.length) {
+    alert("No invoices to export!");
+    return;
+  }
+
+  // 1) Build the header row
+  const headers = [
+    "Invoice ID",
+    "Student Name",
+    "Course",
+    "Original Price",
+    "Discounted Price",
+    "Tax Amount",
+    "cgst",
+    "sgst",
+    "igst",
+    "pincode",
+    "Total Amount",
+    "Created At"
+  ];
+
+  // 2) Map each invoice to a row of values
+  const rows = filteredInvoices.map(inv => [
+    inv.invoiceId,
+    inv.studentName,
+    inv.course.title,
+    inv.course.originalPrice.toFixed(2),
+    inv.course.discountedPrice.toFixed(2),
+    inv.taxAmount.toFixed(2),
+    inv.cgst.toFixed(2),
+    inv.sgst.toFixed(2),
+    inv.igst.toFixed(2),
+    inv.pincode,
+    inv.totalAmount.toFixed(2),
+    new Date(inv.createdAt).toLocaleString()
+  ]);
+
+  // 3) Combine header + rows into CSV string
+  const csvContent =
+    [headers, ...rows]
+      .map(row => row.map(field => `"${String(field).replace(/"/g, '""')}"`).join(","))
+      .join("\r\n");
+
+  // 4) Create a Blob and trigger download
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement("a");
+  a.href     = url;
+  a.download = `invoices_export_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+};
+
   // Create invoice
   const handleCreate = async () => {
     try {
@@ -245,6 +300,12 @@ const filteredInvoices = invoices.filter(inv => {
             className="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded"
           >
             <FiPlus className="mr-2" /> Create Invoice
+          </button>
+          <button
+            onClick={downloadCSV}
+            className="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded"
+          >
+            Download Excel
           </button>
           <div className="flex-1 min-w-[200px]">
         <label className="block text-sm">Search</label>

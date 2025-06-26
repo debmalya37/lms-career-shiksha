@@ -14,6 +14,7 @@ export interface IPreAdmission extends Document {
   pincode:       string;
   state:         string;
   city:          string;
+  dob:            Date; // Assuming you want to store date of birth
   transactionId:     string;
   createdAt:     Date;
   updatedAt:     Date;
@@ -32,6 +33,7 @@ const PreAdmissionSchema = new Schema<IPreAdmission>(
     pincode:    { type: String, required: true },
     state:      { type: String, required: true },
     city:       { type: String, required: true },
+    dob:         { type: Date, required: true }, // Assuming you want to store date of birth
     transactionId:   { type: String },
   },
   { timestamps: true }

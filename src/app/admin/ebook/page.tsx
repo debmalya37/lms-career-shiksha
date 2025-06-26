@@ -44,6 +44,21 @@ const ManageEBooks = () => {
     fetchData();
   }, []);
 
+  // inside ManageEBooks component:
+
+const handleDelete = async (id: string) => {
+  if (!confirm('Delete this e-book?')) return;
+  try {
+    await axios.delete(`/api/ebook?id=${encodeURIComponent(id)}`);
+    setEBooks(ebooks.filter(e => e._id !== id));
+    alert('eBook deleted');
+  } catch (err) {
+    console.error('Error deleting eBook:', err);
+    alert('Failed to delete');
+  }
+};
+
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -190,6 +205,12 @@ const ManageEBooks = () => {
             >
               Edit
             </button>
+            <button
+     onClick={() => handleDelete(ebook._id)}
+     className="bg-red-500 text-white py-1 px-3 rounded-md hover:bg-red-600"
+   >
+    Delete
+   </button>
           </li>
         ))}
       </ul>

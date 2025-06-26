@@ -82,6 +82,10 @@ const InvoiceTable: React.FC<InvoiceTableProps> = ({ filteredInvoices }) => {
               'Course',
               'Amount',
               'Tax',
+              'cgst',
+              'sgst',
+              'igst',
+              'pincode',
               'Total',
               'Date',
               'PDF',
@@ -103,6 +107,10 @@ const InvoiceTable: React.FC<InvoiceTableProps> = ({ filteredInvoices }) => {
               <td className="px-4 py-2">{inv.course.title}</td>
               <td className="px-4 py-2">₹{inv.course.discountedPrice.toFixed(2)}</td>
               <td className="px-4 py-2">₹{inv.taxAmount.toFixed(2)}</td>
+              <td className="px-4 py-2">₹{inv.cgst.toFixed(2)}</td>
+              <td className="px-4 py-2">₹{inv.sgst.toFixed(2)}</td>
+              <td className="px-4 py-2">₹{inv.igst.toFixed(2)}</td>
+              <td className="px-4 py-2">{inv.pincode}</td>
               <td className="px-4 py-2 font-semibold text-indigo-600">
                 ₹{inv.totalAmount.toFixed(2)}
               </td>

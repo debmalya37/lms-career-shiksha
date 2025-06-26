@@ -48,7 +48,7 @@ export default function AdmissionForm() {
       if (!courseId || !transactionId || invoiceCreated) return;
       try {
         // fetch all pre-admissions
-        const { data: all } = await axios.get("/api/pre-admission");
+        const { data: all } = await axios.get("/api/pre-admission?mine=true");
         // find mine
         const me = (all as any[]).find(rec =>
           rec.courseId === courseId &&
@@ -70,6 +70,20 @@ export default function AdmissionForm() {
             dob:        me.dob || "",
           }));
 
+          // 2️⃣ look up actual paid amount
+let paidAmount: number | undefined = undefined;
+try {
+  const resp = await axios.get<{ found: boolean; amount: number | null }>(
+    `/api/user/purchase?transactionId=${encodeURIComponent(transactionId)}`
+  );
+  if (resp.data.found && resp.data.amount != null) {
+    paidAmount = resp.data.amount;
+  }
+} catch (err) {
+  console.warn('Could not fetch paid amount, falling back to course discountPrice');
+}
+
+
           // immediately generate the invoice
           await fetch("/api/invoices", {
             method: "POST",
@@ -81,6 +95,8 @@ export default function AdmissionForm() {
               email:           me.email,
               courseId,
               transactionId,
+              // override discountedPrice with what they actually paid:
+    discountedPrice: paidAmount,
             }),
           });
           setInvoiceCreated(true);
@@ -145,22 +161,22 @@ const handleSubmit = async (e: React.FormEvent) => {
     if (!res.ok) throw new Error(json.error || "Admission failed");
 
     // 2️⃣ invoice
-    const invRes = await fetch("/api/invoices", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        admissionFormId: json.admissionId,
-        studentName:     json.name,
-        phone:           json.phone,
-        email:           json.email,
-        courseId:        json.courseId,
-        transactionId,
-      }),
-    });
-    if (!invRes.ok) {
-      const err = await invRes.json();
-      throw new Error(err.error || "Invoice failed");
-    }
+    // const invRes = await fetch("/api/invoices", {
+    //   method: "POST",
+    //   headers: { "Content-Type": "application/json" },
+    //   body: JSON.stringify({
+    //     admissionFormId: json.admissionId,
+    //     studentName:     json.name,
+    //     phone:           json.phone,
+    //     email:           json.email,
+    //     courseId:        json.courseId,
+    //     transactionId,
+    //   }),
+    // });
+    // if (!invRes.ok) {
+    //   const err = await invRes.json();
+    //   throw new Error(err.error || "Invoice failed");
+    // }
 
     // 3️⃣ only *after* both succeeded, fire cleanup calls in parallel:
     await Promise.all([
@@ -188,13 +204,21 @@ const handleSubmit = async (e: React.FormEvent) => {
     <div className="max-w-3xl mx-auto p-6">
       <div className="bg-white rounded-2xl shadow-md overflow-hidden">
         <div className="p-6">
-          <h2 className="text-2xl font-bold mb-6 text-center">Student Admission Form</h2>
+          <h2 className="text-2xl font-bold mb-6 text-center">Student Admission Form ( Read Only Verification)</h2>
+          {/* …inside your render, just before the submit button… */}
+<div className="col-span-full">
+  <p className="text-sm text-red-700 bg-red-100 p-3 rounded">
+    ⚠️ Please do not go back, switch tabs, or navigate away until you&apos;ve clicked “I&apos;ve Verified & Confirmed All Details.”  
+    Doing so may interrupt your purchase & admission flow.
+  </p>
+</div>
+
           <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* courseName */}
             <input type="hidden" name="courseId" value={form.courseId} />
             <div className="col-span-full">
               <label className="block text-sm font-medium">Course Enrolling In</label>
-              <input readOnly value={courseName} className="mt-1 w-full rounded-md border-gray-300 bg-gray-100 px-3 py-2" />
+              <input title="course name" readOnly value={courseName} className="mt-1 w-full rounded-md border-gray-300 bg-gray-100 px-3 py-2" />
             </div>
 
             {/* file uploads */}
@@ -215,16 +239,16 @@ const handleSubmit = async (e: React.FormEvent) => {
             <div>
               <label className="block text-sm font-medium">Name</label>
               <input title="Full Name" type="text" autoComplete="name" autoFocus
-               name="name" value={form.name} onChange={handleChange} required className="mt-1 w-full rounded-md border-gray-300 px-3 py-2" />
+               name="name" value={form.name} readOnly onChange={handleChange} required className="mt-1 w-full rounded-md border-gray-300 px-3 py-2" />
             </div>
             <div>
               <label htmlFor="FatherName" className="block text-sm font-medium">Father’s Name</label>
               <input title="Father's Name" type="text" autoComplete="name"	
-             name="fatherName" value={form.fatherName} onChange={handleChange} required className="mt-1 w-full rounded-md border-gray-300 px-3 py-2" />
+             name="fatherName" value={form.fatherName} readOnly onChange={handleChange} required className="mt-1 w-full rounded-md border-gray-300 px-3 py-2" />
             </div>
             <div>
               <label className="block text-sm font-medium">Phone</label>
-              <input title="Phone Number" type="tel" autoComplete="tel"
+              <input title="Phone Number" readOnly type="tel" autoComplete="tel"
                name="phone" value={form.phone} onChange={handleChange} required className="mt-1 w-full rounded-md border-gray-300 px-3 py-2" />
             </div>
             <div>
@@ -237,7 +261,7 @@ const handleSubmit = async (e: React.FormEvent) => {
             <div>
               <label className="block text-sm font-medium">Date of Birth</label>
               <input title="Date of Birth" autoComplete="bday"
-               type="date" name="dob" value={form.dob} onChange={handleChange} required className="mt-1 w-full rounded-md border-gray-300 px-3 py-2" />
+               type="date" name="dob" readOnly value={form.dob} onChange={handleChange} required className="mt-1 w-full rounded-md border-gray-300 px-3 py-2" />
               {form.dob && (
                 <p className="text-sm text-gray-600 mt-1">
                   Selected: {format(new Date(form.dob), "MMMM d, yyyy")}
@@ -250,11 +274,11 @@ const handleSubmit = async (e: React.FormEvent) => {
               <label className="block text-sm font-medium">Residential Address</label>
               <textarea title="Residential Address" autoComplete="address-line1"
               
-              name="address1" value={form.address1} onChange={handleChange} rows={2} required className="mt-1 w-full rounded-md border-gray-300 px-3 py-2" />
+              name="address1" value={form.address1} readOnly onChange={handleChange} rows={2} required className="mt-1 w-full rounded-md border-gray-300 px-3 py-2" />
             </div>
             <div className="col-span-full">
               <label className="block text-sm font-medium">Address Line 2 (optional)</label>
-              <textarea title="Address Line 2" autoComplete="address-line2"
+              <textarea readOnly title="Address Line 2" autoComplete="address-line2"
               
               name="address2" value={form.address2} onChange={handleChange} rows={2} className="mt-1 w-full rounded-md border-gray-300 px-3 py-2" />
             </div>
@@ -279,7 +303,7 @@ const handleSubmit = async (e: React.FormEvent) => {
             {/* submit */}
             <div className="col-span-full text-center">
               <button type="submit" className="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl">
-                SUBMIT TO ADMISSION
+                I&apos;ve Verified & Confirmed All Details
               </button>
             </div>
           </form>

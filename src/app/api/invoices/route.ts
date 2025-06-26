@@ -43,6 +43,19 @@ export async function POST(req: NextRequest) {
       transactionId: string,
       course: ICourse;
 
+       // 0️⃣ Idempotency check: if an invoice with this transactionId already exists, return it
+  if (manualTxn) {
+    const existing = await Invoice.findOne({
+      transactionId: manualTxn,
+      ...(admissionFormId && mongoose.isValidObjectId(admissionFormId)
+        ? { admissionFormId }
+        : {})
+    }).lean();
+    if (existing) {
+      return NextResponse.json({ invoice: existing }, {status: 203});
+    }
+  }
+
   // If admin passes a valid admissionFormId, pull from that form:
   if (admissionFormId && mongoose.isValidObjectId(admissionFormId)) {
     const form = await preAdmissionModel.findById(admissionFormId).lean<IPreAdmission>();
@@ -105,9 +118,10 @@ export async function POST(req: NextRequest) {
   const originalPrice = typeof manualOriginal === 'number'
     ? manualOriginal
     : course.price;
-  const discountedPrice = typeof manualDiscounted === 'number'
+    const discountedPrice = typeof manualDiscounted === 'number'
     ? manualDiscounted
     : course.discountedPrice;
+  
   const discount = originalPrice - discountedPrice;
 
   // Tax breakdown (GST included)
@@ -124,7 +138,25 @@ export async function POST(req: NextRequest) {
   const totalAmount = discountedPrice;
 
   // Build and save invoice
-  const invoiceId = `${new Date().toISOString().slice(0,10)}-${uuidv4().slice(-6)}`;
+  // const invoiceId = `${new Date().toISOString().slice(0,10)}-${uuidv4().slice(-6)}`;
+  const today = new Date();
+const dateStr = today.toISOString().slice(0, 10); // "YYYY-MM-DD"
+
+const startOfDay = new Date(dateStr);
+const endOfDay = new Date(dateStr);
+endOfDay.setDate(endOfDay.getDate() + 1);
+
+// count how many invoices already created today
+const todaysCount = await Invoice.countDocuments({
+  createdAt: { $gte: startOfDay, $lt: endOfDay }
+});
+
+// next serial, left–pad to 5 digits
+const seq = (todaysCount + 1).toString().padStart(5, '0');
+
+const invoiceId = `${dateStr}-${seq}`;
+
+
   const inv = new Invoice({
     invoiceId,
     ...(admissionFormId && mongoose.isValidObjectId(admissionFormId)
