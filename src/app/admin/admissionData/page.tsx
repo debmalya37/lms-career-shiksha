@@ -17,9 +17,9 @@ interface Admission {
   address2: string;
   state: string;
   dob: string; // ISO string
-  profileImageUrl: string;
-  aadhaarImageUrl: string;
-  aadhaarNumber: string;
+  // profileImageUrl: string;
+  // aadhaarImageUrl: string;
+  // aadhaarNumber: string;
   createdAt: string;
 }
 
@@ -50,7 +50,7 @@ export default function AdmissionDataPage() {
     doc.text(`Email: ${ad.email}`, margin, y);
     doc.text(`Phone: ${ad.phone}`, 300, y);
     y += 20;
-    doc.text(`Aadhaar No: ${ad.aadhaarNumber}`, margin, y);
+    // doc.text(`Aadhaar No: ${ad.aadhaarNumber}`, margin, y);
     doc.text(`DOB: ${new Date(ad.dob).toLocaleDateString()}`, 300, y);
     y += 20;
     doc.text(`Address: ${ad.address1}`, margin, y);
@@ -72,33 +72,33 @@ export default function AdmissionDataPage() {
         img.src     = url;
       });
 
-    try {
-      const profileImg = await loadImage(ad.profileImageUrl);
-      doc.addImage(
-        profileImg,
-        "JPEG",
-        margin,
-        y,
-        100,
-        100
-      );
-    } catch {
-      /* skip if fails */
-    }
+    // try {
+    //   const profileImg = await loadImage(ad.profileImageUrl);
+    //   doc.addImage(
+    //     profileImg,
+    //     "JPEG",
+    //     margin,
+    //     y,
+    //     100,
+    //     100
+    //   );
+    // } catch {
+    //   /* skip if fails */
+    // }
 
-    try {
-      const aadhaarImg = await loadImage(ad.aadhaarImageUrl);
-      doc.addImage(
-        aadhaarImg,
-        "JPEG",
-        400,
-        y,
-        100,
-        100
-      );
-    } catch {
-      /* skip */
-    }
+    // try {
+    //   const aadhaarImg = await loadImage(ad.aadhaarImageUrl);
+    //   doc.addImage(
+    //     aadhaarImg,
+    //     "JPEG",
+    //     400,
+    //     y,
+    //     100,
+    //     100
+    //   );
+    // } catch {
+    //   /* skip */
+    // }
 
     doc.save(`admission_${ad._id}.pdf`);
   };
@@ -117,8 +117,6 @@ export default function AdmissionDataPage() {
                 "Phone",
                 "State",
                 "DOB",
-                "Profile",
-                "Aadhaar",
                 "Actions",
               ].map((h) => (
                 <th
@@ -140,7 +138,7 @@ export default function AdmissionDataPage() {
                 <td className="px-4 py-2 text-sm">
                   {new Date(ad.dob).toLocaleDateString()}
                 </td>
-                <td className="px-4 py-2">
+                {/* <td className="px-4 py-2">
                   <img
                     src={ad.profileImageUrl}
                     alt="profile"
@@ -155,7 +153,7 @@ export default function AdmissionDataPage() {
                     className="h-12 w-12 object-cover rounded cursor-pointer"
                     onClick={() => openModal(ad.aadhaarImageUrl)}
                   />
-                </td>
+                </td> */}
                 <td className="px-4 py-2 space-x-2">
                   <button
                     onClick={() => downloadPdf(ad)}

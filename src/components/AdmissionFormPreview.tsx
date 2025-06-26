@@ -90,7 +90,7 @@ export const AdmissionFormPreview = ({ admission }: { admission: Admission }) =>
   <Image
     src={logo} // 🔁 Update this to the actual path of your logo
     alt="Career Shiksha Logo"
-    className="object-contain w-28 h-28 border mt-2"
+    className="object-cover w-28 h-28 border mt-2"
   />
   <p className="text-base font-semibold text-gray-800">Career Shiksha</p>
 </div>
@@ -117,7 +117,7 @@ export const AdmissionFormPreview = ({ admission }: { admission: Admission }) =>
             {admission.email && <p><strong>Email:</strong> {admission.email}</p>}
             {admission.phone && <p><strong>Phone:</strong> {admission.phone}</p>}
             <p><strong>DOB:</strong> {fmt(admission.dob)}</p>
-            <p><strong>Aadhaar #:</strong> {admission.aadhaarNumber}</p>
+            {/* <p><strong>Aadhaar #:</strong> {admission.aadhaarNumber}</p> */}
           </div>
         </div>
 
@@ -135,7 +135,7 @@ export const AdmissionFormPreview = ({ admission }: { admission: Admission }) =>
 
         {/* Documents */}
         {/* Documents */}
-<div>
+{/* <div>
   <h2 className="font-semibold text-lg border-b pb-1 mb-4">Documents</h2>
   <div className="flex flex-row gap-x-12">
     {admission.aadhaarFrontUrl && (
@@ -159,7 +159,7 @@ export const AdmissionFormPreview = ({ admission }: { admission: Admission }) =>
       </div>
     )}
   </div>
-</div>
+</div> */}
 
 
         {/* Footer */}

@@ -63,28 +63,54 @@ async function enrollUser(
   courseId: string,
   amountPaid: number,
   orderId: string,
-  promoCode?: string,
+  promoCode?: string
 ) {
   await dbConnect();
-  await User.updateOne(
-    { sessionToken },
-    { $addToSet: { course: courseId } }
-  );
+
+  const user = await User.findOne({ sessionToken });
+  if (!user) return;
+
+  // Combine existing + new course IDs
+  const courseIds = new Set<string>([...user.course.map(c => c.toString()), courseId]);
+
+  // Fetch all relevant courses
+  const courses = await Course.find({ _id: { $in: Array.from(courseIds) } }).lean();
+
+  let maxDays = 0;
+  let hasMissingDuration = false;
+
+  for (const c of courses) {
+    if (typeof c.duration !== "number" || isNaN(c.duration)) {
+      hasMissingDuration = true;
+      break;
+    }
+    maxDays = Math.max(maxDays, c.duration);
+  }
+
+  // If any course is missing duration, default to 5 years (1825 days)
+  if (hasMissingDuration) {
+    maxDays = 365 * 5;
+  }
+
+  // Update the user
   await User.updateOne(
     { sessionToken },
     {
+      $addToSet: { course: courseId },
       $push: {
         purchaseHistory: {
-          course:        courseId,
-          amount:        amountPaid,
+          course: courseId,
+          amount: amountPaid,
           transactionId: orderId,
-          purchasedAt:   new Date(),
-          promoCode:     promoCode || null,
+          purchasedAt: new Date(),
+          promoCode: promoCode || null,
         },
       },
+      $set: { subscription: maxDays },
     }
   );
 }
+
   
 // ── 4) GET handler ────────────────────────────────────────────────────────────
 export async function GET(req: NextRequest) {
