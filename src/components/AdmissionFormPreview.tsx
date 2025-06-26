@@ -87,8 +87,8 @@ export const AdmissionFormPreview = ({ admission }: { admission: Admission }) =>
           <div>
             <h1 className="text-2xl font-bold text-blue-600">ADMISSION FORM</h1>
             <div className="flex items-center gap-2">
-  <Image
-    src={logo} // 🔁 Update this to the actual path of your logo
+  <img
+    src={logo.src} // 🔁 Update this to the actual path of your logo
     alt="Career Shiksha Logo"
     className="object-cover w-28 h-28 border mt-2"
   />

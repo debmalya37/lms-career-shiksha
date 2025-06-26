@@ -230,7 +230,7 @@ const imgUrl     = admission?.profileImageUrl || profile?.profileImageUrl;
         <IDCardPreview
           name={name}
           email={email}
-          profileImageUrl={imgUrl}
+          profileImageUrl={logo.src}
           issueDate={issueDate}
           expiryDate={expiryDate}
           onClose={() => setPreviewOpen(false)}

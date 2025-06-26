@@ -82,7 +82,7 @@ export const InvoiceDocument: React.FC<{ invoice: Invoice }> = ({ invoice }) => 
         <View style={styles.invoiceMeta}>
           <Text>Invoice ID: {invoice.invoiceId}</Text>
           <Text>Date: {new Date(invoice.createdAt).toLocaleDateString()}</Text>
-          <Text>Affordable Career Solutions Pvt. Ltd.</Text>
+          <Text>Affordable Career Solutions Pvt Ltd</Text>
           <Text>A‑79, Ganga Vatika, Meerut, UP 250001</Text>
           <Text>Email: affordablecareersolutions@gmail.com</Text>
           <Text>GSTIN: 09AAWCA8771F1ZY</Text>
@@ -152,7 +152,7 @@ export const InvoiceDocument: React.FC<{ invoice: Invoice }> = ({ invoice }) => 
       {/* Footer */}
       <Text style={styles.footer}>
         This is a system‑generated invoice. Contact support for queries.
-        <br />All data as per user input.
+        <br /> <hr />All data as per user input.
       </Text>
     </Page>
   </Document>
