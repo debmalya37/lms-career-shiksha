@@ -18,7 +18,7 @@ interface Subject {
 interface Course {
   _id: string;
   title: string;
-  subjects: (Subject | string)[]; // Subjects can be either strings (IDs) or objects
+  subjects: (Subject | string)[];
 }
 
 interface UserProfile {
@@ -43,31 +43,19 @@ export default function NotesPage() {
         const profile: UserProfile = await res.json();
 
         if (!profile.error && profile.courses?.length > 0) {
-          console.log("User courses:", profile.courses);
-
-          // Extract subject IDs from courses
           const subjectIds = profile.courses.flatMap((course) =>
             course.subjects.map((subject) =>
-              typeof subject === "string" ? subject : subject._id // Handle both string and object
+              typeof subject === "string" ? subject : subject._id
             )
           );
 
-          if (subjectIds.length > 0) {
-            console.log("Extracted Subject IDs:", subjectIds);
-
-            // Fetch notes filtered by subject IDs
+          if (subjectIds.length) {
             const notesRes = await fetch(
               `/api/notes/specific?subject=${subjectIds.join(",")}`
             );
             const fetchedNotes = await notesRes.json();
-
-            console.log("Fetched notes:", fetchedNotes);
             setNotes(fetchedNotes);
-          } else {
-            console.warn("No valid subject IDs found.");
           }
-        } else {
-          console.error("Profile data error or no courses found.");
         }
       } catch (error) {
         console.error("Error fetching notes:", error);
@@ -81,52 +69,55 @@ export default function NotesPage() {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-screen">
-        <p>Loading...</p>
+      <div className="flex items-center justify-center h-screen bg-gradient-to-b from-gray-950 to-gray-800">
+        <p className="text-white text-lg">Loading...</p>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto py-8 h-[100vh] bg-gradient-to-b from-gray-950 to-gray-800 pr-5 pl-5">
-      <h1 className="text-3xl font-bold text-black mb-6">Notes</h1>
-      <div className="bg-white rounded-lg shadow-md p-6 overflow-x-auto">
-        <table className="min-w-full text-left table-auto text-black">
-          <thead>
-            <tr className="bg-gray-200">
-              <th className="px-4 py-2">Title</th>
-              <th className="px-4 py-2">Subject</th>
-              <th className="px-4 py-2">Download</th>
-            </tr>
-          </thead>
-          <tbody>
-            {notes.length > 0 ? (
-              notes.map((note) => (
-                <tr key={note._id} className="border-b">
-                  <td className="px-4 py-2">{note.title}</td>
-                  <td className="px-4 py-2">{note.subject?.name || "Unknown Subject"}</td>
-                  <td className="px-4 py-2">
-                    <Link
-                      href={note.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 hover:underline"
-                    >
-                      Download
-                    </Link>
+    <div className="flex flex-col min-h-screen bg-gradient-to-b from-gray-950 to-gray-800">
+      <main className="flex-grow container mx-auto py-8 px-4 sm:px-6 lg:px-8 pb-24">
+        <h1 className="text-3xl font-bold text-white mb-6">Notes</h1>
+        <div className="bg-white rounded-lg shadow-md p-4 overflow-x-auto">
+          <table className="min-w-full text-left table-auto">
+            <thead>
+              <tr className="bg-gray-200">
+                <th className="px-2 sm:px-4 py-2">Title</th>
+                <th className="px-2 sm:px-4 py-2">Subject</th>
+                <th className="px-2 sm:px-4 py-2">Download</th>
+              </tr>
+            </thead>
+            <tbody>
+              {notes.length ? (
+                notes.map((note) => (
+                  <tr key={note._id} className="border-b hover:bg-gray-50">
+                    <td className="px-2 sm:px-4 py-2 break-words">{note.title}</td>
+                    <td className="px-2 sm:px-4 py-2">{note.subject?.name || "Unknown"}</td>
+                    <td className="px-2 sm:px-4 py-2">
+                      <Link
+                        href={note.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:underline"
+                      >
+                        Download
+                      </Link>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={3} className="px-2 sm:px-4 py-2 text-center">
+                    No notes available.
                   </td>
                 </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan={3} className="px-4 py-2 text-center">
-                  No notes available.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </main>
+      {/* The footer will come after this main, ensuring no overlap */}
     </div>
   );
 }
