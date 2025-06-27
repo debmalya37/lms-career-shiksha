@@ -15,7 +15,7 @@ interface Course {
   description: string;
   instructor?: string;
   courseImg?: string;
-  createdAt: string;
+  duration: string;
   subjects: { name: string }[];  // assume populated
 }
 
@@ -98,10 +98,10 @@ export default function MyCoursesPage() {
                       <BookOpenIcon className="w-4 h-4" />
                       <span>{course.subjects.length} Subjects</span>
                     </span>
-                    <span className="flex items-center space-x-1">
+                    {/* <span className="flex items-center space-x-1">
                       <CalendarDaysIcon className="w-4 h-4" />
-                      <span>{new Date(course.createdAt).toLocaleDateString()}</span>
-                    </span>
+                       <span>{new Date(course.duration).toLocaleDateString()}</span>
+                    </span> */}
                   </div>
 
                   <Link href={`/courses/${course._id}`}>
