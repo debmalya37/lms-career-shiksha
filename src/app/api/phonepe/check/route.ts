@@ -92,6 +92,7 @@ async function enrollUser(
     maxDays = 365 * 5;
   }
 
+  let amountinRupees = amountPaid / 100; // Convert paise to rupees
   // Update the user
   await User.updateOne(
     { sessionToken },
@@ -100,7 +101,7 @@ async function enrollUser(
       $push: {
         purchaseHistory: {
           course: courseId,
-          amount: amountPaid,
+          amount: amountinRupees,
           transactionId: orderId,
           purchasedAt: new Date(),
           promoCode: promoCode || null,

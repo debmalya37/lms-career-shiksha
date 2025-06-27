@@ -31,23 +31,22 @@ export default function TutorialVideoPlayer({ url }: TutorialVideoPlayerProps) {
   const playerContainerRef = useRef<HTMLDivElement>(null);
   const progressBarRef = useRef<HTMLDivElement>(null);
   const animationRef = useRef<number>();
+  const hideTimer = useRef<number>();
 
+  const [controlsVisible, setControlsVisible] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [apiReady, setApiReady] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [showControls, setShowControls] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [playbackRate, setPlaybackRate] = useState(1);
   const [showRateMenu, setShowRateMenu] = useState(false);
 
-  // 1. Load YouTube Iframe API
+  // 1️⃣ Load YouTube IFrame API
   useEffect(() => {
     if (!videoId) return;
     if (!window.YT) {
-      window.onYouTubeIframeAPIReady = () => {
-        setApiReady(true);
-      };
+      window.onYouTubeIframeAPIReady = () => setApiReady(true);
       const tag = document.createElement("script");
       tag.src = "https://www.youtube.com/iframe_api";
       document.body.appendChild(tag);
@@ -56,70 +55,90 @@ export default function TutorialVideoPlayer({ url }: TutorialVideoPlayerProps) {
     }
   }, [videoId]);
 
+  // 2️⃣ Auto‐hide helper
+  const showAndScheduleHide = () => {
+    setControlsVisible(true);
+    if (hideTimer.current) window.clearTimeout(hideTimer.current);
+    hideTimer.current = window.setTimeout(() => {
+      setControlsVisible(false);
+    }, 2000);
+  };
+
+  // 3️⃣ Hide immediately on fullscreen toggle
   useEffect(() => {
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.code === "Space") {
-        e.preventDefault();
-        if (playerRef.current) {
-          isPlaying ? playerRef.current.pauseVideo() : playerRef.current.playVideo();
-        }
-      } else if (e.code === "ArrowRight") {
-        playerRef.current?.seekTo(playerRef.current.getCurrentTime() + 10, true);
-      } else if (e.code === "ArrowLeft") {
-        playerRef.current?.seekTo(playerRef.current.getCurrentTime() - 10, true);
+    const onFSChange = () => {
+      setControlsVisible(false);
+      if (hideTimer.current) window.clearTimeout(hideTimer.current);
+    };
+    document.addEventListener("fullscreenchange", onFSChange);
+    return () => {
+      document.removeEventListener("fullscreenchange", onFSChange);
+      if (hideTimer.current) window.clearTimeout(hideTimer.current);
+    };
+  }, []);
+
+  // 4️⃣ Keyboard shortcuts
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (!playerRef.current) return;
+      switch (e.code) {
+        case "Space":
+          e.preventDefault();
+          isPlaying
+            ? playerRef.current.pauseVideo()
+            : playerRef.current.playVideo();
+          break;
+        case "ArrowRight":
+          playerRef.current.seekTo(playerRef.current.getCurrentTime() + 10, true);
+          break;
+        case "ArrowLeft":
+          playerRef.current.seekTo(playerRef.current.getCurrentTime() - 10, true);
+          break;
       }
     };
-  
-    window.addEventListener("keydown", handleKey);
-    return () => window.removeEventListener("keydown", handleKey);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
   }, [isPlaying]);
-  
 
-  // 2. Initialize the player once API is ready
+  // 5️⃣ Init player when API ready
   const playerRef = useRef<any>(null);
   useEffect(() => {
     if (!apiReady || !videoId || !playerContainerRef.current) return;
-    if (playerRef.current) return; // do not recreate if already exists
-
-    const playerVars = {
-      autoplay: 0,
-      controls: 0,
-      modestbranding: 1,
-      rel: 0,
-      disablekb: 1,
-      fs: 0,
-      iv_load_policy: 3,
-      playsinline: 1,
-    };
+    if (playerRef.current) return;
 
     playerRef.current = new window.YT.Player(playerContainerRef.current, {
       videoId,
-      height: "100%",
-      width: "100%",
-      playerVars,
+      playerVars: {
+        autoplay: 0,
+        controls: 0,
+        modestbranding: 1,
+        rel: 0,
+        disablekb: 1,
+        fs: 0,
+        iv_load_policy: 3,
+        playsinline: 1,
+      },
       events: {
-        onReady: (event: any) => {
-          const dur = event.target.getDuration();
-          setDuration(dur);
-          event.target.setPlaybackRate(playbackRate);
+        onReady: (evt: any) => {
+          const d = evt.target.getDuration();
+          setDuration(d);
+          evt.target.setPlaybackRate(playbackRate);
         },
-        onStateChange: (event: any) => {
-          const state = event.data;
-          setIsPlaying(state === window.YT.PlayerState.PLAYING);
-          if (state === window.YT.PlayerState.PLAYING) {
-            startProgressLoop();
-          } else {
-            cancelAnimationFrame(animationRef.current!);
-          }
+        onStateChange: (evt: any) => {
+          const st = evt.data;
+          const playing = st === window.YT.PlayerState.PLAYING;
+          setIsPlaying(playing);
+          if (playing) startProgressLoop();
+          else cancelAnimationFrame(animationRef.current!);
         },
       },
     });
   }, [apiReady, videoId, playbackRate]);
 
-  // 3. Update progress continuously while playing
+  // 6️⃣ Progress loop
   const startProgressLoop = () => {
     const step = () => {
-      if (playerRef.current?.getCurrentTime && !isDragging) {
+      if (!isDragging && playerRef.current?.getCurrentTime) {
         setCurrentTime(playerRef.current.getCurrentTime());
       }
       animationRef.current = requestAnimationFrame(step);
@@ -127,112 +146,73 @@ export default function TutorialVideoPlayer({ url }: TutorialVideoPlayerProps) {
     animationRef.current = requestAnimationFrame(step);
   };
 
-  // 4. Seek logic (mouse & touch)
-  const updateSeekFromX = (clientX: number) => {
+  // 7️⃣ Seek helpers
+  const updateSeek = (x: number) => {
     if (!progressBarRef.current || !playerRef.current || duration <= 0) return;
     const rect = progressBarRef.current.getBoundingClientRect();
-    const pos = Math.min(Math.max(0, (clientX - rect.left) / rect.width), 1);
-    const seekTime = pos * duration;
-    playerRef.current.seekTo(seekTime, true);
-    setCurrentTime(seekTime);
+    const pct = Math.min(Math.max(0, (x - rect.left) / rect.width), 1);
+    const t = pct * duration;
+    playerRef.current.seekTo(t, true);
+    setCurrentTime(t);
   };
-
-  const handleMouseDown = (e: MouseEvent<HTMLDivElement>) => {
+  const onMouseDown = (e: MouseEvent<HTMLDivElement>) => {
     e.stopPropagation();
     setIsDragging(true);
-    updateSeekFromX(e.clientX);
+    updateSeek(e.clientX);
   };
-  const handleMouseMove = (e: globalThis.MouseEvent) => {
-    if (isDragging) updateSeekFromX(e.clientX);
-  };
-  const handleMouseUp = () => {
-    if (isDragging) setIsDragging(false);
-  };
-  const handleTouchStart = (e: TouchEvent<HTMLDivElement>) => {
+  const onMouseMove = (e: MouseEvent) => isDragging && updateSeek(e.clientX);
+  const onMouseUp = () => setIsDragging(false);
+  const onTouchStart = (e: TouchEvent<HTMLDivElement>) => {
     e.stopPropagation();
     setIsDragging(true);
-    updateSeekFromX(e.touches[0].clientX);
+    updateSeek(e.touches[0].clientX);
   };
-  const handleTouchMove = (e: TouchEvent<HTMLDivElement>) => {
-    if (isDragging) updateSeekFromX(e.touches[0].clientX);
-  };
-  const handleTouchEnd = () => {
-    setIsDragging(false);
-  };
+  const onTouchMove = (e: TouchEvent) =>
+    isDragging && updateSeek(e.touches[0].clientX);
+  const onTouchEnd = () => setIsDragging(false);
 
   useEffect(() => {
     if (isDragging) {
-      document.addEventListener("mousemove", handleMouseMove);
-      document.addEventListener("mouseup", handleMouseUp);
+      document.addEventListener("mousemove", onMouseMove as any);
+      document.addEventListener("mouseup", onMouseUp);
     } else {
-      document.removeEventListener("mousemove", handleMouseMove);
-      document.removeEventListener("mouseup", handleMouseUp);
+      document.removeEventListener("mousemove", onMouseMove as any);
+      document.removeEventListener("mouseup", onMouseUp);
     }
     return () => {
-      document.removeEventListener("mousemove", handleMouseMove);
-      document.removeEventListener("mouseup", handleMouseUp);
+      document.removeEventListener("mousemove", onMouseMove as any);
+      document.removeEventListener("mouseup", onMouseUp);
     };
   }, [isDragging]);
 
-  // 5. Format time (MM:SS)
-  const formatTime = (secs: number) => {
-    const m = Math.floor(secs / 60);
-    const s = Math.floor(secs % 60);
-    return `${m}:${s.toString().padStart(2, "0")}`;
+  // 8️⃣ Format time
+  const fmt = (s: number) => {
+    const m = Math.floor(s / 60),
+      sec = Math.floor(s % 60).toString().padStart(2, "0");
+    return `${m}:${sec}`;
   };
 
-  // 6. Play/Pause toggle
-  const handlePlayPause = (e: React.MouseEvent<HTMLButtonElement>) => {
+  // 9️⃣ Controls actions
+  const togglePlay = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!playerRef.current) return;
-    if (isPlaying) {
-      playerRef.current.pauseVideo();
-    } else {
-      playerRef.current.playVideo();
-    }
+    isPlaying ? playerRef.current.pauseVideo() : playerRef.current.playVideo();
   };
-
-  // 7. Skip forward/back by 10 seconds
-  const skip = (offset: number, e: React.MouseEvent<HTMLButtonElement>) => {
+  const skip = (off: number, e: React.MouseEvent) => {
     e.stopPropagation();
     if (!playerRef.current) return;
-    const newTime = playerRef.current.getCurrentTime() + offset;
-    playerRef.current.seekTo(newTime, true);
+    playerRef.current.seekTo(playerRef.current.getCurrentTime() + off, true);
   };
-
-  // 8. Fullscreen toggle
-  const handleFullScreen = (e: React.MouseEvent<HTMLButtonElement>) => {
+  const toggleFullscreen = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!outerRef.current) return;
-    if (
-      !document.fullscreenElement &&
-      !(document as any).webkitFullscreenElement &&
-      !(document as any).mozFullScreenElement &&
-      !(document as any).msFullscreenElement
-    ) {
-      if (outerRef.current.requestFullscreen) {
-        outerRef.current.requestFullscreen().catch((err) =>
-          console.error("Fullscreen request error:", err)
-        );
-      } else if ((outerRef.current as any).webkitRequestFullscreen) {
-        (outerRef.current as any).webkitRequestFullscreen();
-      } else if ((outerRef.current as any).mozRequestFullScreen) {
-        (outerRef.current as any).mozRequestFullScreen();
-      } else if ((outerRef.current as any).msRequestFullscreen) {
-        (outerRef.current as any).msRequestFullscreen();
-      }
-    } else {
-      document.exitFullscreen();
-    }
+    if (!document.fullscreenElement) outerRef.current.requestFullscreen?.();
+    else document.exitFullscreen();
   };
-
-  // 9. Change playback rate
-  const changePlaybackRate = (rate: number) => {
-    if (playerRef.current) {
-      playerRef.current.setPlaybackRate(rate);
-      setPlaybackRate(rate);
-      setShowRateMenu(false);
-    }
+  const changeRate = (r: number) => {
+    playerRef.current?.setPlaybackRate(r);
+    setPlaybackRate(r);
+    setShowRateMenu(false);
   };
 
   if (!videoId) {
@@ -243,162 +223,90 @@ export default function TutorialVideoPlayer({ url }: TutorialVideoPlayerProps) {
     );
   }
 
-  
-
   return (
     <div
       ref={outerRef}
-      className="group relative w-full aspect-video bg-black overflow-hidden rounded-lg shadow-lg"
-      onClick={() => setShowControls((prev) => !prev)}
+      className="relative w-full aspect-video bg-black overflow-hidden rounded-lg shadow-lg"
+      onMouseEnter={showAndScheduleHide}
+      onMouseMove={showAndScheduleHide}
+      onMouseLeave={showAndScheduleHide}
+      onTouchStart={showAndScheduleHide}
     >
-      {/* 1) YouTube Iframe Placeholder */}
+      {/* video iframe */}
       <div ref={playerContainerRef} className="w-full h-full" />
 
-      {/* 2) Timestamps */}
+      {/* timestamp */}
       <div
-        className={`absolute bottom-[5.5rem] left-4 text-white text-sm md:text-base font-medium transition-opacity duration-200 ${
-          showControls ? "opacity-100" : "opacity-0"
-        } group-hover:opacity-100`}
-        onClick={(e) => e.stopPropagation()}
+        className="absolute bottom-20 left-4 text-white text-sm font-medium select-none"
+        style={{ opacity: controlsVisible ? 1 : 0, transition: "opacity 0.2s" }}
       >
-        {formatTime(currentTime)} / {formatTime(duration)}
+        {fmt(currentTime)} / {fmt(duration)}
       </div>
 
-      {/* 3) Control Overlay */}
+      {/* controls overlay */}
       <div
-        className={`absolute inset-0 flex flex-col justify-end items-center transition-opacity duration-200 ${
-          showControls ? "opacity-100" : "opacity-0"
-        } group-hover:opacity-100 bg-gradient-to-t from-black/60 to-transparent`}
+        className="absolute inset-0 flex flex-col justify-end items-center bg-gradient-to-t from-black/60 to-transparent"
+        style={{ opacity: controlsVisible ? 1 : 0, transition: "opacity 0.2s" }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Play / Skip / Fullscreen Buttons */}
         <div className="flex items-center gap-6 mb-4">
-          {/* Rewind 10s */}
-          <button
-            onClick={(e) => skip(-10, e)}
-            title="Rewind 10s"
-            className="flex items-center text-white hover:text-gray-200 transition-colors"
-          >
-            <span className="text-xl">⏪</span>
-            <span className="ml-1 text-sm md:text-base">10s</span>
+          <button onClick={(e) => skip(-10, e)} className="text-white">
+            ⏪ 10s
           </button>
-
-          {/* Play/Pause Button */}
           <button
-            onClick={handlePlayPause}
-            title={isPlaying ? "Pause" : "Play"}
-            className="bg-red-600 text-white p-3 rounded-full hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-400 transition-colors"
+            onClick={togglePlay}
+            className="bg-red-600 p-3 rounded-full text-white"
           >
-            {isPlaying ? (
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-6 w-6 md:h-8 md:w-8"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M6.75 5.25a.75.75 0 01.75-.75H9a.75.75 0 01.75.75v13.5a.75.75 0 01-.75.75H7.5a.75.75 0 01-.75-.75V5.25zm7.5 0A.75.75 0 0115 4.5h1.5a.75.75 0 01.75.75v13.5a.75.75 0 01-.75.75H15a.75.75 0 01-.75-.75V5.25z"
-                  clipRule="evenodd"
-                />
-              </svg>
-            ) : (
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-6 w-6 md:h-8 md:w-8"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M4.5 5.653c0-1.426 1.529-2.33 2.779-1.643l11.54 6.348c1.295.712 1.295 2.573 0 3.285L7.28 19.991c-1.25.687-2.779-.217-2.779-1.643V5.653z"
-                  clipRule="evenodd"
-                />
-              </svg>
-            )}
+            {isPlaying ? "❚❚" : "▶"}
           </button>
-
-          {/* Forward 10s */}
-          <button
-            onClick={(e) => skip(10, e)}
-            title="Forward 10s"
-            className="flex items-center text-white hover:text-gray-200 transition-colors"
-          >
-            <span className="text-sm md:text-base">10s</span>
-            <span className="ml-1 text-xl">⏩</span>
+          <button onClick={(e) => skip(10, e)} className="text-white">
+            10s ⏩
           </button>
-
-          {/* Fullscreen Button (restyled) */}
           <button
-            onClick={handleFullScreen}
-            title="Fullscreen"
-            className="flex items-center justify-center ml-4 bg-white/20 hover:bg-white/30 p-2 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-white"
+            onClick={toggleFullscreen}
+            className="ml-4 bg-white/20 p-2 rounded-md"
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-6 w-6 text-white"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M4 4h5v2H6v3H4V4zm11 0h5v5h-2V6h-3V4zm5 11v5h-5v-2h3v-3h2zm-11 5H4v-5h2v3h3v2z"
-              />
-            </svg>
+            ⛶
           </button>
         </div>
 
-        {/* 4) Progress Bar */}
+        {/* progress bar */}
         <div
           ref={progressBarRef}
-          className="relative w-full h-1.5 bg-gray-700/50 hover:bg-gray-700 rounded-full mb-2 cursor-pointer transition-colors"
-          onMouseDown={handleMouseDown}
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
+          className="relative w-full h-1.5 bg-gray-700 rounded-full mb-2 cursor-pointer"
+          onMouseDown={onMouseDown}
+          onTouchStart={onTouchStart}
+          onTouchMove={onTouchMove}
+          onTouchEnd={onTouchEnd}
         >
           <div
             className="absolute top-0 left-0 h-full bg-red-600 rounded-full"
             style={{ width: `${(currentTime / duration) * 100}%` }}
-          >
-            <div className="absolute -right-2 -top-1.5 w-4 h-4 bg-red-600 rounded-full shadow-lg" />
-          </div>
+          />
         </div>
 
-        {/* 5) Playback‐Rate Toggle + Menu */}
-        <div className="absolute mb-4 right-2 z-20">
-          {/* Toggle Button */}
+        {/* playback rate menu */}
+        <div className="absolute bottom-16 right-4">
           <button
             onClick={(e) => {
               e.stopPropagation();
-              setShowRateMenu((prev) => !prev);
+              setShowRateMenu((v) => !v);
             }}
-            className="px-3 py-1 bg-white/20 hover:bg-white/30 rounded-md text-white text-sm transition-colors"
-            title="Playback Rate"
+            className="px-2 py-1 bg-white/20 rounded-md text-white"
           >
             {playbackRate}×
           </button>
-
-          {/* Pop-Up Menu */}
           {showRateMenu && (
-            <div
-              onClick={(e) => e.stopPropagation()}
-              className="absolute bottom-full mb-2 right-0 w-24 bg-black/80 backdrop-blur-sm rounded-md overflow-hidden shadow-xl z-10"
-            >
-              {[1, 1.25, 1.5, 2].map((rate) => (
+            <div className="mt-1 bg-black/80 rounded shadow-lg overflow-hidden">
+              {[1, 1.25, 1.5, 2].map((r) => (
                 <button
-                  key={rate}
-                  onClick={() => changePlaybackRate(rate)}
-                  className={`w-full py-2 text-center text-sm transition-colors ${
-                    playbackRate === rate
-                      ? "bg-red-600 text-white"
-                      : "text-gray-200 hover:bg-gray-700/50"
+                  key={r}
+                  onClick={() => changeRate(r)}
+                  className={`block w-full px-3 py-1 text-left text-sm ${
+                    playbackRate === r ? "bg-red-600 text-white" : "text-gray-200"
                   }`}
                 >
-                  {rate}×
+                  {r}×
                 </button>
               ))}
             </div>

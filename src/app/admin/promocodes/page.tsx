@@ -12,6 +12,7 @@ interface Promo {
   expiresAt: string;
   usageLimit: number;
   usedCount: number;
+  applicableCourses: { _id: string; title: string }[];
 }
 interface Course { _id: string; title: string; }
 
@@ -113,7 +114,7 @@ export default function PromoAdminPage() {
       <table className="w-full table-auto border-collapse">
         <thead>
           <tr>
-            {["Code","Type","Value","Expires","Used/Limit"].map(h=>(
+            {["Code","Type","Value","Applicable Courses","Expires","Used/Limit"].map(h=>(
               <th key={h} className="border px-2 py-1 text-left">{h}</th>
             ))}
           </tr>
@@ -124,6 +125,12 @@ export default function PromoAdminPage() {
               <td className="border px-2 py-1">{p.code}</td>
               <td className="border px-2 py-1">{p.discountType}</td>
               <td className="border px-2 py-1">{p.discountValue}</td>
+              <td className="border px-2 py-1">
+  {Array.isArray(p.applicableCourses)
+    ? (p.applicableCourses as any[]).map(c => c.title).join(", ")
+    : ""}
+</td>
+
               <td className="border px-2 py-1">{new Date(p.expiresAt).toLocaleDateString()}</td>
               <td className="border px-2 py-1">{p.usedCount}/{p.usageLimit}</td>
             </tr>

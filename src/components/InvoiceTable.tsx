@@ -87,6 +87,7 @@ const InvoiceTable: React.FC<InvoiceTableProps> = ({ filteredInvoices }) => {
               'igst',
               'pincode',
               'Total',
+              'Payment Method',
               'Date',
               'PDF',
             ].map((h) => (
@@ -114,6 +115,7 @@ const InvoiceTable: React.FC<InvoiceTableProps> = ({ filteredInvoices }) => {
               <td className="px-4 py-2 font-semibold text-indigo-600">
                 ₹{inv.totalAmount.toFixed(2)}
               </td>
+              <td className="px-4 py-2">{inv.paymentMethod}</td>
               <td className="px-4 py-2">
                 {new Date(inv.createdAt).toLocaleDateString()}
               </td>

@@ -93,9 +93,11 @@ const [revenueTotal, setRevenueTotal] = useState(0);
 const [patTotal, setPatTotal] = useState(0);
 const [invoiceCount, setInvoiceCount] = useState(0);
 const [quarterFilter, setQuarterFilter] = useState("");
+const [pincode, setPincode] = useState("");
   // new month‐range filter state
   const [fromMonth, setFromMonth] = useState("");
   const [toMonth, setToMonth] = useState("");
+  const [paymentFilter, setPaymentFilter] = useState<"All"|"Online"|"Offline">("All");
 
   // Fetch invoices & GST total
  // Replace your existing fetchInvoices with this:
@@ -134,14 +136,20 @@ const [quarterFilter, setQuarterFilter] = useState("");
   setInvoiceCount(data.length);
 };
 
-const filteredInvoices = invoices.filter(inv => {
-    const term = searchTerm.toLowerCase();
-    return (
-      inv.invoiceId.toLowerCase().includes(term) ||
-      inv.studentName.toLowerCase().includes(term) ||
-      inv.course.title.toLowerCase().includes(term)
-    );
-  });
+const filteredInvoices = invoices
+    .filter(inv => {
+      const t = searchTerm.toLowerCase();
+      return (
+        inv.invoiceId.toLowerCase().includes(t) ||
+        inv.studentName.toLowerCase().includes(t) ||
+        inv.course.title.toLowerCase().includes(t)
+      );
+    })
+    .filter(inv => {
+      if (paymentFilter === "All") return true;
+     // treat missing field as Online
+      return (inv.paymentMethod || "Online") === paymentFilter;
+    });
 
   // Fetch all courses once
   const fetchCourses = async () => {
@@ -173,7 +181,7 @@ const filteredInvoices = invoices.filter(inv => {
     let _cgst = 0,
       _sgst = 0,
       _igst = 0;
-    if (stateName === "UP") {
+    if (stateName === "Uttar Pradesh" || stateName === "UP") {
       _cgst = amt * 0.09;
       _sgst = amt * 0.09;
     } else {
@@ -184,7 +192,7 @@ const filteredInvoices = invoices.filter(inv => {
     setSgst(_sgst);
     setIgst(_igst);
     setTaxAmount(_taxAmount);
-    setTotalAmount(amt + _taxAmount);
+    setTotalAmount(amt);
   }, [discountedPrice, stateName]);
 
  // Utility: convert the filteredInvoices array to CSV
@@ -207,6 +215,7 @@ const filteredInvoices = invoices.filter(inv => {
     "igst",
     "pincode",
     "Total Amount",
+    "Payment Method",
     "Created At"
   ];
 
@@ -223,6 +232,7 @@ const filteredInvoices = invoices.filter(inv => {
     inv.igst.toFixed(2),
     inv.pincode,
     inv.totalAmount.toFixed(2),
+    inv.paymentMethod || "Online",
     new Date(inv.createdAt).toLocaleString()
   ]);
 
@@ -253,6 +263,7 @@ const filteredInvoices = invoices.filter(inv => {
         address2,
         phone,
         email,
+        pincode,
         state: stateName,
         courseId: selectedCourseId,
         originalPrice,
@@ -274,6 +285,7 @@ const filteredInvoices = invoices.filter(inv => {
       setAddress2("");
       setPhone("");
       setEmail("");
+      setPincode("");
       setStateName("");
       setSelectedCourseId("");
       setOriginalPrice(0);
@@ -347,9 +359,23 @@ const filteredInvoices = invoices.filter(inv => {
         >
           Clear
         </button>
+  {/* PAYMENT METHOD FILTER */}
+       <div className="ml-4">
+       <label className="block text-sm">Payment:</label>
+       <select
+       title="Select Payment Method"
 
-          
-         
+         value={paymentFilter}
+         onChange={e => setPaymentFilter(e.target.value as any)}
+         className="mt-1 border px-2 py-1 rounded"
+       >
+         <option value="All">All</option>
+         <option value="Online">Online</option>
+         <option value="Offline">Offline</option>
+       </select>
+     </div>
+        
+        
         </div>
         
 
@@ -418,7 +444,7 @@ const filteredInvoices = invoices.filter(inv => {
             </button>
             <h2 className="text-xl font-semibold mb-4">Create New Invoice</h2>
 
-            <div className="space-y-4">
+            <div className="space-y-4 overflow-y-auto max-h-[80vh]">
               {/* Row 1 */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
@@ -486,6 +512,16 @@ const filteredInvoices = invoices.filter(inv => {
                   />
                 </div>
                 <div>
+                  <label className="block text-sm font-medium">Pincode</label>
+                  <input
+                    title="Pincode"
+                    type="tel"
+                    value={pincode}
+                    onChange={(e) => setPincode(e.target.value)}
+                    className="mt-1 w-full border px-3 py-2 rounded"
+                  />
+                </div>
+                <div>
                   <label className="block text-sm font-medium">State</label>
                   <select
                     title="Select State"
@@ -502,7 +538,21 @@ const filteredInvoices = invoices.filter(inv => {
                   </select>
                 </div>
               </div>
-
+{/* Row: Payment Method */}
+<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <div>
+      <label className="block text-sm font-medium">Payment Method</label>
+      <select
+      title="Select Payment Method"
+        value={paymentMethod}
+        onChange={e => setPaymentMethod(e.target.value)}
+        className="mt-1 w-full border px-3 py-2 rounded"
+      >
+        <option value="Online">Online</option>
+        <option value="Offline">Offline</option>
+      </select>
+    </div>
+  </div>
               {/* Row 4: Address lines */}
               <div className="space-y-4">
                 <div>

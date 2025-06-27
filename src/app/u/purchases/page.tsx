@@ -30,7 +30,8 @@ export default function PurchasesPage() {
         {records.map(rec => (
           <li key={rec.transactionId} className="p-4 border rounded-lg">
             <h2 className="text-lg font-semibold">{rec.course.title}</h2>
-            <p>Amount: ₹{(rec.amount/100).toFixed(2)}</p>
+            <p>Amount: ₹{(rec.amount).toFixed(2)}</p> {/* Assuming amount is in paise /100 */}
+
             <p>Txn ID: {rec.transactionId}</p>
             <p>Date: {new Date(rec.purchasedAt).toLocaleString()}</p>
           </li>

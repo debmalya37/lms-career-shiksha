@@ -6,7 +6,9 @@ import { Types } from 'mongoose';
 
 export async function GET() {
   await connectMongo();
-  const codes = await PromoCode.find().lean();
+  const codes = await PromoCode.find()
+    .populate("applicableCourses", "title") // 👈 only fetch title
+    .lean();
   return NextResponse.json(codes);
 }
 
