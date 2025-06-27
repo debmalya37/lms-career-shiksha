@@ -3,7 +3,9 @@
 
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import { FiX } from "react-icons/fi";
 import { jsPDF } from "jspdf";
+import { AdmissionFormPreview } from "@/components/AdmissionFormPreview";
 
 interface Admission {
   _id: string;
@@ -17,16 +19,19 @@ interface Admission {
   address2: string;
   state: string;
   dob: string; // ISO string
-  // profileImageUrl: string;
-  // aadhaarImageUrl: string;
-  // aadhaarNumber: string;
+  profileImageUrl: string;
+  aadhaarImageUrl: string;
+  aadhaarNumber: string;
+  transactionId: string;
+  aadhaarFrontUrl: string;
+  aadhaarBackUrl: string;
   createdAt: string;
 }
 
 export default function AdmissionDataPage() {
   const [list, setList] = useState<Admission[]>([]);
   const [modalSrc, setModalSrc] = useState<string | null>(null);
-
+  const [preview, setPreview] = useState<Admission | null>(null);
   useEffect(() => {
     axios.get<Admission[]>("/api/admission").then((res) => {
       setList(res.data);
@@ -155,11 +160,11 @@ export default function AdmissionDataPage() {
                   />
                 </td> */}
                 <td className="px-4 py-2 space-x-2">
-                  <button
-                    onClick={() => downloadPdf(ad)}
+                <button
+                    onClick={() => setPreview(ad)}
                     className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1 rounded"
                   >
-                    Download PDF
+                    Preview & Download
                   </button>
                 </td>
               </tr>
@@ -167,6 +172,22 @@ export default function AdmissionDataPage() {
           </tbody>
         </table>
       </div>
+
+      {preview && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center overflow-auto z-50 py-10">
+          <div className="bg-white rounded-lg overflow-auto max-h-[90vh] max-w-full p-4 relative">
+            <button
+            title="Close Preview"
+              onClick={() => setPreview(null)}
+              className="absolute top-3 right-3 text-gray-600 hover:text-gray-900"
+            >
+              <FiX size={24} />
+            </button>
+            {/* Pass the full admission object to your preview component */}
+            <AdmissionFormPreview admission={preview} />
+          </div>
+        </div>
+      )}
 
       {/* Modal */}
       {modalSrc && (
