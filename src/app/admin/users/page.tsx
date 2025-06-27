@@ -34,6 +34,7 @@ interface User {
   _id: string;
   name: string;
   email: string;
+  phoneNo?: string;
   course: string[];
   subscription?: number;
   purchaseHistory: { amount: number; purchasedAt: string }[];
@@ -275,7 +276,7 @@ export default function UserAdminPage() {
         <table className="min-w-full table-auto text-sm">
           <thead className="bg-gray-100">
             <tr>
-              {['Name','Email','#Courses','Course Title','Subscription','Revenue','Admissions','Invoices'].map(h=>(
+              {['Name','Email', "phone",'#Courses','Course Title','Subscription','Revenue','Admissions','Invoices'].map(h=>(
                 <th key={h} className="px-4 py-2 text-left">{h}</th>
               ))}
             </tr>
@@ -291,6 +292,7 @@ export default function UserAdminPage() {
                   <tr className="border-t hover:bg-gray-50">
                     <td className="px-4 py-2">{u.name}</td>
                     <td className="px-4 py-2">{u.email}</td>
+                    <td className="px-4 py-2">{u.phoneNo}</td>
                     <td className="px-4 py-2">{u.course.length}</td>
                     <td
                         className="px-4 py-2"
