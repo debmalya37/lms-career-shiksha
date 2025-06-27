@@ -102,6 +102,9 @@ const AdminPanel = () => {
         <Link href="/admin/pre-admissions" className="bg-blue-950 text-white p-6 rounded-lg shadow-md text-center">
           <h2 className="text-xl font-semibold">Manage Pre admissions</h2>
         </Link>
+        <Link href="/admin/users" className="bg-blue-950 text-white p-6 rounded-lg shadow-md text-center">
+          <h2 className="text-xl font-semibold">User Management dashbaord </h2>
+        </Link>
       </div>
     </div>
   );
