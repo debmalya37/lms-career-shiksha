@@ -267,8 +267,13 @@ const imgUrl     = admission?.profileImageUrl || profile?.profileImageUrl;
                       />
                     </div>
                   ) : (
-                    <div className="w-24 h-24 bg-gray-700 rounded-xl flex items-center justify-center text-gray-400">
-                      No Photo
+                    <div className="relative">
+                      <div className="absolute inset-0 bg-teal-400 rounded-lg blur-lg opacity-30"></div>
+                      <img
+                        src={logo.src}
+                        alt="Profile"
+                        className="relative w-24 h-24 object-cover rounded-xl border-4 border-white shadow-md"
+                      />
                     </div>
                   )}
                 </div>
