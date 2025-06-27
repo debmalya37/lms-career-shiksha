@@ -248,7 +248,7 @@ const imgUrl     = admission?.profileImageUrl || profile?.profileImageUrl;
           <div className="absolute inset-0 backface-hidden" ref={frontRef}>
             <div className="w-full h-full rounded-xl shadow-xl overflow-hidden border border-gray-700 bg-gradient-to-br from-indigo-800 to-indigo-900 relative">
               <div className="absolute top-3 left-3">
-                <Image src={logo} alt="Logo" width={35} height={35} />
+                {/* <Image src={logo} alt="Logo" width={35} height={35} /> */}
               </div>
               <div className="absolute inset-0 pointer-events-none">
                 <div className="absolute top-0 left-1/2 w-1/3 h-1 bg-teal-300/50 animate-pulse"></div>
@@ -261,7 +261,7 @@ const imgUrl     = admission?.profileImageUrl || profile?.profileImageUrl;
                     <div className="relative">
                       <div className="absolute inset-0 bg-teal-400 rounded-lg blur-lg opacity-30"></div>
                       <img
-                        src={profileImg}
+                        src={logo.src}
                         alt="Profile"
                         className="relative w-24 h-24 object-cover rounded-xl border-4 border-white shadow-md"
                       />
