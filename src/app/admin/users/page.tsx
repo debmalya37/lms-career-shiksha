@@ -19,8 +19,7 @@ import {
 } from 'chart.js';
 import { Bar } from 'react-chartjs-2';
 import { AdmissionFormPreview } from '@/components/AdmissionFormPreview';
-import { pdf, Font } from '@react-pdf/renderer';
-import { InvoiceDocument } from '@/components/InvoiceDocument';
+
 
 ChartJS.register(
   CategoryScale,
@@ -163,11 +162,16 @@ export default function UserAdminPage() {
     .filter(u => stateFilter==='All' || admissions.some(a=>a.userId.toString()===u._id && a.state===stateFilter))
     .filter(u => courseFilter==='All'||u.course.includes(courseFilter));
 
-    // handle invoice PDF download
+    // ---- dynamic invoice PDF download ----
   const handleDownload = async (inv: any) => {
     try {
       setBusyId(inv._id);
-      // register Poppins font
+      // dynamic import to avoid prerender-time ESM require
+      const [{ pdf, Font }, { InvoiceDocument }] = await Promise.all([
+        import('@react-pdf/renderer'),
+        import('@/components/InvoiceDocument')
+      ]);
+
       Font.register({
         family: 'Poppins',
         fonts: [
@@ -202,6 +206,7 @@ export default function UserAdminPage() {
       setBusyId(null);
     }
   };
+
 
   return (
     <div className="p-8 space-y-8">
