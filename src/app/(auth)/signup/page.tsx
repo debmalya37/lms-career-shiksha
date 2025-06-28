@@ -141,13 +141,12 @@ export default function Signup() {
               />
               {floatingLabel("confirmPassword", "Confirm Password")}
             </div>
-
-            {/* Phone Number */}
+            {/* Phone number */}
             <div className="relative">
               <input
-              title="Enter your phone number"
+              title="Enter Phone number"
                 id="phoneNo"
-                type="tel"
+                type="phoneNo"
                 value={phoneNo}
                 onChange={(e) => setPhoneNo(e.target.value)}
                 placeholder=""
