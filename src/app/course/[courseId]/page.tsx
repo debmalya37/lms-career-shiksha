@@ -87,9 +87,9 @@ function formatDuration(daysTotal: number) {
   const days   = daysR1 % 30;
 
   const parts = [];
-  if (years)  parts.push(`${years} yr${years > 1 ? 's' : ''}`);
-  if (months) parts.push(`${months} mo${months > 1 ? 's' : ''}`);
-  if (days)   parts.push(`${days} d`);
+  if (years)  parts.push(`${years} year${years > 1 ? 's' : ''}`);
+  if (months) parts.push(`${months} month${months > 1 ? 's' : ''}`);
+  if (days)   parts.push(`${days} day${days > 1 ? 's' : ''}`);
   // if all zero, show lifetime
   if (!parts.length) return 'Lifetime';
   return parts.join(' ');

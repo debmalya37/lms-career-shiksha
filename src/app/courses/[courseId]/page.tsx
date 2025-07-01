@@ -1,6 +1,7 @@
 import connectMongo from '@/lib/db';
 import Course, { ICourse } from '@/models/courseModel';
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,9 +16,11 @@ interface ICourseWithSubjects extends Omit<ICourse, 'subjects'> {
   subjects: Subject[];
 }
 
+
 async function fetchSubjectsForCourse(courseId: string): Promise<ICourseWithSubjects | null> {
   await connectMongo();
 
+   
   const course = (await Course.findById(courseId)
     .populate({
       path: 'subjects',
@@ -36,8 +39,10 @@ async function fetchSubjectsForCourse(courseId: string): Promise<ICourseWithSubj
   return course;
 }
 
+
 export default async function CoursePage({ params }: { params: { courseId: string } }) {
   const course = await fetchSubjectsForCourse(params.courseId);
+  
 
   if (!course) {
     return <div className="flex justify-center items-center h-screen text-red-500 text-lg">Course not found.</div>;
@@ -46,51 +51,69 @@ export default async function CoursePage({ params }: { params: { courseId: strin
   const subjects = course.subjects || [];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-6">
-      {/* Main Heading */}
-      <h1 className="text-4xl font-extrabold text-center text-gray-900 dark:text-white mb-8">
-        Explore Subjects 📚
-      </h1>
+    <main className="min-h-screen bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 p-6 sm:p-8 lg:p-12">
+      {/* Breadcrumb */}
+      <nav className="text-sm mb-6" aria-label="Breadcrumb">
+        <ol className="inline-flex items-center space-x-1 text-gray-600 dark:text-gray-400">
+          <li>
+            <Link href="/" className="hover:underline">Home</Link>
+            <span className="mx-1">/</span>
+          </li>
+          <li>
+            <Link href="/courses" className="hover:underline">Courses</Link>
+            <span className="mx-1">/</span>
+          </li>
+          <li className="font-semibold text-gray-900 dark:text-white">{course.title}</li>
+        </ol>
+      </nav>
 
-      {/* Subjects Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-        {subjects.length > 0 ? (
-          subjects.map((subject) => (
-            <Link
-              key={subject._id}
-              href={`/courses/${params.courseId}/${subject._id}`}
-              className="relative group block overflow-hidden rounded-xl shadow-lg transition-transform transform hover:-translate-y-2 bg-white dark:bg-gray-800"
-            >
-              {/* Subject Image */}
-              <div className="relative w-full h-48 bg-black dark:bg-gray-700 rounded-t-xl overflow-hidden">
-                {subject.subjectImg ? (
-                  <img
-                    src={subject.subjectImg}
-                    alt={subject.name}
-                    className="absolute inset-0 w-full h-full object-contain opacity-90 group-hover:opacity-100 transition-opacity"
-                  />
-                ) : (
-                  <div className="flex items-center justify-center w-full h-full bg-gray-300 dark:bg-gray-700">
-                    <span className="text-gray-500 dark:text-gray-400">No Image</span>
-                  </div>
-                )}
-              </div>
+      {/* Hero */}
+      <header className="text-center mb-12">
+        <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white mb-2">
+          {course.title}
+        </h1>
+        <p className="text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+          Choose a subject below to dive deeper.
+        </p>
+      </header>
 
-              {/* Gradient Overlay */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-50 group-hover:opacity-70 transition-opacity" />
-
-              {/* Subject Name */}
-              <div className="absolute bottom-4 left-4">
-                <h2 className="text-lg font-semibold text-white shadow-lg">{subject.name}</h2>
-              </div>
-            </Link>
-          ))
-        ) : (
-          <div className="col-span-full text-center text-gray-600 dark:text-gray-400 text-lg">
-            No subjects found for this course.
+      {/* Subjects grid */}
+      <section>
+        {course.subjects.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+            {course.subjects.map((subject) => (
+              <Link
+                key={subject._id}
+                href={`/courses/${course._id}/${subject._id}`}
+                className="group block bg-white dark:bg-gray-800 rounded-2xl shadow-md overflow-hidden transform hover:shadow-xl hover:-translate-y-1 transition"
+              >
+                <div className="relative w-full aspect-[16/9] overflow-hidden">
+                  {subject.subjectImg ? (
+                    <img
+                      src={subject.subjectImg}
+                      alt={subject.name}
+                      className="object-cover w-full h-full group-hover:scale-105 transition-transform"
+                    />
+                  ) : (
+                    <div className="flex items-center justify-center w-full h-full text-gray-500">
+                      No Image
+                    </div>
+                  )}
+                </div>
+                <div className="p-4">
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white line-clamp-2">
+                    {subject.name}
+                  </h2>
+                </div>
+              </Link>
+            ))}
           </div>
+        ) : (
+          <p className="text-center text-gray-600 dark:text-gray-400">
+            No subjects found for this course.
+          </p>
         )}
-      </div>
-    </div>
+      </section>
+    </main>
   );
 }

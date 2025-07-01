@@ -8,6 +8,7 @@ import {
   CalendarDaysIcon,
   BookOpenIcon,
 } from "@heroicons/react/24/outline";
+import { MoonIcon, SunIcon } from "lucide-react";
 
 interface Course {
   _id: string;
@@ -16,6 +17,7 @@ interface Course {
   instructor?: string;
   courseImg?: string;
   duration: string;
+  isHidden?: boolean;
   subjects: { name: string }[];  // assume populated
 }
 
@@ -26,6 +28,18 @@ interface UserProfile {
 export default function MyCoursesPage() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
+   // Client‑only state for dark/light
+   const [dark, setDark] = useState(false);
+   useEffect(() => {
+     if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+       setDark(true);
+     }
+   }, []);
+ 
+   const toggleDark = () => {
+     setDark(!dark);
+     document.documentElement.classList.toggle("dark", !dark);
+   };
 
   useEffect(() => {
     async function fetchUserCourses() {
@@ -53,9 +67,15 @@ export default function MyCoursesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-700 py-12 px-4 sm:px-6 lg:px-8">
+    <div className={`min-h-screen bg-gray-700 py-12 px-4 sm:px-6 lg:px-8 ${dark ? "bg-gray-900 text-gray-100" : "bg-white text-gray-900"}`}>
+      <button onClick={toggleDark} className="p-1">
+          {dark
+            ? <SunIcon className="w-6 h-6 text-yellow-400" />
+            : <MoonIcon className="w-6 h-6 text-gray-600" />}
+        </button>
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-3xl font-extrabold text-gray-50 mb-8 text-center">My Courses</h1>
+        <h1 className={`text-3xl font-extrabold text-gray-50 mb-8 text-center ${dark ? "bg-gray-900 text-gray-100" : "bg-white text-gray-900"}`}>My Courses</h1>
+        
 
         {courses.length === 0 ? (
           <p className="text-center text-gray-500 py-20">
@@ -63,7 +83,7 @@ export default function MyCoursesPage() {
           </p>
         ) : (
           <div className="grid gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {courses.map(course => (
+            {courses.filter(course => !course.isHidden).map(course => (
               <motion.div
                 key={course._id}
                 className="group bg-white rounded-xl overflow-hidden shadow-lg border border-transparent hover:border-gradient-to-br hover:from-blue-300 hover:to-purple-300 transition-all duration-300 flex flex-col"

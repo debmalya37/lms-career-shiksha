@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import ClipLoader from "react-spinners/ClipLoader";
 
 type Answer     = { text: string; isCorrect: boolean };
-type Question   = { question: string; answers: Answer[]; marks: number; image?: string };
+type Question   = { _id: string; question: string; answers: Answer[]; marks: number; image?: string };
 type QuizData   = { _id: string; title: string; totalTime: number; negativeMarking: number; questions: Question[] };
 type UserProfile = { name: string; email: string };
 
@@ -77,6 +77,17 @@ function QuizAppContent() {
       incorrectAnswers: state.incorrectCount,
       userName:     profile.name,
       userEmail:    profile.email,
+       // optionally include per-question answers if your API expects them:
+    answers: quizData.questions.map((q, i) => ({
+      questionIndex: i,
+      questionId:     q._id,
+      questionTitle: q.question,
+      marks:          q.marks,
+      image:          q.image || "",
+      
+      userAnswer:     state.answers[i] || "",
+      correctAnswer:  q.answers.find(a => a.isCorrect)?.text || "",
+    })),
     };
     Promise.all([
       
@@ -86,6 +97,11 @@ function QuizAppContent() {
       fetch("/api/sendQuizResults", {
         method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(payload)
       }),
+      fetch("/api/quizresult", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify(payload),
+      }).catch(err => console.error("Failed to send quiz result:", err))
     ]).finally(() => resultsSent.current = true);
   }, [state.showResults, quizData, profile]);
 

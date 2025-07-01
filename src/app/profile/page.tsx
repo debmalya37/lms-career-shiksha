@@ -77,6 +77,8 @@ export default function ProfilePage() {
 <br />
 <div>
         <Link href={"/u/admissionforms"} className="bg-blue-950 text-gray-50 p-2 rounded-md m-2">Admissions</Link>
+        <Link href={"/u/invoice"} className="bg-blue-950 text-gray-50 p-2 rounded-md m-2">Invoices</Link>
+        <Link href={"/u/quizresults"} className="bg-blue-950 text-gray-50 p-2 rounded-md m-2">My performance</Link>
         </div>
         <br />
         <div className="mb-4">

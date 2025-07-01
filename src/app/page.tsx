@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import NotificationPopup from "@/components/NotificationPopup";
 import DisableRightClickAndClipboard from "@/components/DisableRightClick";
+import MobileClipboardFunction from "@/components/MobileClipboard";
 // import MobileClipboardFunction from "@/components/MobileClipboard"; // If you still need it
 
 // Define interfaces
@@ -16,7 +17,7 @@ interface Course {
   courseImg?: string;
   subjects: { name: string }[] | string[];
   createdAt: string;
-  isHidden?: boolean;
+  isHidden?: boolean; // Ensure this property exists
   isFree?: boolean;
 }
 interface BannerAd {
@@ -51,6 +52,17 @@ export default function Home() {
   const [currentAdIndex, setCurrentAdIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true); // Track loading state
   // Check for session token and redirect if missing
+  const [priceFilter, setPriceFilter] = useState<'All' | 'Free' | 'Paid'>('All');
+
+  // …fetching logic…
+
+  // Helper for filtering by free/paid:
+  const applyPriceFilter = (course: Course) => {
+    if (priceFilter === 'All') return true;
+    if (priceFilter === 'Free') return !!course.isFree;
+    return !course.isFree;
+  };
+
   useEffect(() => {
     async function checkSession() {
       try {
@@ -169,87 +181,103 @@ export default function Home() {
   // Inside your Home component
 // Reusable Course Card
 
-const CourseCard = ({
+interface Course {
+  _id: string;
+  title: string;
+  description: string;
+  courseImg?: string;
+  isFree?: boolean;
+  isHidden?: boolean;
+}
+
+interface CourseCardProps {
+  course: Course | null;
+  buttonLabel: string;
+  buttonLink: string;
+}
+
+ const  CourseCard = ({
   course,
   buttonLabel,
   buttonLink,
-}: {
-  course: Course | null;
-  // Use null for loading state
-  buttonLabel: string;
-  buttonLink: string;
-}) => {
+}: CourseCardProps) => {
+  const isFree = !!course?.isFree;
 
-    const isFree = !!course?.isFree;
   return (
-    <div className="w-full sm:w-64 h-72 bg-blue-950 rounded shadow hover:shadow-md transition-shadow flex flex-col overflow-hidden">
+    <div
+      className="
+        flex-shrink-0
+        w-full sm:w-64
+        bg-white
+        rounded-xl
+        shadow-lg
+        hover:shadow-2xl
+        transition
+        transform hover:-translate-y-1
+        flex flex-col
+        mt-7
+      "
+    >
+      {/* 16:9 Thumbnail */}
+      <div className="relative w-full aspect-video overflow-hidden rounded-t-xl bg-gray-100">
+        {course ? (
+          <img
+            src={course.courseImg || "/placeholder.jpg"}
+            alt={course.title}
+            className="object-cover w-full h-full transition-transform duration-300 transform hover:scale-105"
+          />
+        ) : (
+          <div className="w-full h-full bg-gray-300 animate-pulse" />
+        )}
+        {isFree && (
+          <span className="
+            absolute top-2 left-2
+            bg-green-600 text-white text-xs font-semibold
+            uppercase px-2 py-0.5 rounded
+          ">
+            Free
+          </span>
+        )}
+      </div>
 
-        {/* Course Image */}
-        <div className="h-32 w-full bg-gray-700 flex items-center justify-center overflow-hidden rounded-md">
+      {/* Content */}
+      <div className="p-4 flex-1 flex flex-col">
+        <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-2">
+          {course ? course.title : <div className="h-5 bg-gray-300 animate-pulse rounded w-3/4" />}
+        </h3>
+        <span className="text-sm text-gray-700 flex-1 mb-4 line-clamp-3">
+          {course
+            ? course.description.length > 100
+              ? course.description.slice(0, 100) + "…"
+              : course.description
+            : <div className="h-4 bg-gray-300 animate-pulse rounded w-full mb-2" />}
+        </span>
+        <div className="flex items-center justify-end">
           {course ? (
-            <img
-              src={course.courseImg || "/placeholder.jpg"}
-              alt={course.title}
-              className="object-cover w-full h-full p-2 rounded-md transition-transform duration-300 transform hover:scale-105 rounded-xl"
-            />
+            <Link href={buttonLink}>
+              <span className="
+                text-sm font-medium p-3 bg-slate-300 rounded-md
+                hover:bg-slate-100
+                text-blue-600 hover:text-blue-800
+                transition
+              ">
+                {buttonLabel} →
+              </span>
+            </Link>
           ) : (
-            <div className="w-full h-full bg-gray-500 animate-pulse"></div>
+            <div className="h-6 bg-gray-300 animate-pulse rounded w-16" />
           )}
         </div>
-
-        {/* Course Info */}
-        <div className="flex-1 flex flex-col p-3">
-          {/* Course Title */}
-          <h3 className="text-lg font-bold text-gray-100 mb-1">
-            {course ? course.title : <div className="w-3/4 h-5 bg-gray-500 animate-pulse rounded"></div>}
-          </h3>
-
-          {/* Description */}
-          <div className="text-sm text-gray-200 flex-1">
-            {course ? course.description.slice(0, 50) + "..." : <div className="w-full h-4 bg-gray-500 animate-pulse rounded"></div>}
-          </div>
-          {/* ← FREE sticker */}
-        {/* {isFree && (
-          <span className="text-xs font-semibold text-blue-700 bg-blue-100 border border-blue-300 px-2 py-0.5 rounded-md w-fit">
-            FREE
-          </span>
-        )} */}
-
-          {/* Button */}
-          <div className="flex justify-end mt-2">
-
-            {/* ← FREE sticker */}
-        {isFree && (
-          <span className="text-xs font-semibold text-blue-700 bg-blue-100 border border-blue-300 px-2 py-0.5 rounded-md w-fit mr-3">
-            FREE
-          </span>
-        )}
-          {course ? (
-          <Link href={buttonLink}>
-            <button className="text-sm text-blue-100 hover:underline">
-              {buttonLabel}
-            </button>
-          </Link>
-        ) : (
-          <div className="w-16 h-5 bg-gray-500 animate-pulse rounded" />
-        )}
-          {/* ← FREE sticker */}
-        {/* {isFree && (
-          <span className="text-xs font-semibold text-blue-700 bg-blue-100 border border-blue-300 px-2 py-0.5 rounded-md w-fit">
-            FREE
-          </span>
-        )} */}
-          </div>
-        </div>
       </div>
+    </div>
   );
-};
+}
 
 
   return (
-    <main className="bg-slate-300 min-h-screen text-black">
-      {/* <DisableRightClickAndClipboard /> */}
-      {/* <MobileClipboardFunction /> */}
+    <main className="bg-white min-h-screen text-gray-800">
+      <DisableRightClickAndClipboard />
+      <MobileClipboardFunction />
 
       <div className="container mx-auto p-4 rounded-md">
         {/* Banner Ad */}
@@ -270,69 +298,57 @@ const CourseCard = ({
   </a>
 )}
 
-
-
-        {/* Top Navbar Icons
-        <div className="relative flex justify-end mt-6">
-          <div className="flex items-center space-x-4 absolute right-0">
-            <BellIcon
-              className="h-8 w-8 text-blue-600 cursor-pointer"
-              onClick={() => setIsNotificationOpen(!isNotificationOpen)}
-            />
-            <Link href="/profile">
-              <UserIcon className="h-8 w-8 text-blue-600 cursor-pointer" />
-            </Link>
-          </div>
-        </div> */}
-
-        {/* {isNotificationOpen && (
-          <NotificationPopup
-            close={() => setIsNotificationOpen(false)}
-            latestLiveClasses={latestLiveClasses}
-            latestTutorial={latestTutorial}
-            latestCourse={latestCourse}
-            adminNotifications={adminNotifications}
-          />
-        )} */}
-
         {/* Main Body */}
         <div className="p-4 flex-1 overflow-auto">
            {/* Subscribed Courses */}
-        <div className="mt-8">
-          <h2 className="text-lg sm:text-2xl font-bold text-blue-950 mb-4">
-            Your Subscribed Courses
-          </h2>
+        <div className="container mx-auto px-4 py-12">
+        <h2 className="text-2xl font-semibold mb-4">🎓 Continue Learning</h2>
           <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
 
             {isLoading
               ? Array.from({ length: 5 }).map((_, index) => (
                   <CourseCard key={index} course={null} buttonLabel="" buttonLink="" />
                 ))
-              : userCourses.map((course) => (
+              : userCourses.filter(course => !course.isHidden).map((course) => (
                   <CourseCard
                     key={course._id}
                     course={course}
-                    buttonLabel="View"
+                    buttonLabel="Go to Course"
                     buttonLink={`/courses/${course._id}`}
                   />
                 ))}
           </div>
         </div>
+        {/* ───── Price Filter Pills ───── */}
+          <div className="flex flex-wrap gap-2 mb-6  justify-items-start ml-2">
+            {(['All','Free','Paid'] as const).map(option => (
+              <button
+                key={option}
+                onClick={() => setPriceFilter(option)}
+                className={`
+                  px-3 py-1 rounded-full  text-sm
+                  ${priceFilter === option
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}
+                `}
+              >
+                {option}
+              </button>
+            ))}
+          </div>
         {/* Unsubscribed Courses */}
-        <div className="mt-6">
-          <h2 className="text-lg sm:text-2xl font-bold text-blue-950 mb-4">
-            Courses You Haven&apos;t Subscribed To
-          </h2>
+        <div className="container mx-auto px-4 py-12">
+        <h2 className="text-2xl font-semibold mb-6">📚 Courses You Might Like</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
             {isLoading
               ? Array.from({ length: 5 }).map((_, index) => (
                   <CourseCard key={index} course={null} buttonLabel="" buttonLink="" />
                 ))
-              : unsubscribedCourses.map((course) => (
+              : unsubscribedCourses.filter(course => !course.isHidden && applyPriceFilter(course)).map((course) => (
                   <CourseCard
                     key={course._id}
                     course={course}
-                    buttonLabel="Go to Course"
+                    buttonLabel="View Course"
                     buttonLink={`/course/${course._id}`}
                   />
                 ))}
