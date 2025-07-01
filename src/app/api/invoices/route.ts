@@ -147,20 +147,27 @@ export async function POST(req: NextRequest) {
   const totalAmount = discountedPrice;
 
   // 5️⃣ Generate invoiceId (financial‐year based) …
-  const now = new Date();
-  const year = now.getFullYear();
-  const fyStart =
-    now.getMonth() + 1 >= 4
-      ? new Date(year, 3, 1)
-      : new Date(year - 1, 3, 1);
-  const fyEnd = new Date(fyStart);
-  fyEnd.setFullYear(fyStart.getFullYear() + 1);
-  const fyCount = await Invoice.countDocuments({
-    createdAt: { $gte: fyStart, $lt: fyEnd },
-  });
-  const seq = String(fyCount + 1).padStart(5, '0');
-  const dateStr = now.toISOString().slice(0, 10);
-  const invoiceId = `${dateStr}-${seq}`;
+    // 5️⃣ Generate invoiceId (financial‐year based) with On/Off prefix …
+    const now = new Date();
+    const year = now.getFullYear();
+    const fyStart =
+      now.getMonth() + 1 >= 4
+        ? new Date(year, 3, 1)   // April 1st of current year
+        : new Date(year - 1, 3, 1); // April 1st of last year
+    const fyEnd = new Date(fyStart);
+    fyEnd.setFullYear(fyStart.getFullYear() + 1);
+  
+    const prefix = paymentMethod === 'Offline' ? 'Off' : 'On';
+  
+    const prefixCount = await Invoice.countDocuments({
+      createdAt: { $gte: fyStart, $lt: fyEnd },
+      paymentMethod
+    });
+  
+    const seq = String(prefixCount + 1).padStart(5, '0'); // 00001, 00002, ...
+    const dateStr = now.toISOString().slice(0, 10);
+    const invoiceId = `${prefix}-${dateStr}-${seq}`;
+  
 
   // 6️⃣ Save
   const inv = new Invoice({

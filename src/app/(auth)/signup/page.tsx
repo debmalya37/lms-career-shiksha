@@ -117,7 +117,7 @@ export default function Signup() {
                   focus:outline-none
                 "
               />
-              {floatingLabel("password", "Password")}
+              {floatingLabel("password", "Create Password")}
             </div>
 
             {/* Confirm Password */}
