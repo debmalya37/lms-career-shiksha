@@ -36,9 +36,10 @@ const navLinks: NavLink[] = [
   { name: "Home", href: "/",        icon: <FiHome /> },
   { name: "Courses", href: "/courses", icon: <FiBookOpen /> },
   { name: "Tutorials", href: "/tutorials", icon: <FiVideo /> },
-  { name: "Live Classes", href: "/live-classes", icon: <FiLayers /> },
+  { name: "Live classes", href: "/live-classes", icon: <FiLayers /> },
+  { name: "Leaderboard", href: "/leaderboard", icon: <FiLayers /> },
   { name: "Notes", href: "/notes",     icon: <FiFileText /> },
-  { name: "Track Progress", href: "/u/quizresults", icon: <FiAward /> },
+  { name: "Progress", href: "/u/quizresults", icon: <FiAward /> },
   { name: "Contact", href: "/contact",  icon: <FiPhone /> },
 ];
 
@@ -99,20 +100,29 @@ const Navbar: React.FC = () => {
       </Link>
 
       {/* Desktop Nav Links */}
-      <nav className="hidden md:flex absolute left-1/2 transform -translate-x-1/2 space-x-4">
-        {navLinks.map((link) => (
-          <Link
-            key={link.href}
-            href={link.href}
-            className={`flex items-center space-x-1 text-gray-700 hover:text-blue-700 font-normal mr-1 ${
-              pathname === link.href ? "text-blue-700" : ""
-            }`}
-          >
-            <span className="text-lg">{link.icon}</span>
-            <span>{link.name}</span>
-          </Link>
-        ))}
-      </nav>
+      {/* Desktop Nav Links */}
+<nav className="hidden md:flex flex-1 justify-center space-x-6 ml-2">
+  {navLinks.map((link) => (
+    <Link
+      key={link.href}
+      href={link.href}
+      className={`
+        flex items-center space-x-1
+        px-3 py-2 rounded-md
+        text-gray-700 hover:text-blue-700
+        transition
+        ${pathname === link.href 
+          ? "bg-blue-100 text-blue-900" 
+          : "bg-blue-300 "
+        }
+      `}
+    >
+      <span className="text-lg">{link.icon}</span>
+      <span className="whitespace-nowrap">{link.name}</span>
+    </Link>
+  ))}
+</nav>
+
 
       {/* Spacer */}
       <div className="flex-1" />

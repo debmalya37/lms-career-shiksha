@@ -11,7 +11,9 @@ export interface User extends Document {
   profile: Types.ObjectId[];
   phoneNo?: string;
   address?: string;
-  deviceIdentifier?: string | null 
+  deviceIdentifier?: string | null ,
+  resetOTP: string | null;
+resetOTPExpires: Date | null;
   createdAt: Date;
 }
 
@@ -46,6 +48,8 @@ const userSchema = new Schema<User>({
   phoneNo: { type: String, required: false }, // New field
   address: { type: String, required: false },
   deviceIdentifier: { type: String, default: null },
+  resetOTP:         { type: String, default: null },
+  resetOTPExpires:  { type: Date,   default: null },
 },
 { timestamps: true } 
 );

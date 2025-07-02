@@ -256,7 +256,7 @@ interface CourseCardProps {
           {course ? (
             <Link href={buttonLink}>
               <span className="
-                text-sm font-medium p-3 bg-slate-300 rounded-md
+                text-sm font-light p-2 bg-slate-300 rounded-md
                 hover:bg-slate-100
                 text-blue-600 hover:text-blue-800
                 transition
@@ -339,7 +339,7 @@ interface CourseCardProps {
         {/* Unsubscribed Courses */}
         <div className="container mx-auto px-4 py-12">
         <h2 className="text-2xl font-semibold mb-6">📚 Courses You Might Like</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-5 gap-6">
             {isLoading
               ? Array.from({ length: 5 }).map((_, index) => (
                   <CourseCard key={index} course={null} buttonLabel="" buttonLink="" />
@@ -348,7 +348,7 @@ interface CourseCardProps {
                   <CourseCard
                     key={course._id}
                     course={course}
-                    buttonLabel="View Course"
+                    buttonLabel="View"
                     buttonLink={`/course/${course._id}`}
                   />
                 ))}

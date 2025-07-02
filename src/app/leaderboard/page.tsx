@@ -34,7 +34,7 @@ export default function LeaderboardPage() {
 
   // 2) load quiz list for jump-to
   useEffect(() => {
-    fetch("/api/quiz")
+    fetch("/api/u/quiz")
       .then(r => r.json())
       .then((qs: any[]) =>
         setQuizzes(qs.map(q => ({

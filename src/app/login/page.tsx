@@ -28,6 +28,15 @@ const LoginPage = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const returnTo = searchParams.get("returnTo") || "/";
+
+
+  const [showForgot, setShowForgot] = useState(false);
+  const [otpEmail, setOtpEmail]   = useState("");
+  const [otp, setOtp]             = useState("");
+  const [errorMessages, setError]  = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [step, setStep]           = useState<"email"|"verify"|"reset">("email");
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -57,6 +66,57 @@ const LoginPage = () => {
     }
     
   };
+
+  
+  async function handleForgotSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    try {
+      await fetch("/api/forgot-password", {
+        method: "POST",
+        headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify({ email: otpEmail }),
+      }).then(r => {
+        if (!r.ok) throw new Error("Email not found");
+        setStep("verify");
+      });
+    } catch (err:any) {
+      setError(err.message);
+    }
+  }
+
+  async function handleVerifyOtp(e: React.FormEvent) {
+    e.preventDefault();
+    try {
+      await fetch("/api/verify-otp", {
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify({ email: otpEmail, otp }),
+      }).then(r => {
+        if (!r.ok) throw new Error("Invalid or expired OTP");
+        setStep("reset");
+      });
+    } catch (err:any) {
+      setError(err.message);
+    }
+  }
+
+  async function handleResetPassword(e: React.FormEvent) {
+    e.preventDefault();
+    try {
+      await fetch("/api/reset-password", {
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify({ email: otpEmail, newPassword }),
+      }).then(r => {
+        if (!r.ok) throw new Error("Could not reset");
+        setShowForgot(false);
+        setStep("email");
+        alert("Password reset! Please log in");
+      });
+    } catch (err:any) {
+      setError(err.message);
+    }
+  }
 
   return (
     <div
@@ -175,8 +235,81 @@ const LoginPage = () => {
             </Link>
           </p>
         </div>
+        <div className="mt-2 text-center">
+        <button
+          className="text-sm text-blue-500 hover:underline"
+          onClick={() => { setShowForgot(true); setStep("email"); setError(""); }}
+        >
+          Forgot password?
+        </button>
+      </div>
+
+      
+   
       </form>
+      {showForgot && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md relative">
+            <button
+              className="absolute top-2 right-2 text-gray-600"
+              onClick={() => setShowForgot(false)}
+            >×</button>
+            {step === "email" && (
+              <form onSubmit={handleForgotSubmit} className="space-y-4">
+                <h2 className="text-xl font-semibold">Reset password</h2>
+                {errorMessage && <p className="text-red-600">{errorMessage}</p>}
+                <input
+                  type="email"
+                  placeholder="Your email"
+                  className="w-full p-2 border rounded"
+                  value={otpEmail}
+                  onChange={e => setOtpEmail(e.target.value)}
+                  required
+                />
+                <button className="w-full py-2 bg-blue-600 text-white rounded">
+                  Send OTP
+                </button>
+              </form>
+            )}
+            {step === "verify" && (
+              <form onSubmit={handleVerifyOtp} className="space-y-4">
+                <h2 className="text-xl font-semibold">Enter OTP</h2>
+                {errorMessage && <p className="text-red-600">{errorMessage}</p>}
+                <input
+                  type="text"
+                  placeholder="6‑digit code"
+                  className="w-full p-2 border rounded"
+                  value={otp}
+                  onChange={e => setOtp(e.target.value)}
+                  required
+                />
+                <button className="w-full py-2 bg-blue-600 text-white rounded">
+                  Verify
+                </button>
+              </form>
+            )}
+            {step === "reset" && (
+              <form onSubmit={handleResetPassword} className="space-y-4">
+                <h2 className="text-xl font-semibold">New Password</h2>
+                {errorMessage && <p className="text-red-600">{errorMessage}</p>}
+                <input
+                  type="password"
+                  placeholder="New password"
+                  className="w-full p-2 border rounded"
+                  value={newPassword}
+                  onChange={e => setNewPassword(e.target.value)}
+                  required
+                />
+                <button className="w-full py-2 bg-green-600 text-white rounded">
+                  Reset Password
+                </button>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
     </div>
+    
   );
 };
 
