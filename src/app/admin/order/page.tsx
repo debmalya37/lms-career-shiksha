@@ -77,7 +77,7 @@ export default function OrderPage() {
                   <td className="p-3 font-medium">{order.userName}</td>
                   <td className="p-3">{order.userEmail}</td>
                   <td className="p-3">{order.course.title}</td>
-                  <td className="p-3">₹{(order.amount / 100).toFixed(2)}</td>
+                  <td className="p-3">₹{(order.amount).toFixed(2)}</td>
                   <td className="p-3">{order.transactionId}</td>
                   <td className="p-3">{order.promoCode || "—"}</td>
                   <td className="p-3">{new Date(order.purchasedAt).toLocaleString()}</td>

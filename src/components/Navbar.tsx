@@ -17,7 +17,6 @@ import {
   FiBell,
   FiAward,
 } from "react-icons/fi";
-import { BellIcon, UserIcon } from "@heroicons/react/24/solid";
 import Logo from "../../public/image/logo.jpeg";
 import NotificationPopup from "@/components/NotificationPopup";
 
@@ -33,14 +32,14 @@ interface NavLink {
 }
 
 const navLinks: NavLink[] = [
-  { name: "Home", href: "/",        icon: <FiHome /> },
+  { name: "Home", href: "/", icon: <FiHome /> },
   { name: "Courses", href: "/courses", icon: <FiBookOpen /> },
-  { name: "Tutorials", href: "/tutorials", icon: <FiVideo /> },
-  { name: "Live classes", href: "/live-classes", icon: <FiLayers /> },
-  { name: "Leaderboard", href: "/leaderboard", icon: <FiLayers /> },
-  { name: "Notes", href: "/notes",     icon: <FiFileText /> },
+  // { name: "Tutorials", href: "/tutorials", icon: <FiVideo /> },
+  { name: "Live classes", href: "/live-classes", icon: <FiVideo /> },
+  { name: "Leaderboard", href: "/leaderboard", icon: <FiAward /> },
+  { name: "Notes", href: "/notes", icon: <FiFileText /> },
   { name: "Progress", href: "/u/quizresults", icon: <FiAward /> },
-  { name: "Contact", href: "/contact",  icon: <FiPhone /> },
+  { name: "Contact", href: "/contact", icon: <FiPhone /> },
 ];
 
 const Navbar: React.FC = () => {
@@ -51,94 +50,81 @@ const Navbar: React.FC = () => {
   const sidebarRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Fetch notifications once
     fetch("/api/notifications")
       .then((r) => r.json())
       .then(setAdminNotifications)
       .catch(console.error);
   }, []);
 
-  // Close sidebar when clicking outside (mobile)
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
-      if (
-        sidebarRef.current &&
-        !sidebarRef.current.contains(e.target as Node)
-      ) {
+      if (sidebarRef.current && !sidebarRef.current.contains(e.target as Node)) {
         setSidebarOpen(false);
       }
     }
-    if (sidebarOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
+    if (sidebarOpen) document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [sidebarOpen]);
 
   return (
-    <header className="fixed top-0 inset-x-0 z-50 bg-white shadow-md h-16 flex items-center px-4 md:px-8">
-      {/* Mobile: Hamburger */}
-      <button
-        className="md:hidden text-blue-700 mr-4"
-        onClick={() => setSidebarOpen(!sidebarOpen)}
-        aria-label="Toggle menu"
-      >
-        {sidebarOpen ? <FiX size={24} /> : <FiMenu size={24} />}
-      </button>
+    <header className="fixed top-0 inset-x-0 z-50 bg-white shadow-md flex flex-col">
+      {/* First row: logo, mobile toggle, notifications/profile */}
+      <div className="flex items-center justify-between h-[6.5rem] md:h-16 px-4 md:px-8">
+        {/* Mobile: Hamburger */}
+        <button
+          className="md:hidden text-blue-700 mr-4 "
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+          aria-label="Toggle menu"
+        >
+          {sidebarOpen ? <FiX size={24} /> : <FiMenu size={24} />}
+        </button>
 
-      {/* Logo */}
-      <Link href="/" className="flex items-center flex-shrink-0">
-        <Image
-          src={Logo}
-          alt="Career Shiksha"
-          width={36}
-          height={36}
-          className="rounded-full"
-        />
-        <span className="ml-2 font-bold text-xl text-blue-900">
-          Career Shiksha
-        </span>
-      </Link>
-
-      {/* Desktop Nav Links */}
-      {/* Desktop Nav Links */}
-<nav className="hidden md:flex flex-1 justify-center space-x-6 ml-2">
-  {navLinks.map((link) => (
-    <Link
-      key={link.href}
-      href={link.href}
-      className={`
-        flex items-center space-x-1
-        px-3 py-2 rounded-md
-        text-gray-700 hover:text-blue-700
-        transition
-        ${pathname === link.href 
-          ? "bg-blue-100 text-blue-900" 
-          : "bg-blue-300 "
-        }
-      `}
-    >
-      <span className="text-lg">{link.icon}</span>
-      <span className="whitespace-nowrap">{link.name}</span>
-    </Link>
-  ))}
-</nav>
-
-
-      {/* Spacer */}
-      <div className="flex-1" />
-
-      {/* Notification & Profile */}
-      <div className="flex items-center space-x-4">
-        <FiBell
-          className="h-6 w-6 text-blue-600 cursor-pointer"
-          onClick={() => setIsNotificationOpen(!isNotificationOpen)}
-        />
-        <Link href="/profile">
-          <FiUser className="h-6 w-6 text-blue-600 cursor-pointer" />
+        {/* Logo */}
+        <Link href="/" className="flex items-center flex-shrink-0">
+          <Image
+            src={Logo}
+            alt="Career Shiksha"
+            width={36}
+            height={36}
+            className="rounded-full"
+          />
+          <span className="ml-2 font-bold text-xl text-blue-900">
+            Career Shiksha
+          </span>
         </Link>
+
+        {/* Notification & Profile */}
+        <div className="flex items-center space-x-4">
+          <FiBell
+            className="h-6 w-6 text-blue-600 cursor-pointer"
+            onClick={() => setIsNotificationOpen(!isNotificationOpen)}
+          />
+          <Link href="/profile">
+            <FiUser className="h-6 w-6 text-blue-600 cursor-pointer" />
+          </Link>
+        </div>
       </div>
 
-      {/* Mobile Sidebar */}
+      {/* Second row: desktop nav links */}
+      <nav className="hidden md:flex justify-center space-x-6 py-2 border-t border-gray-200">
+        {navLinks.map((link) => (
+          <Link
+            key={link.href}
+            href={link.href}
+            className={`
+              flex items-center space-x-1 px-3 py-1 rounded-md
+              text-gray-700 hover:text-blue-700 transition
+              bg-blue-100
+              ${pathname === link.href ? "bg-blue-200 text-blue-950" : ""}
+            `}
+          >
+            <span className="text-lg">{link.icon}</span>
+            <span className="whitespace-nowrap">{link.name}</span>
+          </Link>
+        ))}
+      </nav>
+
+      {/* Mobile Sidebar Overlay */}
       {sidebarOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-40 z-40 md:hidden" />
       )}
@@ -169,7 +155,7 @@ const Navbar: React.FC = () => {
       {isNotificationOpen && (
         <NotificationPopup
           close={() => setIsNotificationOpen(false)}
-          latestLiveClasses={[]}  // pass your data here
+          latestLiveClasses={[]}
           latestTutorial={null}
           latestCourse={null}
           adminNotifications={adminNotifications}

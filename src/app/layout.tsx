@@ -39,7 +39,7 @@ export default function RootLayout({
           <DisableRightClick />
 
           {/* Main content pushed below the 64px navbar */}
-          <main className="pt-16">
+          <main className="pt-28">
             {children}
           </main>
 
