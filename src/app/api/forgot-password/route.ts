@@ -28,7 +28,7 @@ export async function POST(request: Request) {
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Reset Your Password - SEO Earning Space</title>
+  <title>Reset Your Password - Career Shiksha</title>
   <style>
     body { font-family: Arial, sans-serif; background-color: #f7f9fc; margin: 0; padding: 0; }
     .container { background-color: #fff; max-width: 600px; margin: 40px auto; padding: 30px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
@@ -44,12 +44,12 @@ export async function POST(request: Request) {
 <body>
   <div class="container">
     <div class="logo">
-      <img src="https://seoearningspace.com/logo.png" alt="SEO Earning Space Logo" />
+      <img src="https://civilacademyapp.com/image/logo.jpeg" alt=" Career Shiksha logo" />
     </div>
     <div class="title">Password Reset Request</div>
     <div class="message">
       Hi <strong>${user.name || email}</strong>,<br><br>
-      We received a request to reset the password for your <strong>SEO Earning Space</strong> account.<br>
+      We received a request to reset the password for your <strong>Career Shiksha</strong> account.<br>
       Use the code below to proceed. This code is valid for the next <strong>10 minutes</strong>.
     </div>
     <div class="otp-box">${otp}</div>
@@ -57,11 +57,11 @@ export async function POST(request: Request) {
       If you did not request this, you can safely ignore this email. Your account remains secure.
     </div>
     <div class="support">
-      Need help? Contact us at <a href="mailto:support@seoearningspace.com">support@seoearningspace.com</a>
+      Need help? Contact us at <a href="mailto:civilacademy98@gmail.com">civilacademy98@gmail.com</a>
     </div>
     <div class="footer">
-      SEO Earning Space<br>
-      <em>Empowering your micro‑task earnings</em>
+      Career Shiksha | Affordable Career Solutions<br>
+      <em>Civil Academy IAS PCS</em>
     </div>
   </div>
 </body>
@@ -77,7 +77,7 @@ export async function POST(request: Request) {
   });
 
   await transporter.sendMail({
-    from: `"SEO Earnings" <${process.env.EMAIL_USER}>`,
+    from: `"Civil Academy" <${process.env.EMAIL_USER}>`,
     to: email,
     subject: "Your Password Reset Code",
     html,
