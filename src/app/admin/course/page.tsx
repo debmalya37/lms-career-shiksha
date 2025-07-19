@@ -18,6 +18,7 @@ interface Course {
   title: string;
   description: string;
   courseImg: string;
+  duration:  number;
   subjects: Subject[];
   isHidden: boolean;
   price: number;
@@ -102,6 +103,16 @@ function updateDuration(d: number, m: number, y: number) {
     setDiscountedPrice(c.discountedPrice);  // <-- new
     setCourseImg(null);
     setIntroVideo(c.introVideo || ""); // <-- NEW
+    // split the existing c.duration (in days) back into years, months, days:
+const total = c.duration;
+const yrs  = Math.floor(total / 365);
+const rem1 = total % 365;
+const mos  = Math.floor(rem1 / 30);
+const dys  = rem1 % 30;
+
+// update your three controls (and computed duration)
+updateDuration(dys, mos, yrs);
+
 
   };
 

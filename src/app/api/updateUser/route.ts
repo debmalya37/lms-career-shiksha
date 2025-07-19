@@ -13,7 +13,8 @@ export async function POST(request: Request) {
       id,
       { name, email, password, subscription, phoneNo, address, course },
       { new: true }
-    );
+    ).populate('course');  // ← populate so you get full course docs back
+    
 
     if (!updatedUser) {
       return NextResponse.json({ message: 'User not found' }, { status: 404 });
