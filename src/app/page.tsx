@@ -7,6 +7,8 @@ import { useRouter } from "next/navigation";
 import NotificationPopup from "@/components/NotificationPopup";
 import DisableRightClickAndClipboard from "@/components/DisableRightClick";
 import MobileClipboardFunction from "@/components/MobileClipboard";
+import ProgressBar from "@/components/ProgressBar";
+import SimpleProgressBar from "@/components/SimpleProgressBar";
 // import MobileClipboardFunction from "@/components/MobileClipboard"; // If you still need it
 
 // Define interfaces
@@ -27,6 +29,7 @@ interface BannerAd {
 }
 
 interface UserProfile {
+  userId: string;
   name: string;
   email: string;
   subscription: number;
@@ -51,6 +54,7 @@ export default function Home() {
   const [bannerAds, setBannerAds] = useState<BannerAd[]>([]);
   const [currentAdIndex, setCurrentAdIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true); // Track loading state
+  const [userId, setUserId] = useState<string | null>(null);
   // Check for session token and redirect if missing
   const [priceFilter, setPriceFilter] = useState<'All' | 'Free' | 'Paid'>('All');
 
@@ -107,6 +111,7 @@ export default function Home() {
   
         if (profileData?.courses?.length) {
           setUserCourses(profileData.courses);
+          setUserId(profileData.userId);
         }
   
         const allCoursesRes = await axios.get(`/api/course`);
@@ -188,6 +193,12 @@ interface Course {
   courseImg?: string;
   isFree?: boolean;
   isHidden?: boolean;
+  /** progress added by /api/profile */
+  progress?: {
+      total: number;
+      completed: number;
+      percent: number;
+    };
 }
 
 interface CourseCardProps {
@@ -239,6 +250,13 @@ interface CourseCardProps {
           </span>
         )}
       </div>
+      {/* progress bar */}
+      {course?.progress && (
+        <div className="p-4">
+                  <SimpleProgressBar progress={course.progress.percent} />
+
+        </div>
+      )}
 
       {/* Content */}
       <div className="p-4 flex-1 flex flex-col">

@@ -1,16 +1,31 @@
+// components/ProgressBar.tsx
 "use client";
+import { useState, useEffect } from "react";
 
 interface ProgressBarProps {
-  progress: number;
+  courseId: string;
+  userId:   string;
 }
 
-const ProgressBar = ({ progress }: ProgressBarProps) => (
-  <div className="w-full bg-gray-200 rounded-full h-4">
-    <div
-      className="bg-blue-600 h-4 rounded-full"
-      style={{ width: `${progress}%` }}
-    ></div>
-  </div>
-);
+export default function ProgressBar({ courseId, userId }: ProgressBarProps) {
+  const [percent, setPercent] = useState(0);
 
-export default ProgressBar;
+  useEffect(() => {
+    ;(async () => {
+      const res = await fetch('/api/profile');
+      if (!res.ok) return;
+      const data = await res.json();
+      const course = data.courses.find((c: any) => c._id === courseId);
+      if (course) setPercent(course.progress.percent);
+    })();
+  }, [courseId]);
+
+  return (
+    <div className="w-full bg-gray-200 rounded-full h-4">
+      <div
+        className="bg-blue-600 h-4 rounded-full"
+        style={{ width: `${percent}%` }}
+      />
+    </div>
+  );
+}

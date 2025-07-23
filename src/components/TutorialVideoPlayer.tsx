@@ -16,6 +16,7 @@ declare global {
 
 interface TutorialVideoPlayerProps {
   url: string;
+  onEnded?: () => void;
 }
 
 function getYouTubeId(url: string): string | null {
@@ -25,13 +26,22 @@ function getYouTubeId(url: string): string | null {
   return match && match[2].length === 11 ? match[2] : null;
 }
 
-export default function TutorialVideoPlayer({ url }: TutorialVideoPlayerProps) {
+export default function TutorialVideoPlayer({
+  url,
+  onEnded,
+}: TutorialVideoPlayerProps) {
   const videoId = getYouTubeId(url);
   const outerRef = useRef<HTMLDivElement>(null);
   const playerContainerRef = useRef<HTMLDivElement>(null);
   const progressBarRef = useRef<HTMLDivElement>(null);
   const animationRef = useRef<number>();
   const hideTimer = useRef<number>();
+
+  const onEndedRef = useRef<(() => void) | undefined>(onEnded);
+  useEffect(() => {
+    // always keep the latest onEnded in the ref
+    onEndedRef.current = onEnded;
+  }, [onEnded]);
 
   const [controlsVisible, setControlsVisible] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -78,6 +88,7 @@ export default function TutorialVideoPlayer({ url }: TutorialVideoPlayerProps) {
   }, []);
 
   // 4️⃣ Keyboard shortcuts
+  const playerRef = useRef<any>(null);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (!playerRef.current) return;
@@ -100,11 +111,10 @@ export default function TutorialVideoPlayer({ url }: TutorialVideoPlayerProps) {
     return () => window.removeEventListener("keydown", onKey);
   }, [isPlaying]);
 
-  // 5️⃣ Init player when API ready
-  const playerRef = useRef<any>(null);
+  // 5️⃣ Init player when API ready (once)
   useEffect(() => {
-    if (!apiReady || !videoId || !playerContainerRef.current) return;
-    if (playerRef.current) return;
+    if (!apiReady || !videoId || !playerContainerRef.current || playerRef.current)
+      return;
 
     playerRef.current = new window.YT.Player(playerContainerRef.current, {
       videoId,
@@ -120,8 +130,7 @@ export default function TutorialVideoPlayer({ url }: TutorialVideoPlayerProps) {
       },
       events: {
         onReady: (evt: any) => {
-          const d = evt.target.getDuration();
-          setDuration(d);
+          setDuration(evt.target.getDuration());
           evt.target.setPlaybackRate(playbackRate);
         },
         onStateChange: (evt: any) => {
@@ -130,6 +139,11 @@ export default function TutorialVideoPlayer({ url }: TutorialVideoPlayerProps) {
           setIsPlaying(playing);
           if (playing) startProgressLoop();
           else cancelAnimationFrame(animationRef.current!);
+
+          if (st === window.YT.PlayerState.ENDED) {
+            // always call the latest callback
+            onEndedRef.current?.();
+          }
         },
       },
     });
@@ -195,13 +209,11 @@ export default function TutorialVideoPlayer({ url }: TutorialVideoPlayerProps) {
   // 9️⃣ Controls actions
   const togglePlay = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!playerRef.current) return;
-    isPlaying ? playerRef.current.pauseVideo() : playerRef.current.playVideo();
+    playerRef.current?.[isPlaying ? "pauseVideo" : "playVideo"]();
   };
   const skip = (off: number, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!playerRef.current) return;
-    playerRef.current.seekTo(playerRef.current.getCurrentTime() + off, true);
+    playerRef.current?.seekTo(playerRef.current.getCurrentTime() + off, true);
   };
   const toggleFullscreen = (e: React.MouseEvent) => {
     e.stopPropagation();

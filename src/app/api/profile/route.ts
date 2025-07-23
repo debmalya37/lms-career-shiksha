@@ -6,6 +6,8 @@ import { User } from '@/models/user';
 import Profile from '@/models/profileModel';
 import Course from '@/models/courseModel';
 import Subject from '@/models/subjectModel';
+import Tutorial from '@/models/tutorialModel';
+import Progress from '@/models/progressModel';
 import { Types } from 'mongoose';
 
 /** The shape of one Course document from `.lean()` */
@@ -46,73 +48,94 @@ export async function GET(request: NextRequest) {
     }
 
     // 2) Fetch all courses the user ever purchased
-    const rawCourses = await Course.find({ _id: { $in: user.course } })
-      .lean<RawCourse[]>();   // ← note the array type here
+    const rawCourses = await Course.find({ _id: { $in: user.course } }).lean<RawCourse[]>();
 
     // 3) Fetch all subjects referenced by those courses
-    const allSubjectIds: Types.ObjectId[] = rawCourses.flatMap((c: RawCourse) => c.subjects);
-    const rawSubjects = await Subject.find({ _id: { $in: allSubjectIds } })
-      .lean<RawSubject[]>();  // ← array type
+    const allSubjectIds: Types.ObjectId[] = rawCourses.flatMap(c => c.subjects);
+    const rawSubjects = await Subject.find({ _id: { $in: allSubjectIds } }).lean<RawSubject[]>();
 
     // 4) Build lookup to turn ObjectId → RawSubject
-    const subjectMap: Record<string, RawSubject> = rawSubjects.reduce(
-      (acc: Record<string, RawSubject>, s: RawSubject) => {
-        acc[s._id.toString()] = s;
-        return acc;
-      },
-      {}
-    );
+    const subjectMap: Record<string, RawSubject> = rawSubjects.reduce((acc, s) => {
+      acc[s._id.toString()] = s;
+      return acc;
+    }, {} as Record<string, RawSubject>);
 
     // 5) Build map of when each course was purchased
-    const purchaseMap: Record<string, Date> = (user.purchaseHistory || []).reduce(
-      (acc: Record<string, Date>, rec) => {
-        acc[rec.course.toString()] = rec.purchasedAt;
-        return acc;
-      },
-      {}
-    );
+    const purchaseMap: Record<string, Date> = (user.purchaseHistory || []).reduce((acc, rec) => {
+      acc[rec.course.toString()] = rec.purchasedAt;
+      return acc;
+    }, {} as Record<string, Date>);
 
     const now = new Date();
 
-    // 6) Enrich + filter out expired
-    const activeCourses = rawCourses
-  .map((course: RawCourse) => {
-    const courseIdStr = course._id.toString();
-    const purchasedAt = purchaseMap[courseIdStr];
+    // 6) Filter out expired
+    const validRawCourses = rawCourses.filter(course => {
+      const purchasedAt = purchaseMap[course._id.toString()];
+      if (purchasedAt) {
+        const expiry = new Date(purchasedAt);
+        expiry.setDate(expiry.getDate() + course.duration);
+        return expiry > now;
+      }
+      return true;
+    });
 
-    // If user has purchased this course, check expiry
-    if (purchasedAt) {
-      const expiry = new Date(purchasedAt);
-      expiry.setDate(expiry.getDate() + course.duration);
-      if (expiry <= now) return null; // expired → skip
+    const courseIds = validRawCourses.map(c => c._id);
+
+    // 7) Fetch completed tutorial progress for these courses
+    const completedDocs = await Progress.find({
+      user: user._id,
+      course: { $in: courseIds },
+      completed: true
+    }).lean();
+
+    const completedMap = completedDocs.reduce((acc, p) => {
+      const cid = (p.course as Types.ObjectId).toString();
+      acc[cid] = (acc[cid] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    // 8) Compute total tutorials per course
+    const tutorialCounts: Record<string, number> = {};
+    for (const course of validRawCourses) {
+      const total = await Tutorial.countDocuments({ subject: { $in: course.subjects } });
+      tutorialCounts[course._id.toString()] = total;
     }
 
-    // Either not purchased (so show it anyway) or still valid
-    return {
-      _id:             courseIdStr,
-      title:           course.title,
-      description:     course.description,
-      courseImg:       course.courseImg,
-      createdAt:       course.createdAt.toISOString(),
-      isHidden:        course.isHidden,
-      price:           course.price,
-      isFree:          course.isFree,
-      discountedPrice: course.discountedPrice,
-      duration:        course.duration,
-      introVideo:      course.introVideo,
-      subjects: course.subjects
-        .map((id: Types.ObjectId) => subjectMap[id.toString()])
-        .filter((s): s is RawSubject => !!s)
-        .map((s: RawSubject) => ({ _id: s._id.toString(), name: s.name })),
-    };
-  })
-  .filter((c): c is NonNullable<typeof c> => c !== null);
+    // 9) Enrich courses with subjects & progress
+    const activeCourses = validRawCourses.map(course => {
+      const idStr = course._id.toString();
+      const total = tutorialCounts[idStr] || 0;
+      const completed = completedMap[idStr] || 0;
+      const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
 
+      return {
+        _id:             idStr,
+        title:           course.title,
+        description:     course.description,
+        courseImg:       course.courseImg,
+        createdAt:       course.createdAt.toISOString(),
+        isHidden:        course.isHidden,
+        price:           course.price,
+        isFree:          course.isFree,
+        discountedPrice: course.discountedPrice,
+        duration:        course.duration,
+        introVideo:      course.introVideo,
+        subjects: course.subjects
+          .map(id => subjectMap[id.toString()])
+          .filter((s): s is RawSubject => !!s)
+          .map(s => ({ _id: s._id.toString(), name: s.name })),
+        progress: {
+          total,
+          completed,
+          percent
+        }
+      };
+    });
 
-    // 7) Fetch profile doc
+    // 10) Fetch profile doc
     const profile = await Profile.findOne({ userId: user._id }).lean();
 
-    // 8) Respond
+    // 11) Respond
     return NextResponse.json({
       userId:       user._id.toString(),
       email:        user.email,
@@ -129,10 +152,6 @@ export async function GET(request: NextRequest) {
   }
 }
 
-
-
-
-
 export async function POST(request: NextRequest) {
   const { userId, firstName, lastName, email, subject, aim } = await request.json();
 
@@ -145,11 +164,12 @@ export async function POST(request: NextRequest) {
       { firstName, lastName, email, subject, aim },
       { new: true, upsert: true }
     );
-      console.log("posting profile : ",profile);
+    console.log("posting profile : ", profile);
     await User.findByIdAndUpdate(userId, { profile: profile._id });
 
     return NextResponse.json({ message: 'Profile saved successfully!', profile });
   } catch (error) {
+    console.error('Error saving profile:', error);
     return NextResponse.json({ error: 'Failed to save profile' }, { status: 500 });
   }
 }
