@@ -3,10 +3,10 @@ import React from "react";
 const PrivacyPolicy = () => {
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-4">Privacy Policy for Career Shiksha Learning Portal</h1>
+      <h1 className="text-3xl font-bold mb-4">Privacy Policy for Civil Academy Learning Portal</h1>
       <p className="text-gray-700 mb-4">Effective Date: 01/01/2024</p>
       <p className="text-gray-700 mb-8">
-        At Career Shiksha Learning Portal, your privacy is important to us. This Privacy Policy explains
+        At Civil Academy Learning Portal, your privacy is important to us. This Privacy Policy explains
         how we collect, use, share, and protect your information when you use our platform and services. 
         By using our services, you agree to the terms outlined below.
       </p>
@@ -74,7 +74,7 @@ const PrivacyPolicy = () => {
 
         <h3 className="text-xl font-medium mb-2">3.2 Legal Requirements</h3>
         <p className="text-gray-700 mb-4">
-          We may disclose your data if required by law or to protect the rights, property, or safety of Career Shiksha, its users, or others.
+          We may disclose your data if required by law or to protect the rights, property, or safety of Civil Academy, its users, or others.
         </p>
 
         <h3 className="text-xl font-medium mb-2">3.3 Business Transfers</h3>
@@ -170,7 +170,7 @@ const PrivacyPolicy = () => {
           <br />
           <strong>Email:</strong> civilacademy98@gmail.com
           <br />
-          <strong>Address:</strong> Meerut Centre - Career Shiksha IAS/PCS, 2nd Flr, Star Plaza, Bachcha Park, Meerut Mob- 9927827825
+          <strong>Address:</strong> Meerut Centre - Civil Academy IAS/PCS, 2nd Flr, Star Plaza, Bachcha Park, Meerut Mob- 9927827825
         </p>
       </section>
     </div>

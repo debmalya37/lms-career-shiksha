@@ -105,7 +105,7 @@ export default function UserAdmissionListPage() {
             className="bg-white rounded-xl shadow-lg overflow-hidden"
           >
             <div className="p-4 bg-gradient-to-r from-indigo-800 to-indigo-600 flex items-center space-x-3">
-              <Image src={logo} alt="Career Shiksha" width={40} height={40} />
+              <Image src={logo} alt="Civil Academy" width={40} height={40} />
               <h2 className="text-white font-bold text-lg">Career Shiksha</h2>
             </div>
             <div className="p-4 space-y-2">

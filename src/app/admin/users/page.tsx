@@ -20,7 +20,6 @@ import {
 import { Bar } from 'react-chartjs-2';
 import { AdmissionFormPreview } from '@/components/AdmissionFormPreview';
 
-
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -30,15 +29,23 @@ ChartJS.register(
   ChartLegend
 );
 
+interface CourseProgress {
+  courseId:    string;
+  title:       string;
+  duration:    number;       // total days
+  purchasedAt: string | null;
+  daysLeft:    number | null;
+}
+
 interface User {
-  _id: string;
-  name: string;
-  email: string;
-  phoneNo?: string;
-  course: string[];
-  subscription?: number;
+  _id:             string;
+  name:            string;
+  email:           string;
+  phoneNo?:        string;
+  subscription?:   number;
   purchaseHistory: { amount: number; purchasedAt: string }[];
-  createdAt: string;
+  createdAt:       string;
+  courseProgress:  CourseProgress[];
 }
 
 interface Admission {
@@ -84,6 +91,7 @@ export default function UserAdminPage() {
   const [openRows, setOpenRows]         = useState<Record<string,boolean>>({});
   const [previewAdmission,setPreviewAdmission] = useState<Admission | null>(null);
   const [busyId, setBusyId]           = useState<string|null>(null);
+
   // fetch users + stats
   useEffect(() => {
     fetch('/api/admin/users', { cache: 'no-store' })
@@ -106,8 +114,9 @@ export default function UserAdminPage() {
 
   if (!stats) return <p className="p-8 text-center">Loading…</p>;
 
-  // — Admissions by state chart data —
-  const stateCounts = admissions.reduce<Record<string,number>>((acc, a) => {
+  // Charts data omitted for brevity...
+   // — Admissions by state chart data —
+   const stateCounts = admissions.reduce<Record<string,number>>((acc, a) => {
     acc[a.state] = (acc[a.state] || 0) + 1;
     return acc;
   }, {});
@@ -155,16 +164,28 @@ export default function UserAdminPage() {
 
   // Filters UI
   const allStates  = Array.from(new Set(admissions.map(a=>a.state)));
-  const allCourses = courseLabels;
+  // for courseFilter dropdown we use stats.usersByCourse keys
+  const allCourses = Object.keys(stats.usersByCourse);
 
   // apply search + filters
   const visibleUsers = users
-    .filter(u => u.name.toLowerCase().includes(search.toLowerCase()) || u.email.toLowerCase().includes(search.toLowerCase()))
-    .filter(u => stateFilter==='All' || admissions.some(a=>a.userId.toString()===u._id && a.state===stateFilter))
-    .filter(u => courseFilter==='All'||u.course.includes(courseFilter));
+    .filter(u =>
+      u.name.toLowerCase().includes(search.toLowerCase()) ||
+      u.email.toLowerCase().includes(search.toLowerCase())
+    )
+    .filter(u =>
+      stateFilter === 'All' ||
+      admissions.some(a => a.email === u.email && a.state === stateFilter)
+    )
+    .filter(u =>
+      courseFilter === 'All' ||
+      u.courseProgress.some(cp => cp.title === courseFilter)
+    );
 
-    // ---- dynamic invoice PDF download ----
-  const handleDownload = async (inv: any) => {
+  // PDF download handler omitted...
+
+   // ---- dynamic invoice PDF download ----
+   const handleDownload = async (inv: any) => {
     try {
       setBusyId(inv._id);
       // dynamic import to avoid prerender-time ESM require
@@ -207,8 +228,6 @@ export default function UserAdminPage() {
       setBusyId(null);
     }
   };
-
-
   return (
     <div className="p-8 space-y-8">
       <h1 className="text-3xl font-bold">User Management Dashboard</h1>
@@ -250,6 +269,7 @@ export default function UserAdminPage() {
         </div>
       </div>
 
+
       {/* Filters */}
       <div className="flex space-x-4">
         <input
@@ -259,15 +279,23 @@ export default function UserAdminPage() {
           onChange={e=>setSearch(e.target.value)}
           className="border px-3 py-2 rounded flex-1"
         />
-        <select title='state' value={stateFilter} onChange={e=>setStateFilter(e.target.value)} className="border px-3 py-2 rounded">
+        <select
+        title='Filter by state'
+          value={stateFilter}
+          onChange={e=>setStateFilter(e.target.value)}
+          className="border px-3 py-2 rounded"
+        >
           <option>All</option>
-          {allStates.map(s=><option key={s}>{s}</option>)}
+          {allStates.map(s => <option key={s}>{s}</option>)}
         </select>
         <select
-        title='course'
-         value={courseFilter} onChange={e=>setCourseFilter(e.target.value)} className="border px-3 py-2 rounded">
+        title='Filter by course'
+          value={courseFilter}
+          onChange={e=>setCourseFilter(e.target.value)}
+          className="border px-3 py-2 rounded"
+        >
           <option>All</option>
-          {allCourses.map(c=><option key={c}>{c}</option>)}
+          {allCourses.map(c => <option key={c}>{c}</option>)}
         </select>
       </div>
 
@@ -276,115 +304,177 @@ export default function UserAdminPage() {
         <table className="min-w-full table-auto text-sm">
           <thead className="bg-gray-100">
             <tr>
-              {['Name','Email', "phone",'#Courses','Course Title','Subscription','Revenue','Admissions','Invoices'].map(h=>(
-                <th key={h} className="px-4 py-2 text-left">{h}</th>
-              ))}
+              {['Name','Email','Phone','#Courses','Courses & Time Left','Subscription','Revenue','Admissions','Invoices']
+                .map(h => (
+                  <th key={h} className="px-4 py-2 text-left">{h}</th>
+                ))
+              }
             </tr>
           </thead>
           <tbody>
-            {visibleUsers.map(u=>{
-              const myAdmissions = admissions.filter(a=>a.email===u.email);
-              const myInvoices   = invoices.filter(inv=>inv.email===u.email);
-              const isOpen       = openRows[u._id]||false;
+  {visibleUsers.map((u, rowIdx) => {
+    const myAdmissions = admissions.filter(a => a.email === u.email);
+    const myInvoices   = invoices.filter(inv => inv.email === u.email);
+    const isOpen       = !!openRows[u._id];
 
-              return (
-                <React.Fragment key={u._id}>
-                  <tr className="border-t hover:bg-gray-50">
-                    <td className="px-4 py-2">{u.name}</td>
-                    <td className="px-4 py-2">{u.email}</td>
-                    <td className="px-4 py-2">{u.phoneNo}</td>
-                    <td className="px-4 py-2">{u.course.length}</td>
-                    <td
-                        className="px-4 py-2"
-                        title={u.course.join(', ')}      // <-- native tooltip shows full list
-                      >
-                                 {u.course.map((c,i)=><div className='border-spacing-1 border-2 border-gray-300' key={i}>{c}</div>)}
+    return (
+      <React.Fragment key={u._id}>
+        <tr
+          className={`
+            hover:bg-indigo-50
+            ${rowIdx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}
+            transition
+          `}
+        >
+          <td className="px-4 py-2 text-gray-800 font-medium">{u.name}</td>
+          <td className="px-4 py-2 text-gray-700">{u.email}</td>
+          <td className="px-4 py-2 text-gray-700">{u.phoneNo}</td>
 
-                      </td>
-                    <td className="px-4 py-2">{u.subscription||'—'}</td>
-                    <td className="px-4 py-2 font-medium">
-                      ₹{(u.purchaseHistory.reduce((s,p)=>s+p.amount,0)).toFixed(2)}
-                    </td>
-                    <td className="px-4 py-2">
-                      <button
-                        onClick={()=>setOpenRows(prev=>({...prev,[u._id]:!isOpen}))}
-                        className="text-indigo-600 hover:underline"
-                      >
-                        {isOpen?'▾':'▸'} {myAdmissions.length}
-                      </button>
-                    </td>
-                    <td className="px-4 py-2">
-                      <button
-                        onClick={()=>setOpenRows(prev=>({...prev,[u._id]:!isOpen}))}
-                        className="text-indigo-600 hover:underline"
-                      >
-                        {isOpen?'▾':'▸'} {myInvoices.length}
-                      </button>
-                    </td>
-                  </tr>
-                  {isOpen && (
-                    <tr>
-                      <td colSpan={7} className="bg-gray-50 p-4">
-                        <div className="grid grid-cols-2 gap-6">
-                          <div>
-                            <h4 className="font-semibold mb-2">Admissions</h4>
-                            {myAdmissions.length
-                              ? myAdmissions.map(adm=>(
-                                  <div key={adm._id as string} className="flex items-center justify-between mb-1">
-                                    <span>
-                                      {new Date(adm.createdAt).toLocaleDateString()} — {adm.courseId.toString()}
-                                    </span>
-                                    <button
-                                      onClick={()=>setPreviewAdmission(adm as any)}
-                                      className="px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-xs"
-                                    >
-                                      Preview
-                                    </button>
-                                  </div>
-                                ))
-                              : <em>No admissions</em>}
-                          </div>
+          {/* #Courses */}
+          <td className="px-4 py-2 text-center">
+            <span className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded-full">
+              {u.courseProgress.length}
+            </span>
+          </td>
 
-                          {/* Invoices column */}
-                          <div>
-                            <h4 className="font-semibold mb-2">Invoices</h4>
-                            {myInvoices.length
-                              ? myInvoices.map(inv=>(
-                                  <div key={inv._id} className="flex items-center justify-between mb-1">
-                                    <span>
-                                      {inv.invoiceId} — ₹{inv.totalAmount.toFixed(2)}
-                                    </span>
-                                    <button
-                                      onClick={()=>handleDownload(inv)}
-                                      disabled={busyId===inv._id}
-                                      className={`px-2 py-1 rounded text-xs ${
-                                        busyId===inv._id
-                                          ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
-                                          : 'bg-blue-500 text-white hover:bg-blue-600'
-                                      }`}
-                                    >
-                                      {busyId===inv._id?'Downloading…':'Download'}
-                                    </button>
-                                  </div>
-                                ))
-                              : <em>No invoices</em>}
-                          </div>
-                        </div>
-                      </td>
-                    </tr>
+          {/* Courses & Time Left */}
+          <td className="px-4 py-2 space-y-1">
+            {u.courseProgress.map(cp => (
+              <div
+                key={cp.courseId}
+                className="p-2 bg-white border-l-4 border-indigo-300 rounded shadow-sm"
+              >
+                <p className="font-semibold text-gray-800">{cp.title}</p>
+                {cp.daysLeft !== null ? (
+                  cp.daysLeft > 0 ? (
+                    <p className="text-sm text-green-700">
+                      {cp.daysLeft}d <span className="text-gray-500">/ {cp.duration}d</span>
+                    </p>
+                  ) : (
+                    <p className="text-sm text-red-600 font-semibold">Expired</p>
+                  )
+                ) : (
+                  <p className="text-sm text-gray-500">Not purchased</p>
+                )}
+              </div>
+            ))}
+          </td>
+
+          {/* Subscription */}
+          <td className="px-4 py-2 text-center text-gray-700">
+            {u.subscription ?? '—'}
+          </td>
+
+          {/* Revenue */}
+          <td className="px-4 py-2 text-right text-indigo-600 font-semibold">
+            ₹{(u.purchaseHistory.reduce((s,p) => s + p.amount, 0) / 100).toFixed(2)}
+          </td>
+
+          {/* Admissions */}
+          <td className="px-4 py-2 text-center">
+            <button
+              onClick={() =>
+                setOpenRows(prev => ({ ...prev, [u._id]: !isOpen }))
+              }
+              className="text-indigo-600 hover:underline"
+            >
+              {isOpen ? '▾' : '▸'} {myAdmissions.length}
+            </button>
+          </td>
+
+          {/* Invoices */}
+          <td className="px-4 py-2 text-center">
+            <button
+              onClick={() =>
+                setOpenRows(prev => ({ ...prev, [u._id]: !isOpen }))
+              }
+              className="text-indigo-600 hover:underline"
+            >
+              {isOpen ? '▾' : '▸'} {myInvoices.length}
+            </button>
+          </td>
+        </tr>
+
+        {isOpen && (
+          <tr>
+            <td colSpan={9} className="bg-indigo-50 p-4">
+              <div className="grid grid-cols-2 gap-6">
+                {/* Admissions list */}
+                <div>
+                  <h4 className="font-semibold text-gray-800 mb-2">Admissions</h4>
+                  {myAdmissions.length > 0 ? (
+                    myAdmissions.map(adm => (
+                      <div
+                        key={adm._id as string}
+                        className="flex items-center justify-between mb-1 px-2 py-1 bg-white rounded shadow-xs"
+                      >
+                        <span className="text-gray-700">
+                          {new Date(adm.createdAt).toLocaleDateString()} —{' '}
+                          <span className="font-medium">{adm.courseId.toString()}</span>
+                        </span>
+                        <button
+                          onClick={() => setPreviewAdmission(adm as any)}
+                          className="px-2 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-700"
+                        >
+                          Preview
+                        </button>
+                      </div>
+                    ))
+                  ) : (
+                    <em className="text-gray-500">No admissions</em>
                   )}
-                </React.Fragment>
-              );
-            })}
-          </tbody>
+                </div>
+
+                {/* Invoices list */}
+                <div>
+                  <h4 className="font-semibold text-gray-800 mb-2">Invoices</h4>
+                  {myInvoices.length > 0 ? (
+                    myInvoices.map(inv => (
+                      <div
+                        key={inv._id}
+                        className="flex items-center justify-between mb-1 px-2 py-1 bg-white rounded shadow-xs"
+                      >
+                        <span className="text-gray-700">
+                          {inv.invoiceId} —{' '}
+                          <span className="font-medium">
+                            ₹{inv.totalAmount.toFixed(2)}
+                          </span>
+                        </span>
+                        <button
+                          onClick={() => handleDownload(inv)}
+                          disabled={busyId === inv._id}
+                          className={`px-2 py-1 rounded text-xs ${
+                            busyId === inv._id
+                              ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
+                              : 'bg-blue-500 text-white hover:bg-blue-600'
+                          }`}
+                        >
+                          {busyId === inv._id ? 'Downloading…' : 'Download'}
+                        </button>
+                      </div>
+                    ))
+                  ) : (
+                    <em className="text-gray-500">No invoices</em>
+                  )}
+                </div>
+              </div>
+            </td>
+          </tr>
+        )}
+      </React.Fragment>
+    );
+  })}
+</tbody>
+
         </table>
       </div>
-       {/* Admission preview modal */}
-       {previewAdmission && (
+
+      {/* Admission preview modal */}
+      {previewAdmission && (
         <div className="fixed inset-0 bg-black bg-opacity-40 z-50 flex items-center justify-center">
           <div className="bg-white rounded-lg overflow-auto max-h-[90vh] max-w-full p-4 relative">
             <button
-              onClick={()=>setPreviewAdmission(null)}
+              onClick={() => setPreviewAdmission(null)}
               className="absolute top-2 right-2 text-gray-600 hover:text-red-600 text-xl font-bold"
             >
               &times;
@@ -394,6 +484,5 @@ export default function UserAdminPage() {
         </div>
       )}
     </div>
-    
   );
 }

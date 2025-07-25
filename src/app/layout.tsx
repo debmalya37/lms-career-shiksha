@@ -17,7 +17,7 @@ import Footer from "@/components/Footer";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Career Shiksha Learning Portal",
+  title: "Civil Academy Learning Portal",
   description: "Learning Management System",
 };
 

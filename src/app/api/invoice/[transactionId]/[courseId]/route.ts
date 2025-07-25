@@ -58,7 +58,7 @@ doc.font(fontPath)
   );
 
   // Header
-  doc.fontSize(20).text("Career Shiksha", { align: "center" }).moveDown(1);
+  doc.fontSize(20).text("Civil Academy", { align: "center" }).moveDown(1);
 
   // Invoice metadata
   doc

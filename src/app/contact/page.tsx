@@ -78,8 +78,8 @@ export default function Contact() {
               rel="noopener noreferrer"
               className="hover:underline ml-2 align-left text-left"
             >
-              Dehradun Centre - Career Shiksha IAS/PCS, GMS Road, above Kotak Mahindra Bank, near Ballupur, Dehradun
-              {/* <span>Dehradun Centre - Career Shiksha IAS/PCS, GMS Road, above Kotak Mahindra Bank, near Ballupur, Dehradun Mob - 6398761583</span> */}
+              Dehradun Centre - Civil Academy IAS/PCS, GMS Road, above Kotak Mahindra Bank, near Ballupur, Dehradun
+              {/* <span>Dehradun Centre - Civil Academy IAS/PCS, GMS Road, above Kotak Mahindra Bank, near Ballupur, Dehradun Mob - 6398761583</span> */}
               </Link>
               </span>
             </div>
@@ -102,7 +102,7 @@ export default function Contact() {
     rel="noopener noreferrer"
     className="hover:underline ml-2 text-left"
   >
-              Meerut Centre - Career Shiksha IAS/PCS, 2nd Flr, Star Plaza, Bachcha Park, Meerut
+              Meerut Centre - Civil Academy IAS/PCS, 2nd Flr, Star Plaza, Bachcha Park, Meerut
               </Link>
               </span>
             </div>

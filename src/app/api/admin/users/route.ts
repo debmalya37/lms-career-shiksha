@@ -1,9 +1,10 @@
 export const dynamic = 'force-dynamic';
 // File: app/api/admin/users/route.ts
 import { NextResponse } from 'next/server';
-import connectMongo from '@/lib/db';
-import { User,  PurchaseRecord } from '@/models/user';
 import dbConnect from '@/lib/db';
+import { User, PurchaseRecord } from '@/models/user';
+import Course from '@/models/courseModel';
+
 type Stats = {
   totalUsers:          number;
   activeSubscriptions: number;
@@ -13,88 +14,122 @@ type Stats = {
 };
 
 export async function GET() {
-    await dbConnect();
-  
-    try {
-      // 1) load users + populate courses
-      const users = await User.find().populate('course').lean();
-      // transform for frontend
-      const transformedUsers = users.map(u => ({
-        _id:             u._id,
+  await dbConnect();
+
+  try {
+    // 1) Load users + populate their course docs (title + duration)
+    const users = await User.find()
+      .populate<{ course: Array<{ _id: any; title: string; duration: number }> }>(
+        'course',
+        'title duration'
+      )
+      .lean();
+
+    const nowMs = Date.now();
+    const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
+    // 2) Transform users with safe guards
+    const transformedUsers = users.map(u => {
+      const courses = Array.isArray(u.course) ? u.course : [];
+
+      // build array of per-course progress
+      const courseProgress = courses.map(c => {
+        // only treat purchaseHistory as an array if it really is
+        const history = Array.isArray(u.purchaseHistory)
+          ? (u.purchaseHistory as PurchaseRecord[])
+          : [];
+
+        const rec = history.find(
+          p => p.course.toString() === c._id.toString()
+        );
+
+        let daysLeft: number | null = null;
+        if (rec) {
+          const purchaseMs = new Date(rec.purchasedAt).getTime();
+          const expiryMs = purchaseMs + c.duration * MS_PER_DAY;
+          daysLeft = Math.max(0, Math.ceil((expiryMs - nowMs) / MS_PER_DAY));
+        }
+
+        return {
+          courseId:    c._id.toString(),
+          title:       c.title,
+          duration:    c.duration,
+          purchasedAt: rec?.purchasedAt.toISOString() || null,
+          daysLeft,
+        };
+      });
+
+      return {
+        _id:             u._id.toString(),
         name:            u.name,
         email:           u.email,
-        subscription:    u.subscription,
-        course:          Array.isArray(u.course) ? u.course.map((c: any) => c.title) : [],
-        address:         u.address,
         phoneNo:         u.phoneNo,
-        deviceIdentifier:u.deviceIdentifier,
+        subscription:    u.subscription,
         createdAt:       u.createdAt,
-        purchaseHistory: u.purchaseHistory ?? []
-      }));
-  
-      // 2) total users
-      const totalUsers = users.length;
-  
-      // 3) active vs expired subscriptions
-      const now = Date.now();
-      let active = 0, expired = 0;
-      users.forEach(u => {
-        if (!u.subscription) {
-          expired++;
-        } else {
-          const expiry = new Date(u.createdAt).getTime() + u.subscription * 86400_000;
-          if (expiry > now) active++;
-          else expired++;
-        }
-      });
-  
-      // 4) revenue per user
-      // inside GET, step 4) revenue per user
-const revenueByUser = users.map(u => {
-    const history = Array.isArray(u.purchaseHistory) ? u.purchaseHistory : [];
-    // sum up paise → then convert to rupees
-    const totalPaise = (history as PurchaseRecord[]).reduce((sum, p) => sum + p.amount, 0);
-    const revenueRupees = totalPaise / 100;
-    return {
-      userId:  u._id.toString(),
-      name:    u.name,
-      revenue: revenueRupees,
-    };
-  });
-  
-  
-      // 5) aggregate users-by-course via Mongo
-      const agg = await User.aggregate([
-        { $unwind: '$course' },
-        { $group: { _id: '$course', count: { $sum: 1 } } },
-        {
-          $lookup: {
-            from:         'courses',
-            localField:   '_id',
-            foreignField: '_id',
-            as:           'course'
-          }
-        },
-        { $unwind: '$course' },
-        { $project: { _id: 0, title: '$course.title', count: 1 } }
-      ]);
-  
-      const usersByCourse: Record<string, number> = {};
-      agg.forEach(({ title, count }) => {
-        usersByCourse[title] = count;
-      });
-  
-      const stats: Stats = {
-        totalUsers,
-        activeSubscriptions:   active,
-        expiredSubscriptions:  expired,
-        usersByCourse,
-        revenueByUser
+        purchaseHistory: Array.isArray(u.purchaseHistory) ? u.purchaseHistory : [],
+        courseProgress,
       };
-  
-      return NextResponse.json({ stats, users: transformedUsers });
-    } catch (err) {
-      console.error('Error in GET /api/usercreation:', err);
-      return NextResponse.json({ message: 'Error retrieving users' }, { status: 500 });
-    }
+    });
+
+    // 3) Stats: total users
+    const totalUsers = users.length;
+
+    // 4) Stats: active vs expired subscriptions
+    let active = 0, expired = 0;
+    users.forEach(u => {
+      if (!u.subscription) {
+        expired++;
+      } else {
+        const createdMs = new Date(u.createdAt).getTime();
+        const expiryMs  = createdMs + u.subscription * MS_PER_DAY;
+        expiryMs > nowMs ? active++ : expired++;
+      }
+    });
+
+    // 5) Stats: revenue per user
+    const revenueByUser = users.map(u => {
+      const history = Array.isArray(u.purchaseHistory)
+        ? (u.purchaseHistory as PurchaseRecord[])
+        : [];
+      const totalPaise = history.reduce((s, p) => s + p.amount, 0);
+      return {
+        userId:  u._id.toString(),
+        name:    u.name,
+        revenue: totalPaise / 100,
+      };
+    });
+
+    // 6) Stats: users by course
+    const agg = await User.aggregate([
+      { $unwind: '$course' },
+      { $group: { _id: '$course', count: { $sum: 1 } } },
+      {
+        $lookup: {
+          from: 'courses',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'course'
+        }
+      },
+      { $unwind: '$course' },
+      { $project: { _id: 0, title: '$course.title', count: 1 } }
+    ]);
+    const usersByCourse: Record<string, number> = {};
+    agg.forEach(({ title, count }: any) => {
+      usersByCourse[title] = count;
+    });
+
+    const stats: Stats = {
+      totalUsers,
+      activeSubscriptions:   active,
+      expiredSubscriptions:  expired,
+      usersByCourse,
+      revenueByUser
+    };
+
+    return NextResponse.json({ stats, users: transformedUsers });
+  } catch (err) {
+    console.error('Error in GET /api/admin/users:', err);
+    return NextResponse.json({ message: 'Error retrieving users' }, { status: 500 });
   }
+}

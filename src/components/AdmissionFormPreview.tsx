@@ -103,7 +103,7 @@ if (course) {
         <div className="col-span-3 text-center">
           <img
             src={logo.src}
-            alt="Career Shiksha Logo"
+            alt="Civil Academy Logo"
             className="mx-auto w-24 h-24 object-cover rounded-full mb-2"
             style={{ border: '2px solid #1E40AF' }}
           />

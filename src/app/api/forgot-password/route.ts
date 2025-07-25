@@ -28,7 +28,7 @@ export async function POST(request: Request) {
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Reset Your Password - Career Shiksha</title>
+  <title>Reset Your Password - Civil Academy</title>
   <style>
     body { font-family: Arial, sans-serif; background-color: #f7f9fc; margin: 0; padding: 0; }
     .container { background-color: #fff; max-width: 600px; margin: 40px auto; padding: 30px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
@@ -44,12 +44,12 @@ export async function POST(request: Request) {
 <body>
   <div class="container">
     <div class="logo">
-      <img src="https://civilacademyapp.com/image/logo.jpeg" alt=" Career Shiksha logo" />
+      <img src="https://civilacademyapp.com/image/logo.jpeg" alt=" Civil Academy logo" />
     </div>
     <div class="title">Password Reset Request</div>
     <div class="message">
       Hi <strong>${user.name || email}</strong>,<br><br>
-      We received a request to reset the password for your <strong>Career Shiksha</strong> account.<br>
+      We received a request to reset the password for your <strong>Civil Academy</strong> account.<br>
       Use the code below to proceed. This code is valid for the next <strong>10 minutes</strong>.
     </div>
     <div class="otp-box">${otp}</div>
@@ -60,7 +60,7 @@ export async function POST(request: Request) {
       Need help? Contact us at <a href="mailto:civilacademy98@gmail.com">civilacademy98@gmail.com</a>
     </div>
     <div class="footer">
-      Career Shiksha | Affordable Career Solutions<br>
+      Civil Academy | Affordable Career Solutions<br>
       <em>Civil Academy IAS PCS</em>
     </div>
   </div>

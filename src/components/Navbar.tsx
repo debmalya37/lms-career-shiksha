@@ -83,13 +83,13 @@ const Navbar: React.FC = () => {
         <Link href="/" className="flex items-center flex-shrink-0">
           <Image
             src={Logo}
-            alt="Career Shiksha"
+            alt="Civil Academy"
             width={36}
             height={36}
             className="rounded-full"
           />
           <span className="ml-2 font-bold text-xl text-blue-900">
-            Career Shiksha
+            Civil Academy
           </span>
         </Link>
 

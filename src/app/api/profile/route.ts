@@ -67,7 +67,8 @@ export async function GET(request: NextRequest) {
     }, {} as Record<string, Date>);
 
     const now = new Date();
-
+// helper to compute days difference, rounding up
+   const msPerDay = 24*60*60*1000;
     // 6) Filter out expired
     const validRawCourses = rawCourses.filter(course => {
       const purchasedAt = purchaseMap[course._id.toString()];
@@ -104,6 +105,19 @@ export async function GET(request: NextRequest) {
     // 9) Enrich courses with subjects & progress
     const activeCourses = validRawCourses.map(course => {
       const idStr = course._id.toString();
+      // find when this course was purchased
+      const purchasedAt = purchaseMap[idStr];
+     // compute expiry date = purchase + duration days
+      const expiryDate = purchasedAt
+        ? new Date(purchasedAt.getTime() + course.duration * msPerDay)
+        : null;
+     // days left (if expiryDate in future)
+      const daysLeft = expiryDate
+        ? Math.max(
+            0,
+            Math.ceil((expiryDate.getTime() - now.getTime()) / msPerDay)
+          )
+        : null;
       const total = tutorialCounts[idStr] || 0;
       const completed = completedMap[idStr] || 0;
       const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
@@ -119,6 +133,9 @@ export async function GET(request: NextRequest) {
         isFree:          course.isFree,
         discountedPrice: course.discountedPrice,
         duration:        course.duration,
+        purchasedAt:     purchasedAt?.toISOString()  || null,
+        expiryDate:      expiryDate?.toISOString()   || null,
+        daysLeft,                                   // integer or null
         introVideo:      course.introVideo,
         subjects: course.subjects
           .map(id => subjectMap[id.toString()])

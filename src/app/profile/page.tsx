@@ -15,6 +15,15 @@ interface ProfileData {
   };
 }
 
+type CourseWithExpiry = {
+  _id: string;
+  title: string;
+  // …
+  daysLeft: number | null;
+  expiryDate: string | null;
+};
+
+
 export default function ProfilePage() {
   const [profileData, setProfileData] = useState<ProfileData | null>(null); // Use ProfileData type
   const [progress, setProgress] = useState(0);
@@ -106,6 +115,33 @@ export default function ProfilePage() {
             )}
           </ul>
         </div>
+        {/* inside your return, under Courses list: */}
+<div className="mb-4">
+  <label className="block text-sm font-medium text-gray-700 mb-2">Courses &amp; Time Left</label>
+  <ul className="space-y-2">
+    {profileData.courses.map((c: any) => (
+      <li key={c._id} className="p-4 bg-gray-50 rounded-md flex justify-between items-center">
+        <div>
+          <p className="font-semibold">{c.title}</p>
+          {c.daysLeft !== null ? (
+            c.daysLeft > 0 
+              ? <p className="text-sm text-green-700">{c.daysLeft} days left</p> 
+              
+              : <p className="text-sm text-red-600">Expired on {new Date(c.expiryDate!).toLocaleDateString()}</p>
+              
+          ) : (
+            <p className="text-sm text-gray-500">No expiry</p>
+          )}
+
+        </div>
+
+        {/* optional: show a mini progress bar or badge */}
+      </li>
+    ))}
+  </ul>
+  
+</div>
+
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">Subscription (Days)</label>
           <input

@@ -77,14 +77,16 @@ export default function Signup() {
 
           <div className="space-y-5">
             {/* Email */}
+            
             <div className="relative">
+            <label className="text-sm font-medium text-gray-700">Email Address</label>
               <input
               title="Enter your email address"
                 id="email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder=""
+                placeholder="Email Address"
                 required
                 className="
                   peer block w-full 
@@ -95,18 +97,19 @@ export default function Signup() {
                   focus:outline-none
                 "
               />
-              {floatingLabel("email", "Email address")}
+              {/* {floatingLabel("email", "Email address")} */}
             </div>
 
             {/* Password */}
             <div className="relative">
+            <label className="text-sm font-medium text-gray-700">Password</label>
               <input
               title="Enter a secure password"
                 id="password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder=""
+                placeholder="Enter a Secure Password"
                 required
                 className="
                   peer block w-full 
@@ -117,18 +120,19 @@ export default function Signup() {
                   focus:outline-none
                 "
               />
-              {floatingLabel("password", "Create Password")}
+              {/* {floatingLabel("password", "Create Password")} */}
             </div>
 
             {/* Confirm Password */}
             <div className="relative">
+            <label className="text-sm font-medium text-gray-700">Confirm Password</label>
               <input
               title="Confirm your password"
                 id="confirmPassword"
                 type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder=""
+                placeholder="Confirm Password"
                 required
                 className="
                   peer block w-full 
@@ -139,17 +143,18 @@ export default function Signup() {
                   focus:outline-none
                 "
               />
-              {floatingLabel("confirmPassword", "Confirm Password")}
+              {/* {floatingLabel("confirmPassword", "Confirm Password")} */}
             </div>
             {/* Phone number */}
             <div className="relative">
+            <label className="text-sm font-medium text-gray-700">Enter Phone Number</label>
               <input
               title="Enter Phone number"
                 id="phoneNo"
                 type="phoneNo"
                 value={phoneNo}
                 onChange={(e) => setPhoneNo(e.target.value)}
-                placeholder=""
+                placeholder="Phone Number"
                 required
                 className="
                   peer block w-full 
@@ -160,25 +165,26 @@ export default function Signup() {
                   focus:outline-none
                 "
               />
-              {floatingLabel("phoneNo", "Phone Number")}
+              {/* {floatingLabel("phoneNo", "Phone Number")} */}
             </div>
 
             {/* Address */}
             <div className="relative">
+              <label htmlFor="address" className="text-sm font-medium text-gray-700">Residential Address</label>
               <textarea
                 id="address"
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
-                placeholder=""
+                placeholder="Residential Address"
                 required
                 rows={3}
                 className="
                   peer block w-full resize-none rounded-md 
                   border border-gray-300 bg-transparent py-2 px-3 
                   text-gray-800 focus:border-blue-500 focus:outline-none
-                "
+                  "
               />
-              <label
+              {/* <label
                 htmlFor="address"
                 className="
                   absolute left-3 top-2 
@@ -189,7 +195,7 @@ export default function Signup() {
                 "
               >
                 Residential Address
-              </label>
+              </label> */}
             </div>
           </div>
 

@@ -43,7 +43,7 @@ export default function DeleteAccountPage() {
       <h1 className="text-2xl font-bold text-red-600 mb-4">Delete Your Account & Data</h1>
       <p className="mb-4">
         This page allows you to request the deletion of your account and all associated data from{" "}
-        <strong>Career Shiksha Learning Portal</strong> (as shown on our store listing). Please read the instructions carefully before proceeding.
+        <strong>Civil Academy Learning Portal</strong> (as shown on our store listing). Please read the instructions carefully before proceeding.
       </p>
       <h2 className="text-xl font-semibold mb-2">Step-by-Step Instructions</h2>
       <ol className="list-decimal list-inside mb-4 text-gray-800">

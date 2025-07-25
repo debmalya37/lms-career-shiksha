@@ -102,7 +102,7 @@ export const AdmissionDocument: React.FC<AdmissionPDFProps> = ({ admission }) =>
           <View style={styles.meta}>
             <Text>ID: {transactionId}</Text>
             <Text>Date: {fmt(createdAt)}</Text>
-            <Text>Career Shiksha</Text>
+            <Text>Civil Academy</Text>
             <Text>A‑79, Ganga Vatika, Meerut, UP 250001</Text>
             <Text>Email: affordablecareersolutions@gmail.com</Text>
           </View>
