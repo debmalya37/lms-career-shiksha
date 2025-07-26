@@ -1,23 +1,32 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 
 export default function Signup() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail]               = useState("");
+  const [password, setPassword]         = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [phoneNo, setPhoneNo] = useState("");
-  const [address, setAddress] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
+  const [phoneNo, setPhoneNo]           = useState("");
+  const [address, setAddress]           = useState("");
+  const [error, setError]               = useState<string | null>(null);
+  const [success, setSuccess]           = useState(false);
   const router = useRouter();
 
+  // Form is valid when every field is non-empty and passwords match
+  const formValid = useMemo(() => {
+    return (
+      email.trim().length > 0 &&
+      password.length > 0 &&
+      confirmPassword.length > 0 &&
+      phoneNo.trim().length > 0 &&
+      address.trim().length > 0 &&
+      password === confirmPassword
+    );
+  }, [email, password, confirmPassword, phoneNo, address]);
+
   const handleSignup = async () => {
-    if (password !== confirmPassword) {
-      setError("Passwords do not match");
-      return;
-    }
+    if (!formValid) return;
     setError(null);
 
     try {
@@ -38,23 +47,6 @@ export default function Signup() {
       setError(`${err.message} || unknown error occurred`);
     }
   };
-
-  // helper for floating labels
-  const floatingLabel = (htmlFor: string, label: string) => (
-    <label
-      htmlFor={htmlFor}
-      className="
-        absolute left-1 
-        text-gray-500 
-        transition-all 
-        pointer-events-none
-        peer-focus:-top-2 peer-focus:text-xs peer-focus:text-blue-500 
-        peer-valid:-top-2 peer-valid:text-xs
-      "
-    >
-      {label}
-    </label>
-  );
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-gray-100 to-blue-100 p-4">
@@ -77,100 +69,83 @@ export default function Signup() {
 
           <div className="space-y-5">
             {/* Email */}
-            
             <div className="relative">
-            <label className="text-sm font-medium text-gray-700">Email Address</label>
+              <label className="text-sm font-medium text-gray-700">
+                Email Address
+              </label>
               <input
-              title="Enter your email address"
                 id="email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Email Address"
                 required
-                className="
-                  peer block w-full 
-                  border-b-2 border-gray-300 
-                  bg-transparent py-2 px-1 
-                  text-gray-800 
-                  focus:border-blue-500 
-                  focus:outline-none
-                "
+                className="peer block w-full border-b-2 border-gray-300 bg-transparent py-2 px-1 text-gray-800 focus:border-blue-500 focus:outline-none"
               />
-              {/* {floatingLabel("email", "Email address")} */}
             </div>
 
             {/* Password */}
             <div className="relative">
-            <label className="text-sm font-medium text-gray-700">Password</label>
+              <label className="text-sm font-medium text-gray-700">
+                Password
+              </label>
               <input
-              title="Enter a secure password"
                 id="password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Enter a Secure Password"
                 required
-                className="
-                  peer block w-full 
-                  border-b-2 border-gray-300 
-                  bg-transparent py-2 px-1 
-                  text-gray-800 
-                  focus:border-blue-500 
-                  focus:outline-none
-                "
+                className="peer block w-full border-b-2 border-gray-300 bg-transparent py-2 px-1 text-gray-800 focus:border-blue-500 focus:outline-none"
               />
-              {/* {floatingLabel("password", "Create Password")} */}
             </div>
 
             {/* Confirm Password */}
             <div className="relative">
-            <label className="text-sm font-medium text-gray-700">Confirm Password</label>
+              <label className="text-sm font-medium text-gray-700">
+                Confirm Password
+              </label>
               <input
-              title="Confirm your password"
                 id="confirmPassword"
                 type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="Confirm Password"
                 required
-                className="
-                  peer block w-full 
-                  border-b-2 border-gray-300 
-                  bg-transparent py-2 px-1 
-                  text-gray-800 
-                  focus:border-blue-500 
-                  focus:outline-none
-                "
+                className={`peer block w-full border-b-2 ${
+                  password !== "" && password !== confirmPassword
+                    ? "border-red-500"
+                    : "border-gray-300"
+                } bg-transparent py-2 px-1 text-gray-800 focus:border-blue-500 focus:outline-none`}
               />
-              {/* {floatingLabel("confirmPassword", "Confirm Password")} */}
+              {password && confirmPassword && password !== confirmPassword && (
+                <p className="text-xs text-red-600 mt-1">
+                  Passwords do not match
+                </p>
+              )}
             </div>
+
             {/* Phone number */}
             <div className="relative">
-            <label className="text-sm font-medium text-gray-700">Enter Phone Number</label>
+              <label className="text-sm font-medium text-gray-700">
+                Enter Phone Number
+              </label>
               <input
-              title="Enter Phone number"
                 id="phoneNo"
-                type="phoneNo"
+                type="tel"
                 value={phoneNo}
                 onChange={(e) => setPhoneNo(e.target.value)}
                 placeholder="Phone Number"
                 required
-                className="
-                  peer block w-full 
-                  border-b-2 border-gray-300 
-                  bg-transparent py-2 px-1 
-                  text-gray-800 
-                  focus:border-blue-500 
-                  focus:outline-none
-                "
+                className="peer block w-full border-b-2 border-gray-300 bg-transparent py-2 px-1 text-gray-800 focus:border-blue-500 focus:outline-none"
               />
-              {/* {floatingLabel("phoneNo", "Phone Number")} */}
             </div>
 
             {/* Address */}
             <div className="relative">
-              <label htmlFor="address" className="text-sm font-medium text-gray-700">Residential Address</label>
+              <label htmlFor="address" className="text-sm font-medium text-gray-700">
+                Residential Address
+              </label>
               <textarea
                 id="address"
                 value={address}
@@ -178,37 +153,24 @@ export default function Signup() {
                 placeholder="Residential Address"
                 required
                 rows={3}
-                className="
-                  peer block w-full resize-none rounded-md 
-                  border border-gray-300 bg-transparent py-2 px-3 
-                  text-gray-800 focus:border-blue-500 focus:outline-none
-                  "
+                className="peer block w-full resize-none rounded-md border border-gray-300 bg-transparent py-2 px-3 text-gray-800 focus:border-blue-500 focus:outline-none"
               />
-              {/* <label
-                htmlFor="address"
-                className="
-                  absolute left-3 top-2 
-                  text-gray-500 text-sm 
-                  transition-all pointer-events-none
-                  peer-focus:-top-2 peer-focus:text-xs peer-focus:text-blue-500 
-                  peer-valid:-top-2 peer-valid:text-xs
-                "
-              >
-                Residential Address
-              </label> */}
             </div>
           </div>
 
-          {/* Button */}
+          {/* Sign Up Button */}
           <button
             onClick={handleSignup}
-            className="
-              mt-8 w-full 
-              bg-gradient-to-r from-blue-500 to-blue-700 
-              text-white font-semibold 
-              py-3 rounded-full shadow-lg 
-              hover:from-blue-600 hover:to-blue-800 transition
-            "
+            disabled={!formValid}
+            className={`
+              mt-8 w-full text-white font-semibold py-3 rounded-full shadow-lg
+              transition
+              ${
+                formValid
+                  ? "bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800"
+                  : "bg-gray-300 cursor-not-allowed"
+              }
+            `}
           >
             Sign Up
           </button>
