@@ -1,4 +1,5 @@
 "use client";
+import EMIDashboard from "@/components/EMIDashboard";
 import IDCard from "@/components/IDCard";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -61,6 +62,9 @@ export default function ProfilePage() {
     <div className="container mx-auto p-8 bg-white rounded-lg shadow-md max-w-xl mt-8">
       <h1 className="text-2xl font-bold text-blue-600 mb-4">User Profile</h1>
       <IDCard/>
+      <div>
+        <EMIDashboard />
+      </div>
       <form>
         {/* <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">First Name</label>

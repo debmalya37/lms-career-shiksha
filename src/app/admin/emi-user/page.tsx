@@ -37,81 +37,76 @@ interface EMIUser {
   }[];
 }
 
+interface EMIStats {
+  totalEMIUsers: number;
+  totalEMICourses: number;
+  totalOutstandingAmount: number;
+  overduePayments: number;
+  upcomingPayments: number;
+}
+
 export default function EMIAdminDashboard() {
   const [users, setUsers] = useState<EMIUser[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<EMIUser[]>([]);
+  const [stats, setStats] = useState<EMIStats>({
+    totalEMIUsers: 0,
+    totalEMICourses: 0,
+    totalOutstandingAmount: 0,
+    overduePayments: 0,
+    upcomingPayments: 0
+  });
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all'); // all, overdue, upcoming
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
 
-  // Mock data - replace with actual API call
+  // Fetch EMI users from API
+  const fetchEMIUsers = async () => {
+    try {
+      const response = await fetch('/api/admin/emi-users');
+      const result = await response.json();
+      
+      if (result.success) {
+        setUsers(result.data);
+        setFilteredUsers(result.data);
+      } else {
+        console.error('Failed to fetch EMI users:', result.error);
+        alert('Failed to load EMI users');
+      }
+    } catch (error) {
+      console.error('Error fetching EMI users:', error);
+      alert('Error loading EMI users');
+    }
+  };
+
+  // Fetch EMI statistics from API
+  const fetchEMIStats = async () => {
+    try {
+      const response = await fetch('/api/admin/emi-stats');
+      const result = await response.json();
+      
+      if (result.success) {
+        setStats(result.data);
+      } else {
+        console.error('Failed to fetch EMI stats:', result.error);
+      }
+    } catch (error) {
+      console.error('Error fetching EMI stats:', error);
+    }
+  };
+
+  // Initial data fetch
   useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      const mockUsers: EMIUser[] = [
-        {
-          _id: '1',
-          name: 'John Doe',
-          email: 'john@example.com',
-          phoneNo: '+1234567890',
-          purchaseHistory: [
-            {
-              course: { _id: 'c1', title: 'Advanced React Development' },
-              amount: 299,
-              transactionId: 'TXN001',
-              purchasedAt: new Date('2024-01-15'),
-              isEMI: true,
-              totalEMIMonths: 6,
-              monthsLeft: 3,
-              emiAmount: 49.83,
-              nextEMIDueDate: new Date('2024-09-15')
-            }
-          ]
-        },
-        {
-          _id: '2',
-          name: 'Jane Smith',
-          email: 'jane@example.com',
-          phoneNo: '+1987654321',
-          purchaseHistory: [
-            {
-              course: { _id: 'c2', title: 'Full Stack JavaScript' },
-              amount: 499,
-              transactionId: 'TXN002',
-              purchasedAt: new Date('2024-02-20'),
-              isEMI: true,
-              totalEMIMonths: 12,
-              monthsLeft: 8,
-              emiAmount: 41.58,
-              nextEMIDueDate: new Date('2024-08-10')
-            }
-          ]
-        },
-        {
-          _id: '3',
-          name: 'Mike Johnson',
-          email: 'mike@example.com',
-          phoneNo: '+1122334455',
-          purchaseHistory: [
-            {
-              course: { _id: 'c3', title: 'Python for Data Science' },
-              amount: 399,
-              transactionId: 'TXN003',
-              purchasedAt: new Date('2024-03-10'),
-              isEMI: true,
-              totalEMIMonths: 9,
-              monthsLeft: 1,
-              emiAmount: 44.33,
-              nextEMIDueDate: new Date('2024-08-05')
-            }
-          ]
-        }
-      ];
-      setUsers(mockUsers);
-      setFilteredUsers(mockUsers);
+    const loadData = async () => {
+      setLoading(true);
+      await Promise.all([
+        fetchEMIUsers(),
+        fetchEMIStats()
+      ]);
       setLoading(false);
-    }, 1000);
+    };
+
+    loadData();
   }, []);
 
   // Filter and search logic
@@ -153,23 +148,69 @@ export default function EMIAdminDashboard() {
   const handleRemoveCourse = async (userId: string, courseId: string, courseName: string) => {
     if (confirm(`Are you sure you want to remove "${courseName}" from this user's courses?`)) {
       try {
-        // API call to remove course
-        // await fetch(`/api/admin/users/${userId}/remove-course/${courseId}`, { method: 'DELETE' });
+        const response = await fetch(`/api/admin/users/${userId}/remove-course/${courseId}`, { 
+          method: 'DELETE' 
+        });
         
-        // Update local state
-        setUsers(prev => prev.map(user => {
-          if (user._id === userId) {
-            return {
-              ...user,
-              purchaseHistory: user.purchaseHistory.filter(p => p.course._id !== courseId)
-            };
-          }
-          return user;
-        }));
+        const result = await response.json();
         
-        alert('Course removed successfully!');
+        if (result.success) {
+          // Update local state by removing the course from the user's purchase history
+          setUsers(prev => prev.map(user => {
+            if (user._id === userId) {
+              return {
+                ...user,
+                purchaseHistory: user.purchaseHistory.filter(p => p.course._id !== courseId)
+              };
+            }
+            return user;
+          }));
+          
+          // Refresh stats after removing course
+          fetchEMIStats();
+          
+          alert('Course removed successfully!');
+        } else {
+          alert(`Failed to remove course: ${result.error}`);
+        }
       } catch (error) {
+        console.error('Error removing course:', error);
         alert('Failed to remove course. Please try again.');
+      }
+    }
+  };
+
+  const handleMarkPaymentReceived = async (userId: string, courseId: string, courseName: string) => {
+    if (confirm(`Mark EMI payment as received for "${courseName}"?`)) {
+      try {
+        const response = await fetch('/api/admin/update-emi-status', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            userId,
+            courseId,
+            paymentReceived: true
+          })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          // Refresh data after updating EMI status
+          await Promise.all([
+            fetchEMIUsers(),
+            fetchEMIStats()
+          ]);
+          
+          alert('EMI payment updated successfully!');
+        } else {
+          alert(`Failed to update EMI status: ${result.error}`);
+        }
+      } catch (error) {
+        console.error('Error updating EMI status:', error);
+        alert('Failed to update EMI status. Please try again.');
       }
     }
   };
@@ -195,6 +236,47 @@ export default function EMIAdminDashboard() {
     }
   };
 
+  const handleExportReport = async () => {
+    try {
+      // You can implement export functionality here
+      // For now, we'll create a simple CSV export
+      const csvContent = [
+        ['User Name', 'Email', 'Phone', 'Course Title', 'EMI Amount', 'Months Left', 'Next Due Date', 'Status'].join(','),
+        ...users.flatMap(user => 
+          user.purchaseHistory
+            .filter(p => p.isEMI)
+            .map(course => {
+              const daysUntilDue = Math.ceil((new Date(course.nextEMIDueDate).getTime() - new Date().getTime()) / (1000 * 3600 * 24));
+              const status = daysUntilDue < 0 ? 'Overdue' : daysUntilDue <= 7 ? 'Due Soon' : 'On Track';
+              return [
+                user.name,
+                user.email,
+                user.phoneNo || '',
+                course.course.title,
+                course.emiAmount,
+                course.monthsLeft,
+                new Date(course.nextEMIDueDate).toLocaleDateString(),
+                status
+              ].join(',');
+            })
+        )
+      ].join('\n');
+
+      const blob = new Blob([csvContent], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `emi-report-${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error exporting report:', error);
+      alert('Failed to export report');
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
@@ -216,7 +298,10 @@ export default function EMIAdminDashboard() {
                   Monitor and manage student EMI payments
                 </p>
               </div>
-              <button className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+              <button 
+                onClick={handleExportReport}
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+              >
                 <Download className="w-4 h-4 mr-2" />
                 Export Report
               </button>
@@ -235,7 +320,7 @@ export default function EMIAdminDashboard() {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-500">Total EMI Users</p>
-                <p className="text-2xl font-bold text-gray-900">{users.length}</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.totalEMIUsers}</p>
               </div>
             </div>
           </div>
@@ -247,9 +332,7 @@ export default function EMIAdminDashboard() {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-500">Overdue Payments</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {users.filter(u => u.purchaseHistory.some(p => p.isEMI && new Date(p.nextEMIDueDate) < new Date())).length}
-                </p>
+                <p className="text-2xl font-bold text-gray-900">{stats.overduePayments}</p>
               </div>
             </div>
           </div>
@@ -260,14 +343,8 @@ export default function EMIAdminDashboard() {
                 <DollarSign className="h-8 w-8 text-green-600" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Total EMI Amount</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  ${users.reduce((acc, user) => 
-                    acc + user.purchaseHistory
-                      .filter(p => p.isEMI)
-                      .reduce((sum, p) => sum + (p.emiAmount * p.monthsLeft), 0), 0
-                  ).toFixed(2)}
-                </p>
+                <p className="text-sm font-medium text-gray-500">Outstanding Amount</p>
+                <p className="text-2xl font-bold text-gray-900">${stats.totalOutstandingAmount}</p>
               </div>
             </div>
           </div>
@@ -279,9 +356,7 @@ export default function EMIAdminDashboard() {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-500">EMI Courses</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {users.reduce((acc, user) => acc + user.purchaseHistory.filter(p => p.isEMI).length, 0)}
-                </p>
+                <p className="text-2xl font-bold text-gray-900">{stats.totalEMICourses}</p>
               </div>
             </div>
           </div>
@@ -381,13 +456,21 @@ export default function EMIAdminDashboard() {
                             </div>
                           </div>
 
-                          <div className="flex gap-2">
+                          <div className="flex gap-2 flex-wrap">
                             <button
                               onClick={() => handleCallUser(user.phoneNo || '', user.name)}
                               className="inline-flex items-center px-3 py-2 border border-green-300 text-sm font-medium rounded-lg text-green-700 bg-green-50 hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors"
                             >
                               <Phone className="w-4 h-4 mr-2" />
                               Call
+                            </button>
+
+                            <button
+                              onClick={() => handleMarkPaymentReceived(user._id, purchase.course._id, purchase.course.title)}
+                              className="inline-flex items-center px-3 py-2 border border-blue-300 text-sm font-medium rounded-lg text-blue-700 bg-blue-50 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                            >
+                              <CheckCircle className="w-4 h-4 mr-2" />
+                              Mark Paid
                             </button>
                             
                             <button

@@ -108,6 +108,12 @@ const AdminPanel = () => {
         <Link href="/admin/quizresult" className="bg-teal-800 text-white p-6 rounded-lg shadow-md text-center">
           <h2 className="text-xl font-semibold">Track User Progress</h2>
         </Link>
+        <Link href="/admin/emi-user" className="bg-teal-800 text-white p-6 rounded-lg shadow-md text-center">
+          <h2 className="text-xl font-semibold">EMI USERS</h2>
+        </Link>
+        <Link href="/admin/meet" className="bg-teal-800 text-white p-6 rounded-lg shadow-md text-center">
+          <h2 className="text-xl font-semibold">MEET CONF</h2>
+        </Link>
       </div>
     </div>
   );

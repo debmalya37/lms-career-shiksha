@@ -24,12 +24,10 @@ if (
 }
 
 // ── 1) Base URLs ────────────────────────────────────────────────────────────────
-// OAuth: identity‑manager in Prod, pg‑sandbox in UAT
 const OAUTH_BASE = PHONEPE_ENV === "PRODUCTION"
   ? "https://api.phonepe.com/apis/identity-manager"
   : "https://api-preprod.phonepe.com/apis/pg-sandbox";
 
-// Order‑Status: pg in Prod, pg‑sandbox in UAT
 const STATUS_BASE = PHONEPE_ENV === "PRODUCTION"
   ? "https://api.phonepe.com/apis/pg"
   : "https://api-preprod.phonepe.com/apis/pg-sandbox";
@@ -57,18 +55,24 @@ async function getAccessToken() {
   return res.data.access_token as string;
 }
 
-// ── 3) Enrollment helper ───────────────────────────────────────────────────────
+// ── 3) Enhanced Enrollment helper with EMI support ─────────────────────────────
 async function enrollUser(
   sessionToken: string,
   courseId: string,
   amountPaid: number,
   orderId: string,
-  promoCode?: string
+  metaInfo: any
 ) {
   await dbConnect();
 
   const user = await User.findOne({ sessionToken });
   if (!user) return;
+
+  // Extract EMI information from metaInfo
+  const promoCode = metaInfo?.udf3 || null;
+  const isEMI = metaInfo?.udf4 === 'true';
+  const emiMonths = isEMI ? parseInt(metaInfo?.udf5 || '0') : undefined;
+  const totalAmountPaise = isEMI ? parseInt(metaInfo?.udf6 || '0') : undefined;
 
   // Combine existing + new course IDs
   const courseIds = new Set<string>([...user.course.map(c => c.toString()), courseId]);
@@ -92,27 +96,55 @@ async function enrollUser(
     maxDays = 365 * 5;
   }
 
-  let amountinRupees = amountPaid / 100; // Convert paise to rupees
+  let amountInRupees = amountPaid / 100; // Convert paise to rupees
+
+  // Create purchase record with EMI information
+  const purchaseRecord: any = {
+    course: courseId,
+    amount: amountInRupees,
+    transactionId: orderId,
+    purchasedAt: new Date(),
+    promoCode: promoCode,
+    isEMI: isEMI,
+  };
+
+  // Add EMI-specific fields if this is an EMI purchase
+  if (isEMI && emiMonths && totalAmountPaise) {
+    const totalAmountRupees = totalAmountPaise / 100;
+    const monthlyEMIAmount = Math.ceil(totalAmountRupees / emiMonths);
+    
+    purchaseRecord.totalEMIMonths = emiMonths;
+    purchaseRecord.monthsLeft = emiMonths - 1; // First payment done, remaining months
+    purchaseRecord.emiAmount = monthlyEMIAmount;
+    
+    // Calculate next due date (1 month from now)
+    const nextDueDate = new Date();
+    nextDueDate.setMonth(nextDueDate.getMonth() + 1);
+    purchaseRecord.nextEMIDueDate = nextDueDate;
+  }
+
   // Update the user
   await User.updateOne(
     { sessionToken },
     {
       $addToSet: { course: courseId },
       $push: {
-        purchaseHistory: {
-          course: courseId,
-          amount: amountinRupees,
-          transactionId: orderId,
-          purchasedAt: new Date(),
-          promoCode: promoCode || null,
-        },
+        purchaseHistory: purchaseRecord,
       },
       $set: { subscription: maxDays },
     }
   );
+
+  console.log('✅ User enrolled successfully:', {
+    userId: user._id,
+    courseId,
+    isEMI,
+    emiMonths,
+    amountPaid: amountInRupees,
+    monthsLeft: purchaseRecord.monthsLeft,
+  });
 }
 
-  
 // ── 4) GET handler ────────────────────────────────────────────────────────────
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -160,29 +192,31 @@ export async function GET(req: NextRequest) {
   // 4.3) Inspect state, amount & metaInfo
   const payload = statusRes.data.data || statusRes.data;
   const { state, amount, metaInfo } = payload;
-  const promoCode = metaInfo?.udf3 || null;   // ← grab your promoCode
 
   if (state === "COMPLETED") {
-    // 4.4) Enroll & redirect to admission
+    // 4.4) Enroll with EMI support & redirect to admission
     if (sessionToken) {
-      await enrollUser(sessionToken, courseId, amount, orderId, promoCode);
+      await enrollUser(sessionToken, courseId, amount, orderId, metaInfo);
     }
+    
     // build admission URL
     const course = await Course.findById(courseId).lean();
-    const name  = Array.isArray(course) || !course?.title ? "" : encodeURIComponent(course.title);
-    const admissionUrl = new URL(
-      `/admission?courseId=${courseId}&courseName=${name}&transactionId=${orderId}`,
-      req.url
-    );
-    return NextResponse.redirect(admissionUrl, 303);
+    const name = Array.isArray(course) || !course?.title ? "" : encodeURIComponent(course.title);
+    
+    // Add EMI info to admission URL if applicable
+    const isEMI = metaInfo?.udf4 === 'true';
+    const emiMonths = isEMI ? metaInfo?.udf5 : '';
+    
+    let admissionUrl = `/admission?courseId=${courseId}&courseName=${name}&transactionId=${orderId}`;
+    
+    if (isEMI) {
+      admissionUrl += `&isEMI=true&emiMonths=${emiMonths}`;
+    }
+    
+    const finalAdmissionUrl = new URL(admissionUrl, req.url);
+    return NextResponse.redirect(finalAdmissionUrl, 303);
   }
   
   // 4.5) Pending/Failed → failure
   return NextResponse.redirect(`/failure/${orderId}?courseId=${courseId}`, 303);
 }
-  
-  
-  
-  
-  
-  // ── 5) POST handler (not used in this case) ────────────────────────────────────

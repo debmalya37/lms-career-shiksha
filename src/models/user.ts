@@ -22,7 +22,13 @@ export interface PurchaseRecord {
   amount: number;
   transactionId: string;
   purchasedAt: Date;
-  promoCode?: string;  
+  promoCode?: string;
+  // EMI Fields
+  isEMI?: boolean;
+  totalEMIMonths?: number;
+  monthsLeft?: number;
+  emiAmount?: number; // Monthly EMI amount
+  nextEMIDueDate?: Date;
 }
 
 const purchaseSchema = new Schema<PurchaseRecord>(
@@ -32,6 +38,12 @@ const purchaseSchema = new Schema<PurchaseRecord>(
     transactionId:  { type: String, required: true },
     purchasedAt:    { type: Date,   default: Date.now },
     promoCode:      { type: String, required: false, default: null },
+    // EMI Fields
+    isEMI:          { type: Boolean, default: false },
+    totalEMIMonths: { type: Number, required: false },
+    monthsLeft:     { type: Number, required: false },
+    emiAmount:      { type: Number, required: false },
+    nextEMIDueDate: { type: Date, required: false },
   },
   { _id: false }
 );

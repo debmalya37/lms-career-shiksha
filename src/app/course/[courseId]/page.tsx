@@ -15,9 +15,11 @@ import {
   ClockIcon,
   CurrencyRupeeIcon,
   UserGroupIcon,
+  CreditCardIcon,
 } from "@heroicons/react/24/solid";
 import IntroVideoPlayer from "@/components/IntroVideoPlayer";
 import { isRunningInStandaloneMode } from "@/lib/utils";
+import EMIModal from "@/components/EMIModal"; // Import the EMI modal
 
 interface Subject {
   _id: string;
@@ -34,15 +36,16 @@ interface Course {
   price: number;
   isFree: boolean;
   introVideo?: string;
-  discountedPrice: number; // New field
+  discountedPrice: number;
   duration: number; 
 }
 
-
 // --- PhonePe Initiation types ---
 interface InitiatePaymentRequest {
-  amount: number;     // in rupees
+  amount: number;
   courseId: string;
+  isEMI?: boolean;
+  emiMonths?: number;
 }
 
 interface PhonePeRedirectInfo {
@@ -63,7 +66,6 @@ interface InitiatePaymentResponse {
     instrumentResponse: InstrumentResponse;
   };
 }
-// ----------------------------------
 
 export default function CourseDetailsPage() {
   const { courseId } = useParams();
@@ -72,29 +74,27 @@ export default function CourseDetailsPage() {
   const [purchased, setPurchased] = useState(false);
   const [payLoading, setPayLoading] = useState(false);
   const [promoCode, setPromoCode] = useState("");
-const [promoMsg, setPromoMsg] = useState<string|null>(null);
-const [finalPrice, setFinalPrice] = useState<number>(0);
-const [showIntro, setShowIntro] = useState(false);
-const [userId, setUserId] = useState<string | null>(null);
+  const [promoMsg, setPromoMsg] = useState<string|null>(null);
+  const [finalPrice, setFinalPrice] = useState<number>(0);
+  const [showIntro, setShowIntro] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [showEMIModal, setShowEMIModal] = useState(false); // EMI modal state
 
-const router = useRouter();
+  const router = useRouter();
 
+  function formatDuration(daysTotal: number) {
+    const years  = Math.floor(daysTotal / 365);
+    const daysR1 = daysTotal % 365;
+    const months = Math.floor(daysR1 / 30);
+    const days   = daysR1 % 30;
 
-function formatDuration(daysTotal: number) {
-  const years  = Math.floor(daysTotal / 365);
-  const daysR1 = daysTotal % 365;
-  const months = Math.floor(daysR1 / 30);
-  const days   = daysR1 % 30;
-
-  const parts = [];
-  if (years)  parts.push(`${years} year${years > 1 ? 's' : ''}`);
-  if (months) parts.push(`${months} month${months > 1 ? 's' : ''}`);
-  if (days)   parts.push(`${days} day${days > 1 ? 's' : ''}`);
-  // if all zero, show lifetime
-  if (!parts.length) return 'Lifetime';
-  return parts.join(' ');
-}
-
+    const parts = [];
+    if (years)  parts.push(`${years} year${years > 1 ? 's' : ''}`);
+    if (months) parts.push(`${months} month${months > 1 ? 's' : ''}`);
+    if (days)   parts.push(`${days} day${days > 1 ? 's' : ''}`);
+    if (!parts.length) return 'Lifetime';
+    return parts.join(' ');
+  }
 
   // fetch course + profile
   useEffect(() => {
@@ -120,7 +120,7 @@ function formatDuration(daysTotal: number) {
     return m ? `https://www.youtube.com/embed/${m[1]}?controls=0&modestbranding=1&rel=0` : url;
   }
   
-  // 2️⃣ Fetch profile → set purchased & userId
+  // Fetch profile → set purchased & userId
   useEffect(() => {
     (async () => {
       try {
@@ -128,7 +128,7 @@ function formatDuration(daysTotal: number) {
           email: string;
           name: string;
           courses: Course[];
-          userId: string;        // <-- assume you add userId in profile response
+          userId: string;
         }>("/api/profile");
         setPurchased(
           Array.isArray(data.courses) &&
@@ -141,90 +141,118 @@ function formatDuration(daysTotal: number) {
     })();
   }, [courseId]);
 
-  
-
   // Promo code application
-  // after fetching course:
-// after you fetch course:
-useEffect(() => {
-  if (course) {
-    setFinalPrice(course.discountedPrice);
-    setPromoCode("");
-    setPromoMsg(null);
-  }
-}, [course]);
+  useEffect(() => {
+    if (course) {
+      setFinalPrice(course.discountedPrice);
+      setPromoCode("");
+      setPromoMsg(null);
+    }
+  }, [course]);
 
+  // Apply promo handler
+  const applyPromo = async () => {
+    if (!promoCode) return;
+    try {
+      const res = await axios.post("/api/promocodes/apply", {
+        code: promoCode,
+        courseId: course!._id
+      });
+      setFinalPrice(res.data.finalPrice);
+      setPromoMsg(`Applied! New price: ₹${res.data.finalPrice.toFixed(2)}`);
+    } catch (err: any) {
+      setPromoMsg(err.response?.data?.error || "Invalid code");
+    }
+  };
 
-// apply handler
-const applyPromo = async () => {
-  if (!promoCode) return;
-  try {
-    const res = await axios.post("/api/promocodes/apply", {
-      code: promoCode,
-      courseId: course!._id
-    });
-    setFinalPrice(res.data.finalPrice);
-    setPromoMsg(`Applied! New price: ₹${res.data.finalPrice.toFixed(2)}`);
-  } catch (err: any) {
-    setPromoMsg(err.response?.data?.error || "Invalid code");
-  }
-};
+  // Enroll for free course
+  const handleEnrollFree = useCallback(async () => {
+    if (!course) return;
+    setPayLoading(true);
+    try {
+      await axios.post("/api/enroll", { courseId: course._id });
+      setPurchased(true);
+      router.push(`/courses/${course._id}`);
+    } catch (err) {
+      console.error("Enroll error:", err);
+      alert("Could not enroll. Please try again.");
+    } finally {
+      setPayLoading(false);
+    }
+  }, [course, router]);
 
+  // Full payment
+  const handlePurchase = useCallback(async () => {
+    if (!course) return;
+    setPayLoading(true);
+    try {
+      const { data } = await axios.post<{ redirectUrl?: string; redirect?: string } & InitiatePaymentResponse>(
+        "/api/initiatePayment",
+        { 
+          amount: course.isFree ? 0 : finalPrice, 
+          courseId: course._id,
+          isEMI: false
+        },
+        { headers: { "Content-Type": "application/json" } }
+      );
 
-// enroll for free course
-const handleEnrollFree = useCallback(async () => {
-     if (!course) return;
-     setPayLoading(true);
-     try {
-       await axios.post("/api/enroll", { courseId: course._id });
-       setPurchased(true);
-       // navigate to course content
-       router.push(`/courses/${course._id}`);
-     } catch (err) {
-       console.error("Enroll error:", err);
-       alert("Could not enroll. Please try again.");
-     } finally {
-       setPayLoading(false);
-     }
-   }, [course, router]);
+      const redirect =
+        data.redirectUrl ??
+        data.redirect ??
+        data.data?.instrumentResponse?.redirectInfo?.url;
 
+      if (redirect) {
+        window.location.href = redirect;
+      } else {
+        console.error("No redirect URL in response:", data);
+        alert("Could not initiate payment. Please try again.");
+      }
+    } catch (err: any) {
+      console.error("Payment initiation error:", err.response?.data || err.message);
+      alert("Error initiating payment. Please try again.");
+    } finally {
+      setPayLoading(false);
+    }
+  }, [course, finalPrice]);
 
-// payment
-const handlePurchase = useCallback(async () => {
-  if (!course) return;
-  setPayLoading(true);
-  try {
-    const { data } = await axios.post<{ redirectUrl?: string; redirect?: string }  & InitiatePaymentResponse>(
-      "/api/initiatePayment",
-      { amount: course.isFree ? 0 : finalPrice, courseId: course._id },
-      { headers: { "Content-Type": "application/json" } }
-    );
-   // Try all possible fields:
-   const redirect =
-   data.redirectUrl ??
-   data.redirect ??
-   data.data?.instrumentResponse?.redirectInfo?.url;
+  // EMI payment handler
+  const handleEMIPurchase = useCallback(async (months: 3 | 6, monthlyAmount: number) => {
+    if (!course) return;
+    setPayLoading(true);
+    setShowEMIModal(false);
+    
+    try {
+      const { data } = await axios.post<{ redirectUrl?: string; redirect?: string } & InitiatePaymentResponse>(
+        "/api/initiatePayment",
+        { 
+          amount: monthlyAmount, // First installment amount
+          courseId: course._id,
+          isEMI: true,
+          emiMonths: months,
+          totalAmount: finalPrice,
+          promoCode: promoCode || undefined
+        },
+        { headers: { "Content-Type": "application/json" } }
+      );
 
+      const redirect =
+        data.redirectUrl ??
+        data.redirect ??
+        data.data?.instrumentResponse?.redirectInfo?.url;
 
-
- // inside handlePurchase()
-if (redirect) {
-  // open PhonePe in external browser window
-  window.location.href = redirect;
-} else {
-  console.error("No redirect URL in response:", data);
-  alert("Could not initiate payment. Please try again.");
-}
-
-} catch (err: any) {
- console.error("Payment initiation error:", err.response?.data || err.message);
- alert("Error initiating payment. Please try again.");
-} finally {
- setPayLoading(false);
-}
-}, [course, finalPrice]);
-
-
+      if (redirect) {
+        window.location.href = redirect;
+      } else {
+        console.error("No redirect URL in response:", data);
+        alert("Could not initiate EMI payment. Please try again.");
+      }
+    } catch (err: any) {
+      console.error("EMI Payment initiation error:", err.response?.data || err.message);
+      alert("Error initiating EMI payment. Please try again.");
+    } finally {
+      setPayLoading(false);
+    }
+  }, [course, finalPrice, promoCode]);
 
   if (loading)
     return (
@@ -253,8 +281,6 @@ if (redirect) {
           backgroundImage: course.courseImg
             ? `url(${course.courseImg})`
             : undefined,
-          
-          
         }}
       >
         <div className="absolute inset-0 bg-black/60" />
@@ -266,10 +292,6 @@ if (redirect) {
             {course.description}
           </p>
           <div className="mt-4 flex items-center space-x-4">
-            {/* <span className="inline-flex items-center px-2 py-1 bg-blue-600 rounded-full text-xs">
-              <ClockIcon className="w-4 h-4 mr-1" />{" "}
-              {new Date(course.createdAt).toLocaleDateString()}
-            </span> */}
             <span className="inline-flex items-center px-2 py-1 bg-green-600 rounded-full text-xs">
               <UserGroupIcon className="w-4 h-4 mr-1" />{" "}
               {course.subjects.length} Topics
@@ -282,7 +304,6 @@ if (redirect) {
       <div className="container mx-auto px-4 md:px-16 py-12 grid gap-8 md:grid-cols-3">
         {/* Left column */}
         <div className="md:col-span-2 space-y-8">
-
           {/* Intro Video Section */}
           <section className="pr-4">
             <h2 className="text-xl font-semibold mb-2">Course Introduction</h2>
@@ -295,7 +316,7 @@ if (redirect) {
 
           {/* Overview */}
           <section>
-            <h2 className="text-xl font-semibold mb-2">What you’ll learn</h2>
+            <h2 className="text-xl font-semibold mb-2">What you&apos;ll learn</h2>
             <ul className="grid gap-2 sm:grid-cols-2">
               {course.subjects.map((s) => (
                 <li
@@ -308,199 +329,181 @@ if (redirect) {
               ))}
             </ul>
           </section>
-          
 
           {/* Description */}
           <section>
             <h2 className="text-xl font-semibold mb-2">Course Description</h2>
             <p className="text-gray-700 leading-relaxed">{course.description}</p>
           </section>
-          
         </div>
 
         {/* Right sidebar */}
         <aside className="space-y-6">
           <div className="p-6 bg-white rounded-lg shadow border-2 border-blue-950">
-          
-              {/* Intro‐video / Thumbnail */}
-              {/* Intro‐video / Thumbnail */}
-<div className="relative w-full h-40 bg-gray-200 rounded-lg overflow-hidden">
-  <img
-    src={course.courseImg || "/default-course.png"}
-    alt="Course thumbnail"
-    className="w-full h-40 object-cover rounded-lg"
-  />
-</div>
+            {/* Course Image */}
+            <div className="relative w-full h-40 bg-gray-200 rounded-lg overflow-hidden">
+              <img
+                src={course.courseImg || "/default-course.png"}
+                alt="Course thumbnail"
+                className="w-full h-40 object-cover rounded-lg"
+              />
+            </div>
 
+            {/* Price Section */}
+            <div className="flex flex-col mt-3 space-y-4 p-4 border-2 border-blue-600 rounded-lg shadow-lg relative bg-gradient-to-tr from-blue-50 via-white to-blue-100">
+              {course.isFree ? (
+                <div className="flex items-center space-x-2">
+                  <span className="text-gray-500 line-through text-lg">
+                    ₹{course.price.toFixed(2)}
+                  </span>
+                  <span className="text-4xl font-extrabold text-white bg-green-600 px-3 py-1 rounded-full">
+                    FREE
+                  </span>
+                </div>
+              ) : (
+                <>
+                  {/* Offer Badge */}
+                  {course.price > course.discountedPrice && (
+                    <div className="absolute top-0 left-0 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-br-lg">
+                      🔥 {Math.round(((course.price - finalPrice) / course.price) * 100)}% OFF
+                    </div>
+                  )}
 
-              
-            {/* Price / Free Section */}
-<div className="flex flex-col mt-3 space-y-4 p-4 border-2 border-blue-600 rounded-lg shadow-lg relative bg-gradient-to-tr from-blue-50 via-white to-blue-100">
-  {course.isFree ? (
-    <div className="flex items-center space-x-2">
-      {/* Strike-through original price */}
-      <span className="text-gray-500 line-through text-lg">
-        ₹{course.price.toFixed(2)}
-      </span>
-      {/* FREE sticker */}
-      <span className="text-4xl font-extrabold text-white bg-green-600 px-3 py-1 rounded-full">
-        FREE
-      </span>
-    </div>
-  ) : (
-    <>
-      {/* Offer Badge */}
-      {course.price > course.discountedPrice && (
-        <div className="absolute top-0 left-0 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-br-lg">
-          🔥 {Math.round(((course.price - finalPrice) / course.price) * 100)}% OFF
-        </div>
-      )}
+                  {/* Original Price */}
+                  {course.price > course.discountedPrice && (
+                    <span className="text-gray-500 line-through text-lg">
+                      ₹{course.price.toFixed(2)}
+                    </span>
+                  )}
 
-      {/* Original Price */}
-      {course.price > course.discountedPrice && (
-        <span className="text-gray-500 line-through text-lg">
-          ₹{course.price.toFixed(2)}
-        </span>
-      )}
+                  {/* Duration */}
+                  <p className="mt-2 text-sm text-gray-800">
+                    ⏳ Duration: {formatDuration(course.duration)}
+                  </p>
 
-{/* NEW: show course.duration */}
-<p className="mt-2 text-sm text-gray-800">
-  ⏳ Duration: {formatDuration(course.duration)}
-</p>
+                  {/* Final Price */}
+                  <div className="flex items-center space-x-2">
+                    <span className="text-4xl font-extrabold text-green-600">
+                      ₹{(finalPrice ?? course.discountedPrice).toFixed(2)}
+                    </span>
+                    <span className="text-sm font-semibold bg-green-100 text-green-700 px-2 py-1 rounded-full">
+                      Limited Time Deal
+                    </span>
+                  </div>
 
-      {/* Final / Discounted Price */}
-      <div className="flex items-center space-x-2">
-        <span className="text-4xl font-extrabold text-green-600">
-          ₹{(finalPrice ?? course.discountedPrice).toFixed(2)}
-        </span>
-        <span className="text-sm font-semibold bg-green-100 text-green-700 px-2 py-1 rounded-full">
-          Limited Time Deal
-        </span>
-      </div>
+                  {/* Promo Code Input */}
+                  <div className="flex space-x-2 mt-2">
+                    <input
+                      type="text"
+                      placeholder="Enter Promo Code"
+                      value={promoCode}
+                      onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                      className="border-2 border-gray-300 focus:border-blue-500 p-2 rounded w-full transition"
+                    />
+                    <button
+                      onClick={applyPromo}
+                      className="bg-green-500 hover:bg-green-600 text-white font-semibold px-4 py-2 rounded transition"
+                    >
+                      Apply
+                    </button>
+                  </div>
 
-      {/* Promo-code Input */}
-      <div className="flex space-x-2 mt-2">
-        <input
-          type="text"
-          placeholder="Enter Promo Code"
-          value={promoCode}
-          onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
-          className="border-2 border-gray-300 focus:border-blue-500 p-2 rounded w-full transition"
-        />
-        <button
-          onClick={applyPromo}
-          className="bg-green-500 hover:bg-green-600 text-white font-semibold px-4 py-2 rounded transition"
-        >
-          Apply
-        </button>
-      </div>
+                  {promoMsg && (
+                    <p className="text-sm text-yellow-700 font-semibold mt-1">
+                      {promoMsg}
+                    </p>
+                  )}
+                </>
+              )}
+            </div>
 
-      {promoMsg && (
-        <p className="text-sm text-yellow-700 font-semibold mt-1">
-          {promoMsg}
-        </p>
-      )}
-    </>
-  )}
-</div>
+            {/* Payment Buttons */}
+            <div className="mt-4 space-y-3">
+              {/* Buy Now Button */}
+              <button
+                onClick={async () => {
+                  const path = `/course/${courseId}/preadmission?coursePrice=${
+                    course.isFree ? 0 : finalPrice
+                  }&promoCode=${encodeURIComponent(promoCode)}`;
+                  const fullUrl = `https://civilacademyapp.com${path}`;
 
+                  try {
+                    await fetch("/api/usercreation/deleteDeviceIdentifier", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ userId: userId }),
+                    }).then((res) => {
+                      if (!res.ok) {
+                        throw new Error("Failed to delete device identifier");
+                      }
+                    });
 
+                    await fetch("/api/logout", { method: "POST" });
 
+                    const ua = navigator.userAgent;
+                    const isAndroid = /Android/i.test(ua);
+                    const isIOS     = /iPhone|iPad|iPod/i.test(ua);
 
-            {/* Purchase button */}
+                    if (isAndroid) {
+                      const intentLink =
+                        `intent://${window.location.host}${path}` +
+                        `#Intent;scheme=https;package=com.android.chrome;end`;
+                      window.location.href = intentLink;
+                    } else if (isIOS) {
+                      window.open(fullUrl, "_blank", "noopener,noreferrer");
+                    } else {
+                      const w = window.screen.availWidth;
+                      const h = window.screen.availHeight;
+                      window.open(
+                        fullUrl,
+                        "_blank",
+                        `noopener,noreferrer,width=${w},height=${h},left=0,top=0`
+                      );
+                    }
+                  } catch (err) {
+                    console.error("Cleanup+redirect failed:", err);
+                    alert("Could not start pre‑admission. Please try again.");
+                  }
+                }}
+                className="w-full py-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold transition"
+              >
+                Buy Now
+              </button>
 
-            {/* ← UPDATED: Instead of directly enrolling/purchasing, navigate to AdmissionForm */}
-            {/* <button
-              onClick={course.isFree ? handleEnrollFree : handlePurchase}
-              disabled={purchased || payLoading}
-              className={`mt-4 w-full py-3 rounded-lg font-semibold transition ${
-                purchased
-                  ? "bg-gray-400 cursor-not-allowed"
-                  : "bg-blue-600 hover:bg-blue-700"
-              } text-white`}
-            >
-              {purchased
-                ? "Go to course"
-                : payLoading
-                ? "Processing..."
-                : course.isFree
-                ? "Enroll for free"
-                : "Buy now"}
-            </button> */}
-            <button
-  onClick={async () => {
-    const path = `/course/${courseId}/preadmission?coursePrice=${
-      course.isFree ? 0 : finalPrice
-    }&promoCode=${encodeURIComponent(promoCode)}`;
-    const fullUrl = `https://civilacademyapp.com${path}`;
-
-    try {
-      // 1️⃣ Delete deviceIdentifier
-      await fetch("/api/usercreation/deleteDeviceIdentifier", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        // you'll need the userId; if you don't have it in state, fetch it from profile API first
-        body: JSON.stringify({ userId: userId }),
-      }).then((res) => {
-        if (!res.ok) {
-          throw new Error("Failed to delete device identifier");
-        }
-      });
-
-      // 2️⃣ Logout (clears sessionToken cookie & server record)
-      await fetch("/api/logout", { method: "POST" });
-
-      // 3️⃣ Open new window/tab
-      const ua = navigator.userAgent;
-      const isAndroid = /Android/i.test(ua);
-      const isIOS     = /iPhone|iPad|iPod/i.test(ua);
-
-      if (isAndroid) {
-        // fire a Chrome intent (if Chrome installed)
-        const intentLink =
-          `intent://${window.location.host}${path}` +
-          `#Intent;scheme=https;package=com.android.chrome;end`;
-        window.location.href = intentLink;
-      } else if (isIOS) {
-        // iOS PWA: open external browser tab
-        window.open(fullUrl, "_blank", "noopener,noreferrer");
-      } else {
-        // Desktop: full-screen pop‑up
-        const w = window.screen.availWidth;
-        const h = window.screen.availHeight;
-        window.open(
-          fullUrl,
-          "_blank",
-          `noopener,noreferrer,width=${w},height=${h},left=0,top=0`
-        );
-      }
-    } catch (err) {
-      console.error("Cleanup+redirect failed:", err);
-      alert("Could not start pre‑admission. Please try again.");
-    }
-  }}
-  className="w-full py-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold transition"
->
-  Buy Now
-</button>
-
-
-
-
-
-
-            <Link href="/contact">
-                <motion.button
-                  className="bg-blue-950 text-white px-6  shadow-md hover:bg-blue-800  mt-4 w-full py-3 rounded-lg font-semibold transition"
-                  whileHover={{ scale: 1.05 }}
+              {/* EMI Button - Only show if course is not free and price > 1000 */}
+              {!course.isFree && finalPrice > 1000 && (
+                <button
+                  onClick={() => setShowEMIModal(true)}
+                  disabled={payLoading}
+                  className="w-full py-3 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold transition-all duration-300 flex items-center justify-center space-x-2"
                 >
-                  Contact Us
-                </motion.button>
-              </Link>
+                  <CreditCardIcon className="w-5 h-5" />
+                  <span>Pay with EMI</span>
+                </button>
+              )}
+            </div>
+
+            {/* Contact Us Button */}
+            <Link href="/contact">
+              <motion.button
+                className="bg-blue-950 text-white px-6 shadow-md hover:bg-blue-800 mt-4 w-full py-3 rounded-lg font-semibold transition"
+                whileHover={{ scale: 1.05 }}
+              >
+                Contact Us
+              </motion.button>
+            </Link>
           </div>
-         
         </aside>
       </div>
+
+      {/* EMI Modal */}
+      <EMIModal
+        isOpen={showEMIModal}
+        onClose={() => setShowEMIModal(false)}
+        coursePrice={finalPrice}
+        onSelectEMI={handleEMIPurchase}
+        courseName={course.title}
+      />
     </motion.main>
   );
 }

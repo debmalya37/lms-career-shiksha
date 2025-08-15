@@ -13,6 +13,8 @@
     "@clerk/nextjs": "^6.0.2",
     "@dicebear/avatars": "^4.10.8",
     "@dicebear/avatars-avataaars-sprites": "^4.10.8",
+    "@google-apps/meet": "^0.7.0",
+    "@google-cloud/local-auth": "^2.1.0",
     "@heroicons/react": "^2.2.0",
     "@hookform/resolvers": "^3.9.1",
     "@radix-ui/react-label": "^2.1.0",
@@ -67,6 +69,7 @@
     "streamifier": "^0.1.1",
     "tailwind-merge": "^2.5.4",
     "tailwindcss-animate": "^1.0.7",
+    "uuid": "^11.1.0",
     "workbox-webpack-plugin": "^7.3.0",
     "zod": "^3.23.8"
   },

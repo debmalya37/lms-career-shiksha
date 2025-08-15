@@ -27,8 +27,6 @@ if (
   );
 }
 
-
-
 const BASE =
   process.env.PHONEPE_ENV === 'PRODUCTION'
     ? 'https://api.phonepe.com/apis/identity-manager'
@@ -39,10 +37,17 @@ const PAY_URL   = process.env.PHONEPE_ENV === 'PRODUCTION'
   ? 'https://api.phonepe.com/apis/pg/checkout/v2/pay'
   : 'https://api-preprod.phonepe.com/apis/pg-sandbox/checkout/v2/pay';
 
-
 export async function POST(req: NextRequest) {
   // 0) parse
-  let payload: { amount?: number; courseId?: string; promoCode?: string };
+  let payload: { 
+    amount?: number; 
+    courseId?: string; 
+    promoCode?: string;
+    isEMI?: boolean;
+    emiMonths?: number;
+    totalAmount?: number;
+  };
+  
   try {
     payload = await req.json();
     console.log('📥 Received payload:', payload);
@@ -51,11 +56,20 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
   }
 
-  const { amount, courseId, promoCode } = payload!;
+  const { amount, courseId, promoCode, isEMI, emiMonths, totalAmount } = payload!;
+  
   if (!amount || !courseId) {
     console.warn('⚠️ Missing amount/courseId:', { amount, courseId });
     return NextResponse.json(
       { error: 'Missing amount or courseId' },
+      { status: 400 }
+    );
+  }
+
+  // Validate EMI parameters if isEMI is true
+  if (isEMI && (!emiMonths || !totalAmount)) {
+    return NextResponse.json(
+      { error: 'Missing EMI parameters (emiMonths, totalAmount)' },
       { status: 400 }
     );
   }
@@ -102,19 +116,24 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // 4) build v2 body
+  // 4) build v2 body with EMI info in metadata
   const body = {
     merchantOrderId,
-    amount:      Math.round(amount * 100),
+    amount:      Math.round(amount * 100), // Convert to paise
     expireAfter: 1200,
     metaInfo: {
       udf1: `course-${courseId}`,
       udf2: `user-${user._id}`,
-      udf3: promoCode || '', 
+      udf3: promoCode || '',
+      udf4: isEMI ? 'true' : 'false', // EMI flag
+      udf5: isEMI ? emiMonths?.toString() : '', // EMI months
+      udf6: isEMI ? Math.round((totalAmount || 0) * 100).toString() : '', // Total amount in paise
     },
     paymentFlow: {
       type:         'PG_CHECKOUT',
-      message:      'Please complete your payment on PhonePe',
+      message:      isEMI 
+        ? `Pay ${emiMonths}-month EMI installment (1 of ${emiMonths}) on PhonePe`
+        : 'Please complete your payment on PhonePe',
       merchantUrls: { redirectUrl },
     },
   };
