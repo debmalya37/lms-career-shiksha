@@ -113,14 +113,14 @@ export const InvoiceDocument: React.FC<{ invoice: Invoice }> = ({ invoice }) => 
       <Text style={styles.sectionTitle}>Course Details</Text>
       <View style={styles.table}>
         <View style={styles.tableRow}>
-          {['Course', 'Original', 'SAC', 'Discount', 'Final (Incl. Tax)'].map((h, i) => (
+          {['Course', 'SAC', 'Original',  'Discount', 'Final (Incl. Tax)'].map((h, i) => (
             <Text key={i} style={styles.tableColHeader}>{h}</Text>
           ))}
         </View>
         <View style={styles.tableRow}>
           <Text style={styles.tableCol}>{invoice.course.title}</Text>
-          <Text style={styles.tableCol}>₹{invoice.course.originalPrice.toFixed(2)}</Text>
           <Text style={styles.tableCol}>999293</Text>
+          <Text style={styles.tableCol}>₹{invoice.course.originalPrice.toFixed(2)}</Text>
           <Text style={styles.tableCol}>₹{invoice.course.discount.toFixed(2)}</Text>
           <Text style={styles.tableCol}>₹{invoice.course.discountedPrice.toFixed(2)}</Text>
         </View>
