@@ -40,6 +40,7 @@ const navLinks: NavLink[] = [
   { name: "Notes", href: "/notes", icon: <FiFileText /> },
   { name: "Progress", href: "/u/quizresults", icon: <FiAward /> },
   { name: "Contact", href: "/contact", icon: <FiPhone /> },
+  { name: "Meetings", href: "/meet", icon: <FiPhone /> },
 ];
 
 const Navbar: React.FC = () => {

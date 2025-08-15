@@ -45,35 +45,35 @@ const UserCreationPage = () => {
   const [searchQuery, setSearchQuery] = useState(''); // new search query state
 
   // Check admin status
-  useEffect(() => {
-    const checkAdminStatus = async () => {
-      try {
-        // Fetch profile data from the API
-        const profileRes = await fetch(`/api/profile`);
-        const profileData = await profileRes.json();
+  // useEffect(() => {
+  //   const checkAdminStatus = async () => {
+  //     try {
+  //       // Fetch profile data from the API
+  //       const profileRes = await fetch(`/api/profile`);
+  //       const profileData = await profileRes.json();
 
-        console.log('Profile Data:', profileData); // Log the profile response
+  //       console.log('Profile Data:', profileData); // Log the profile response
 
-        // Define allowed emails
-        const allowedEmails = ['civilacademy.in@gmail.com', 'civilacademy98@gmail.com', 'debmalyasen37@gmail.com', 'Tech@kryptaroid.com'];
+  //       // Define allowed emails
+  //       const allowedEmails = ['civilacademy.in@gmail.com', 'civilacademy98@gmail.com', 'debmalyasen37@gmail.com', 'Tech@kryptaroid.com'];
 
-        // Check if the profile email is in the allowed list
-        if (profileData?.email && allowedEmails.includes(profileData.email)) {
-          console.log("admin access allowed");
-          setIsAdmin(true);
-        } else {
-          router.push('/'); // Redirect to home if not authorized
-        }
-      } catch (error) {
-        console.error('Error fetching profile data:', error);
-        router.push('/'); // Redirect to home on error
-      } finally {
-        setLoading(false);
-      }
-    };
+  //       // Check if the profile email is in the allowed list
+  //       if (profileData?.email && allowedEmails.includes(profileData.email)) {
+  //         console.log("admin access allowed");
+  //         setIsAdmin(true);
+  //       } else {
+  //         router.push('/'); // Redirect to home if not authorized
+  //       }
+  //     } catch (error) {
+  //       console.error('Error fetching profile data:', error);
+  //       router.push('/'); // Redirect to home on error
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   };
 
-    checkAdminStatus();
-  }, [router, isAdmin]);
+  //   checkAdminStatus();
+  // }, [router, isAdmin]);
 
   useEffect(() => {
     const fetchCourses = async () => {
