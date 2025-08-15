@@ -86,7 +86,7 @@ export const InvoiceDocument: React.FC<{ invoice: Invoice }> = ({ invoice }) => 
           <Text>A‑79, Ganga Vatika, Meerut, UP 250001</Text>
           <Text>Email: affordablecareersolutions@gmail.com</Text>
           <Text>GSTIN: 09AAWCA8771F1ZY</Text>
-          <Text>SAC No: 999293</Text>
+         
         </View>
       </View>
 
@@ -113,13 +113,14 @@ export const InvoiceDocument: React.FC<{ invoice: Invoice }> = ({ invoice }) => 
       <Text style={styles.sectionTitle}>Course Details</Text>
       <View style={styles.table}>
         <View style={styles.tableRow}>
-          {['Course', 'Original', 'Discount', 'Final (Incl. Tax)'].map((h, i) => (
+          {['Course', 'Original', 'SAC', 'Discount', 'Final (Incl. Tax)'].map((h, i) => (
             <Text key={i} style={styles.tableColHeader}>{h}</Text>
           ))}
         </View>
         <View style={styles.tableRow}>
           <Text style={styles.tableCol}>{invoice.course.title}</Text>
           <Text style={styles.tableCol}>₹{invoice.course.originalPrice.toFixed(2)}</Text>
+          <Text style={styles.tableCol}>999293</Text>
           <Text style={styles.tableCol}>₹{invoice.course.discount.toFixed(2)}</Text>
           <Text style={styles.tableCol}>₹{invoice.course.discountedPrice.toFixed(2)}</Text>
         </View>
