@@ -166,7 +166,7 @@ const EMIModal: React.FC<EMIModalProps> = ({
           <h3 className="font-semibold text-gray-900 mb-1">{courseName}</h3>
           <div className="flex items-center justify-between">
             <p className="text-sm text-gray-600">Regular Price: ₹{courseData.discountedPrice.toFixed(2)}</p>
-            <p className="text-2xl font-bold text-orange-600">EMI Price: ₹{courseData.emiPrice.toFixed(2)}</p>
+            {/* <p className="text-2xl font-bold text-orange-600">EMI Price: ₹{courseData.emiPrice.toFixed(2)}</p> */}
           </div>
           {courseData.emiPrice > courseData.discountedPrice && (
             <p className="text-xs text-orange-500 mt-1">
