@@ -216,7 +216,7 @@ export default function CourseDetailsPage() {
   }, [course, finalPrice]);
 
   // EMI payment handler
-  const handleEMIPurchase = useCallback(async (months: 3 | 6, monthlyAmount: number) => {
+  const handleEMIPurchase = useCallback(async (months: number, monthlyAmount: number)  => {
     if (!course) return;
     setPayLoading(true);
     setShowEMIModal(false);
