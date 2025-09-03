@@ -70,7 +70,7 @@ export default function MeetLauncher() {
                 >
                   <div>
                     <h3 className="font-medium text-lg">{link.title}</h3>
-                    <p className="text-sm text-gray-600">{link.link}</p>
+                    {/* <p className="text-sm text-gray-600">{link.link}</p> */}
                   </div>
                   <button
                     onClick={() => openInNewTab(link.link)}
