@@ -503,6 +503,7 @@ export default function CourseDetailsPage() {
         coursePrice={finalPrice}
         onSelectEMI={handleEMIPurchase}
         courseName={course.title}
+        courseId={course._id} 
       />
     </motion.main>
   );

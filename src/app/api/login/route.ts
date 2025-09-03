@@ -38,7 +38,7 @@ export async function POST(request: Request) {
     // 5) Compute cookie expiration based on subscription days (if any)
     const expirationDate = new Date();
     expirationDate.setDate(
-      expirationDate.getDate() + (user?.subscription ?? 0)
+      expirationDate.getDate() + (user?.subscription  || 120) // ?? 120 days by default
     );
 
     await user.save();
@@ -52,7 +52,7 @@ export async function POST(request: Request) {
           email: user.email,
           name: user.name,
           course: user.course,
-          subscription: user?.subscription,
+          subscription: user?.subscription || 120,
         },
       },
       { status: 200 }

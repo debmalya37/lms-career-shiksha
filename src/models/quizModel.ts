@@ -8,9 +8,10 @@ interface Answer {
 
 interface Question {
   question: string;
-  answers: Answer[];
-  marks: number; // New field for marks
-  image?: string; // Optional image field
+  questionType: 'mcq' | 'descriptive'; // New field for question type
+  answers: Answer[]; // For MCQ questions
+  marks: number;
+  image?: string;
 }
 
 interface QuizDocument extends Document {
@@ -29,9 +30,15 @@ const AnswerSchema = new Schema({
 
 const QuestionSchema = new Schema({
   question: { type: String, required: true },
-  answers: [AnswerSchema],
-  marks: { type: Number, required: true }, // Required marks field
-  image: { type: String }, // Optional image field
+  questionType: { 
+    type: String, 
+    enum: ['mcq', 'descriptive'], 
+    default: 'mcq',
+    required: true 
+  },
+  answers: [AnswerSchema], // Only required for MCQ
+  marks: { type: Number, required: true },
+  image: { type: String },
 });
 
 const QuizSchema = new Schema({
@@ -42,9 +49,11 @@ const QuizSchema = new Schema({
   negativeMarking: { 
     type: Number, 
     required: true, 
-    default: 0.0 // Ensure a default floating-point value
+    default: 0.0
   },
   totalTime: { type: Number, required: true },
+}, {
+  timestamps: true
 });
 
 export default mongoose.models.Quiz || mongoose.model<QuizDocument>('Quiz', QuizSchema);
