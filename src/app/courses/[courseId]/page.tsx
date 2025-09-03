@@ -1,7 +1,7 @@
+
 import connectMongo from '@/lib/db';
 import Course, { ICourse } from '@/models/courseModel';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
 
 export const dynamic = 'force-dynamic';
 
