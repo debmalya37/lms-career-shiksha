@@ -4,7 +4,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
 import Image from "next/image";
-import logo from "../../public/image/logo.jpeg";
+import logo from "../../public/image/logo.jpg";
 import { IDCardPreview } from "./IDCardPreview";
 
 import dayjs from "dayjs";

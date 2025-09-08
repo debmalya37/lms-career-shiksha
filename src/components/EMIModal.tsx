@@ -80,7 +80,7 @@ const EMIModal: React.FC<EMIModalProps> = ({
     setIsProcessing(true);
     const option = courseData.emiOptions.find(opt => opt.months === selectedOption);
     if (option) {
-      await onSelectEMI(selectedOption, option.monthlyAmount);
+      await onSelectEMI(selectedOption, (option.monthlyAmount+option.processingFee));
     }
     setIsProcessing(false);
   };

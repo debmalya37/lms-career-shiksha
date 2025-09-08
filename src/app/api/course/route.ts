@@ -1,3 +1,4 @@
+// src/app/api/course/route.ts
 import { NextResponse } from 'next/server';
 import connectMongo from '@/lib/db';
 import Course from '@/models/courseModel';
@@ -40,14 +41,13 @@ export async function POST(request: Request) {
     const description     = formData.get("description") as string;
     const price           = parseFloat(formData.get("price") as string) || 0;
     const isFree          = formData.get("isFree") === "true";
-    const discountedPrice = parseFloat(formData.get("discountedPrice") as string) || 0;  // <-- new
-    const subjectsRaw     = formData.get("subjects") as string;
+    const discountedPrice = parseFloat(formData.get("discountedPrice") as string) || 0;
+    const subjectsRaw     = formData.get("subjects") as string || "[]";
     const subjects        = JSON.parse(subjectsRaw) as string[];
     const isHidden        = formData.get("isHidden") === "true";
     const courseImgFile   = formData.get("courseImg") as File | null;
-    const introVideo = formData.get("introVideo") as string || "";
-    const duration        = parseInt(formData.get("duration") as string, 10) || 0; 
-
+    const introVideo      = (formData.get("introVideo") as string) || "";
+    const duration        = parseInt(formData.get("duration") as string, 10) || 0;
 
     if (!courseId && (!title || !description || subjects.length === 0)) {
       console.error("Validation Error: Missing required fields.");
@@ -58,8 +58,7 @@ export async function POST(request: Request) {
     }
 
     // Log the incoming data for debugging
-    console.log("Incoming Data:", { courseId, title, description, subjects, isHidden, duration, price,
-      isFree, courseImgFile });
+    console.log("Incoming Data:", { courseId, title, description, subjects, isHidden, duration, price, isFree, courseImgFile });
 
     // Handle image upload
     let courseImgUrl = "";
@@ -78,10 +77,10 @@ export async function POST(request: Request) {
       isFree,
       discountedPrice,
       duration,
-      introVideo, // <-- NEW
+      introVideo,
       subjects: uniqueSubjects,
     };
-    
+
     if (courseImgUrl) updatedFields.courseImg = courseImgUrl;
 
     if (courseId) {
@@ -100,10 +99,10 @@ export async function POST(request: Request) {
         isFree,
         discountedPrice,
         duration,
-        introVideo, // <-- NEW
+        introVideo,
         courseImg: courseImgUrl,
       });
-      
+
       await newCourse.save();
       await Subject.updateMany(
         { _id: { $in: uniqueSubjects } },
@@ -114,6 +113,73 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("POST /api/course Error:", error);
     return NextResponse.json({ error: "Failed to add course" }, { status: 500 });
+  }
+}
+
+/**
+ * PUT /api/course
+ * Accepts JSON body and updates a course.
+ * Example body: { courseId: "abc123", mainsAvailable: true }
+ * Only updates allowed fields for safety.
+ */
+export async function PUT(request: Request) {
+  try {
+    await connectMongo();
+    const data = await request.json();
+
+    const { courseId } = data;
+    if (!courseId) {
+      return NextResponse.json({ error: "courseId is required" }, { status: 400 });
+    }
+
+    // List of allowed fields that may be updated via this endpoint
+    const allowedFields = new Set([
+      "title",
+      "description",
+      "isHidden",
+      "price",
+      "isFree",
+      "discountedPrice",
+      "duration",
+      "introVideo",
+      "subjects",
+      "courseImg",
+      "mainsAvailable", // <-- newly supported toggle field
+      "emiEnabled",
+      "emiPrice",
+      "emiOptions",
+      "emiProcessingFeePercentage",
+      "emiMinimumAmount",
+    ]);
+
+    const update: any = {};
+    for (const key of Object.keys(data)) {
+      if (key === "courseId") continue;
+      if (allowedFields.has(key)) {
+        // If subjects provided as string, try parse
+        if (key === "subjects" && typeof data[key] === "string") {
+          try {
+            update[key] = JSON.parse(data[key]);
+          } catch {
+            update[key] = data[key];
+          }
+        } else {
+          update[key] = data[key];
+        }
+      } else {
+        console.warn(`Ignoring not-allowed field in PUT /api/course: ${key}`);
+      }
+    }
+
+    const updatedCourse = await Course.findByIdAndUpdate(courseId, update, { new: true });
+    if (!updatedCourse) {
+      return NextResponse.json({ error: "Course not found or update failed." }, { status: 404 });
+    }
+
+    return NextResponse.json({ message: "Course updated", course: updatedCourse });
+  } catch (err) {
+    console.error("PUT /api/course Error:", err);
+    return NextResponse.json({ error: "Failed to update course" }, { status: 500 });
   }
 }
 

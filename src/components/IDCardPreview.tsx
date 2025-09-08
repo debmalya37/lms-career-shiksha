@@ -4,7 +4,7 @@ import React, { useRef } from "react";
 import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
 import Image from "next/image";
-import logo from "../../public/image/logo.jpeg";
+import logo from "../../public/image/logo.jpg";
 
 interface PreviewProps {
   name: string;

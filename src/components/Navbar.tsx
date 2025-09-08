@@ -17,7 +17,7 @@ import {
   FiBell,
   FiAward,
 } from "react-icons/fi";
-import Logo from "../../public/image/logo.jpeg";
+import Logo from "../../public/image/logo.jpg";
 import NotificationPopup from "@/components/NotificationPopup";
 
 interface AdminNotification {
@@ -41,6 +41,8 @@ const navLinks: NavLink[] = [
   { name: "Progress", href: "/u/quizresults", icon: <FiAward /> },
   { name: "Contact", href: "/contact", icon: <FiPhone /> },
   { name: "Meetings", href: "/meet", icon: <FiPhone /> },
+  { name: "Current Affairs", href: "/current-affairs", icon: <FiLayers /> },
+  { name: "Mains Set", href: "/mainsset", icon: <FiFileText /> },
 ];
 
 const Navbar: React.FC = () => {

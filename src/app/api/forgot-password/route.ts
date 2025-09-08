@@ -44,7 +44,7 @@ export async function POST(request: Request) {
 <body>
   <div class="container">
     <div class="logo">
-      <img src="https://civilacademyapp.com/image/logo.jpeg" alt=" Civil Academy logo" />
+      <img src="https://civilacademyapp.com/image/logo.jpg" alt=" Civil Academy logo" />
     </div>
     <div class="title">Password Reset Request</div>
     <div class="message">

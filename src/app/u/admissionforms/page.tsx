@@ -5,7 +5,7 @@ import React, { useEffect, useState } from "react";
 import { AdmissionDocument } from "@/components/AdmissionDocument";
 import { AdmissionFormPreview } from "@/components/AdmissionFormPreview";
 import Image from "next/image";
-import logo from "../../../../public/image/logo.jpeg";
+import logo from "../../../../public/image/logo.jpg";
 
 interface Admission {
   _id: string;

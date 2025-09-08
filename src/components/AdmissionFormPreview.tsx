@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
-import logo from '../../public/image/logo.jpeg'; // Adjust the path as needed
+import logo from '../../public/image/logo.jpg'; // Adjust the path as needed
 import Image from 'next/image';
 interface Admission {
   name: string;
