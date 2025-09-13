@@ -9,7 +9,7 @@ import DisableRightClickAndClipboard from "@/components/DisableRightClick";
 import MobileClipboardFunction from "@/components/MobileClipboard";
 import ProgressBar from "@/components/ProgressBar";
 import SimpleProgressBar from "@/components/SimpleProgressBar";
-// import MobileClipboardFunction from "@/components/MobileClipboard"; // If you still need it
+import PopupNotificationModal from "@/components/PopupNotificationModal";
 
 // Define interfaces
 interface Course {
@@ -19,13 +19,19 @@ interface Course {
   courseImg?: string;
   subjects: { name: string }[] | string[];
   createdAt: string;
-  isHidden?: boolean; // Ensure this property exists
+  isHidden?: boolean;
   isFree?: boolean;
+  progress?: {
+    total: number;
+    completed: number;
+    percent: number;
+  };
 }
+
 interface BannerAd {
   _id: string;
   imageUrl: string;
-  link: string; // 👈 Add this line
+  link: string;
 }
 
 interface UserProfile {
@@ -35,6 +41,7 @@ interface UserProfile {
   subscription: number;
   courses: Course[];
 }
+
 interface AdminNotification {
   _id: string;
   text: string;
@@ -53,12 +60,13 @@ export default function Home() {
   const [adminNotifications, setAdminNotifications] = useState<AdminNotification[]>([]);
   const [bannerAds, setBannerAds] = useState<BannerAd[]>([]);
   const [currentAdIndex, setCurrentAdIndex] = useState(0);
-  const [isLoading, setIsLoading] = useState(true); // Track loading state
+  const [isLoading, setIsLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
-  // Check for session token and redirect if missing
   const [priceFilter, setPriceFilter] = useState<'All' | 'Free' | 'Paid'>('All');
-
-  // …fetching logic…
+  
+  // Popup notification states
+  const [showPopupNotification, setShowPopupNotification] = useState(false);
+  const [hasShownPopup, setHasShownPopup] = useState(false);
 
   // Helper for filtering by free/paid:
   const applyPriceFilter = (course: Course) => {
@@ -81,6 +89,18 @@ export default function Home() {
     }
     checkSession();
   }, [router]);
+
+  // Show popup notification after 1 second
+  useEffect(() => {
+    if (!hasShownPopup && !isLoading) {
+      const timer = setTimeout(() => {
+        setShowPopupNotification(true);
+        setHasShownPopup(true);
+      }, 1000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [hasShownPopup, isLoading]);
 
   // Convert youtube URL to embed URL
   const convertToEmbedUrl = (url: string): string => {
@@ -151,7 +171,6 @@ export default function Home() {
     }
     fetchData();
   }, []);
-  
 
   // Filter unsubscribed courses
   useEffect(() => {
@@ -183,168 +202,155 @@ export default function Home() {
     return () => clearInterval(interval);
   }, [bannerAds]);
 
-  // Inside your Home component
-// Reusable Course Card
+  // Course Card Component
+  interface CourseCardProps {
+    course: Course | null;
+    buttonLabel: string;
+    buttonLink: string;
+  }
 
-interface Course {
-  _id: string;
-  title: string;
-  description: string;
-  courseImg?: string;
-  isFree?: boolean;
-  isHidden?: boolean;
-  /** progress added by /api/profile */
-  progress?: {
-      total: number;
-      completed: number;
-      percent: number;
-    };
-}
+  const CourseCard = ({
+    course,
+    buttonLabel,
+    buttonLink,
+  }: CourseCardProps) => {
+    const isFree = !!course?.isFree;
 
-interface CourseCardProps {
-  course: Course | null;
-  buttonLabel: string;
-  buttonLink: string;
-}
-
- const  CourseCard = ({
-  course,
-  buttonLabel,
-  buttonLink,
-}: CourseCardProps) => {
-  const isFree = !!course?.isFree;
-
-  return (
-    <div
-      className="
-        flex-shrink-0
-        w-full sm:w-64
-        bg-white
-        rounded-xl
-        shadow-lg
-        hover:shadow-2xl
-        transition
-        transform hover:-translate-y-1
-        flex flex-col
-        mt-7
-      "
-    >
-      {/* 16:9 Thumbnail */}
-      <div className="relative w-full aspect-video overflow-hidden rounded-t-xl bg-gray-100">
-        {course ? (
-          <img
-            src={course.courseImg || "/placeholder.jpg"}
-            alt={course.title}
-            className="object-cover w-full h-full transition-transform duration-300 transform hover:scale-105"
-          />
-        ) : (
-          <div className="w-full h-full bg-gray-300 animate-pulse" />
-        )}
-        {isFree && (
-          <span className="
-            absolute top-2 left-2
-            bg-green-600 text-white text-xs font-semibold
-            uppercase px-2 py-0.5 rounded
-          ">
-            Free
-          </span>
-        )}
-      </div>
-      {/* progress bar */}
-      {course?.progress && (
-        <div className="p-4">
-                  <SimpleProgressBar progress={course.progress.percent} />
-
-        </div>
-      )}
-
-      {/* Content */}
-      <div className="p-4 flex-1 flex flex-col">
-        <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-2">
-          {course ? course.title : <div className="h-5 bg-gray-300 animate-pulse rounded w-3/4" />}
-        </h3>
-        <span className="text-sm text-gray-700 flex-1 mb-4 line-clamp-3">
-          {course
-            ? course.description.length > 100
-              ? course.description.slice(0, 100) + "…"
-              : course.description
-            : <div className="h-4 bg-gray-300 animate-pulse rounded w-full mb-2" />}
-        </span>
-        <div className="flex items-center justify-end">
+    return (
+      <div
+        className="
+          flex-shrink-0
+          w-full sm:w-64
+          bg-white
+          rounded-xl
+          shadow-lg
+          hover:shadow-2xl
+          transition
+          transform hover:-translate-y-1
+          flex flex-col
+          mt-7
+        "
+      >
+        {/* 16:9 Thumbnail */}
+        <div className="relative w-full aspect-video overflow-hidden rounded-t-xl bg-gray-100">
           {course ? (
-            <Link href={buttonLink}>
-              <span className="
-                text-sm font-light p-2 bg-slate-300 rounded-md
-                hover:bg-slate-100
-                text-blue-600 hover:text-blue-800
-                transition
-              ">
-                {buttonLabel} →
-              </span>
-            </Link>
+            <img
+              src={course.courseImg || "/placeholder.jpg"}
+              alt={course.title}
+              className="object-cover w-full h-full transition-transform duration-300 transform hover:scale-105"
+            />
           ) : (
-            <div className="h-6 bg-gray-300 animate-pulse rounded w-16" />
+            <div className="w-full h-full bg-gray-300 animate-pulse" />
+          )}
+          {isFree && (
+            <span className="
+              absolute top-2 left-2
+              bg-green-600 text-white text-xs font-semibold
+              uppercase px-2 py-0.5 rounded
+            ">
+              Free
+            </span>
           )}
         </div>
-      </div>
-    </div>
-  );
-}
+        {/* progress bar */}
+        {course?.progress && (
+          <div className="p-4">
+            <SimpleProgressBar progress={course.progress.percent} />
+          </div>
+        )}
 
+        {/* Content */}
+        <div className="p-4 flex-1 flex flex-col">
+          <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-2">
+            {course ? course.title : <div className="h-5 bg-gray-300 animate-pulse rounded w-3/4" />}
+          </h3>
+          <span className="text-sm text-gray-700 flex-1 mb-4 line-clamp-3">
+            {course
+              ? course.description.length > 100
+                ? course.description.slice(0, 100) + "…"
+                : course.description
+              : <div className="h-4 bg-gray-300 animate-pulse rounded w-full mb-2" />}
+          </span>
+          <div className="flex items-center justify-end">
+            {course ? (
+              <Link href={buttonLink}>
+                <span className="
+                  text-sm font-light p-2 bg-slate-300 rounded-md
+                  hover:bg-slate-100
+                  text-blue-600 hover:text-blue-800
+                  transition
+                ">
+                  {buttonLabel} →
+                </span>
+              </Link>
+            ) : (
+              <div className="h-6 bg-gray-300 animate-pulse rounded w-16" />
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <main className="bg-white min-h-screen text-gray-800">
       <DisableRightClickAndClipboard />
       <MobileClipboardFunction />
 
+      {/* Popup Notification Modal */}
+      <PopupNotificationModal
+        isVisible={showPopupNotification}
+        onClose={() => setShowPopupNotification(false)}
+      />
+
       <div className="container mx-auto p-4 rounded-md">
         {/* Banner Ad */}
-{bannerAds.length > 0 && (
-  <a
-    href={bannerAds[currentAdIndex]?.link}
-    target="_blank"
-    rel="noopener noreferrer"
-    className="block w-full relative overflow-hidden mb-0 rounded-md"
-  >
-    <div className="relative w-full pb-[37.5%] sm:pb-[80%] md:pb-[37.5%] bg-gray-200 rounded-md">
-      <img
-        src={bannerAds[currentAdIndex]?.imageUrl}
-        alt={`Banner Ad ${currentAdIndex + 1}`}
-        className="absolute top-0 left-0 w-full h-full object-cover transition-opacity duration-500 rounded-md"
-      />
-    </div>
-  </a>
-)}
+        {bannerAds.length > 0 && (
+          <a
+            href={bannerAds[currentAdIndex]?.link}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block w-full relative overflow-hidden mb-0 rounded-md"
+          >
+            <div className="relative w-full pb-[37.5%] sm:pb-[80%] md:pb-[37.5%] bg-gray-200 rounded-md">
+              <img
+                src={bannerAds[currentAdIndex]?.imageUrl}
+                alt={`Banner Ad ${currentAdIndex + 1}`}
+                className="absolute top-0 left-0 w-full h-full object-cover transition-opacity duration-500 rounded-md"
+              />
+            </div>
+          </a>
+        )}
 
         {/* Main Body */}
         <div className="p-4 flex-1 overflow-auto">
-           {/* Subscribed Courses */}
-        <div className="container mx-auto px-4 py-12">
-        <h2 className="text-2xl font-semibold mb-4">🎓 Continue Learning</h2>
-          <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
-
-            {isLoading
-              ? Array.from({ length: 5 }).map((_, index) => (
-                  <CourseCard key={index} course={null} buttonLabel="" buttonLink="" />
-                ))
-              : userCourses.filter(course => !course.isHidden).map((course) => (
-                  <CourseCard
-                    key={course._id}
-                    course={course}
-                    buttonLabel="Go to Course"
-                    buttonLink={`/courses/${course._id}`}
-                  />
-                ))}
+          {/* Subscribed Courses */}
+          <div className="container mx-auto px-4 py-12">
+            <h2 className="text-2xl font-semibold mb-4">🎓 Continue Learning</h2>
+            <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
+              {isLoading
+                ? Array.from({ length: 5 }).map((_, index) => (
+                    <CourseCard key={index} course={null} buttonLabel="" buttonLink="" />
+                  ))
+                : userCourses.filter(course => !course.isHidden).map((course) => (
+                    <CourseCard
+                      key={course._id}
+                      course={course}
+                      buttonLabel="Go to Course"
+                      buttonLink={`/courses/${course._id}`}
+                    />
+                  ))}
+            </div>
           </div>
-        </div>
-        {/* ───── Price Filter Pills ───── */}
-          <div className="flex flex-wrap gap-2 mb-6  justify-items-start ml-2">
+
+          {/* Price Filter Pills */}
+          <div className="flex flex-wrap gap-2 mb-6 justify-items-start ml-2">
             {(['All','Free','Paid'] as const).map(option => (
               <button
                 key={option}
                 onClick={() => setPriceFilter(option)}
                 className={`
-                  px-3 py-1 rounded-full  text-sm
+                  px-3 py-1 rounded-full text-sm
                   ${priceFilter === option
                     ? 'bg-blue-600 text-white'
                     : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}
@@ -354,24 +360,25 @@ interface CourseCardProps {
               </button>
             ))}
           </div>
-        {/* Unsubscribed Courses */}
-        <div className="container mx-auto px-4 py-12">
-        <h2 className="text-2xl font-semibold mb-6">📚 Courses You Might Like</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-5 gap-6">
-            {isLoading
-              ? Array.from({ length: 5 }).map((_, index) => (
-                  <CourseCard key={index} course={null} buttonLabel="" buttonLink="" />
-                ))
-              : unsubscribedCourses.filter(course => !course.isHidden && applyPriceFilter(course)).map((course) => (
-                  <CourseCard
-                    key={course._id}
-                    course={course}
-                    buttonLabel="View"
-                    buttonLink={`/course/${course._id}`}
-                  />
-                ))}
+
+          {/* Unsubscribed Courses */}
+          <div className="container mx-auto px-4 py-12">
+            <h2 className="text-2xl font-semibold mb-6">📚 Courses You Might Like</h2>
+            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-5 gap-6">
+              {isLoading
+                ? Array.from({ length: 5 }).map((_, index) => (
+                    <CourseCard key={index} course={null} buttonLabel="" buttonLink="" />
+                  ))
+                : unsubscribedCourses.filter(course => !course.isHidden && applyPriceFilter(course)).map((course) => (
+                    <CourseCard
+                      key={course._id}
+                      course={course}
+                      buttonLabel="View"
+                      buttonLink={`/course/${course._id}`}
+                    />
+                  ))}
+            </div>
           </div>
-        </div>
         </div>
       </div>
     </main>

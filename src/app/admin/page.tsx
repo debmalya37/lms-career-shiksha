@@ -120,6 +120,9 @@ const AdminPanel = () => {
         <Link href="/admin/emimanagement" className="bg-teal-800 text-white p-6 rounded-lg shadow-md text-center">
           <h2 className="text-xl font-semibold">EMI MANAGEMENT</h2>
         </Link>
+        <Link href="/admin/popup" className="bg-teal-800 text-white p-6 rounded-lg shadow-md text-center">
+          <h2 className="text-xl font-semibold">pop up notification</h2>
+        </Link>
       </div>
     </div>
   );
