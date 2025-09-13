@@ -1,12 +1,9 @@
-// app/api/teacher/mainsset/route.ts
 import { NextResponse } from "next/server";
 import connectMongo from "@/lib/db";
 import MainsSet from "@/models/mainsSetModel";
 
-/**
- * GET: teacher view — list mains sets + their submissions (with user ids)
- * NOTE: no auth role-check is performed here; add auth if needed.
- */
+export const dynamic = "force-dynamic"; // ✅ ensures dynamic API
+
 export async function GET() {
   try {
     await connectMongo();
@@ -15,7 +12,6 @@ export async function GET() {
       .populate({ path: "submissions.user", select: "name email" })
       .lean();
 
-    // normalize shape for client
     const payload = sets.map((s: any) => ({
       _id: s._id.toString(),
       title: s.title,
