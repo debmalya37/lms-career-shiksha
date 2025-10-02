@@ -83,7 +83,7 @@ export async function POST(req: NextRequest) {
     state         = form.state;
     transactionId = form.transactionId || manualTxn || '';
 
-    course = (await Course.findById(form.courseId).lean()) as ICourse;
+    course = (await Course.findById(form.courseId).lean()) as unknown as ICourse;
     if (!course) {
       return NextResponse.json({ error: 'Course not found' }, { status: 404 });
     }
@@ -118,7 +118,7 @@ export async function POST(req: NextRequest) {
     state         = manualState;
     transactionId = manualTxn || '';
 
-    course = (await Course.findById(manualCourseId).lean()) as ICourse;
+    course = (await Course.findById(manualCourseId).lean()) as unknown as  ICourse;
     if (!course) {
       return NextResponse.json({ error: 'Course not found' }, { status: 404 });
     }
