@@ -4,7 +4,10 @@ import { X, CreditCard, Calendar, Banknote, AlertCircle, Info } from 'lucide-rea
 
 interface EMIOption {
   months: number;
-  monthlyAmount: number;
+  // New structure: array of monthly amounts
+  monthlyAmounts?: number[]; 
+  // Old structure: single amount (for backward compatibility)
+  monthlyAmount?: number;
   processingFee: number;
 }
 
@@ -66,13 +69,40 @@ const EMIModal: React.FC<EMIModalProps> = ({
       setLoading(false);
     }
   };
+
   useEffect(() => {
     if (isOpen && courseId) {
       fetchCourseEMIData();
     }
   }, [isOpen, courseId]);
 
-  
+  // Helper function to get monthly amount from an EMI option
+  const getMonthlyAmount = (option: EMIOption): number => {
+    if (Array.isArray(option.monthlyAmounts) && option.monthlyAmounts.length > 0) {
+      // Use the first month's amount as representative (or calculate average)
+      return option.monthlyAmounts[0];
+    }
+    return option.monthlyAmount || 0;
+  };
+
+  // Helper function to get total amount for an EMI option
+  const getTotalAmount = (option: EMIOption): number => {
+    if (Array.isArray(option.monthlyAmounts) && option.monthlyAmounts.length > 0) {
+      const total = option.monthlyAmounts.reduce((sum, amount) => sum + (amount || 0), 0);
+      return total + (option.processingFee || 0);
+    }
+    const monthlyAmount = option.monthlyAmount || 0;
+    return (monthlyAmount * option.months) + (option.processingFee || 0);
+  };
+
+  // Helper function to check if option has variable monthly amounts
+  const hasVariableAmounts = (option: EMIOption): boolean => {
+    if (!Array.isArray(option.monthlyAmounts) || option.monthlyAmounts.length === 0) {
+      return false;
+    }
+    const first = option.monthlyAmounts[0];
+    return option.monthlyAmounts.some(amount => amount !== first);
+  };
 
   const handleConfirmEMI = async () => {
     if (!selectedOption || !courseData) return;
@@ -80,7 +110,8 @@ const EMIModal: React.FC<EMIModalProps> = ({
     setIsProcessing(true);
     const option = courseData.emiOptions.find(opt => opt.months === selectedOption);
     if (option) {
-      await onSelectEMI(selectedOption, (option.monthlyAmount+option.processingFee));
+      const monthlyAmount = getMonthlyAmount(option);
+      await onSelectEMI(selectedOption, monthlyAmount + (option.processingFee || 0));
     }
     setIsProcessing(false);
   };
@@ -108,7 +139,7 @@ const EMIModal: React.FC<EMIModalProps> = ({
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold text-gray-900">EMI Not Available</h2>
               <button
-              title='Close Modal'
+                title='Close Modal'
                 onClick={onClose}
                 className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
               >
@@ -166,7 +197,6 @@ const EMIModal: React.FC<EMIModalProps> = ({
           <h3 className="font-semibold text-gray-900 mb-1">{courseName}</h3>
           <div className="flex items-center justify-between">
             <p className="text-sm text-gray-600">Regular Price: ₹{courseData.discountedPrice.toFixed(2)}</p>
-            {/* <p className="text-2xl font-bold text-orange-600">EMI Price: ₹{courseData.emiPrice.toFixed(2)}</p> */}
           </div>
           {courseData.emiPrice > courseData.discountedPrice && (
             <p className="text-xs text-orange-500 mt-1">
@@ -180,8 +210,10 @@ const EMIModal: React.FC<EMIModalProps> = ({
           <h4 className="font-semibold text-gray-900 mb-4">Select Payment Plan:</h4>
           
           {courseData.emiOptions.map((option) => {
-            const totalWithFee = (option.monthlyAmount * option.months) + option.processingFee;
-            const firstPayment = option.monthlyAmount + option.processingFee;
+            const monthlyAmount = getMonthlyAmount(option);
+            const totalWithFee = getTotalAmount(option);
+            const firstPayment = monthlyAmount + (option.processingFee || 0);
+            const isVariable = hasVariableAmounts(option);
             
             return (
               <div
@@ -214,22 +246,28 @@ const EMIModal: React.FC<EMIModalProps> = ({
                       <div className="flex items-center space-x-2 mt-1">
                         <Banknote className="w-4 h-4 text-green-500" />
                         <span className="text-sm text-gray-600">
-                          Pay ₹{option.monthlyAmount.toFixed(2)} per month
+                          {isVariable ? (
+                            `Variable monthly amounts (avg ₹${(getTotalAmount(option) / option.months).toFixed(2)})`
+                          ) : (
+                            `Pay ₹${monthlyAmount.toFixed(2)} per month`
+                          )}
                         </span>
                       </div>
-                      {option.processingFee > 0 && (
+                      {(option.processingFee || 0) > 0 && (
                         <div className="text-xs text-orange-600 mt-1">
-                          + ₹{option.processingFee} processing fee (first payment only)
+                          + ₹{(option.processingFee || 0)} processing fee (first payment only)
                         </div>
                       )}
                     </div>
                   </div>
                   <div className="text-right">
                     <div className="text-lg font-bold text-green-600">
-                      ₹{option.monthlyAmount.toFixed(2)}
+                      ₹{monthlyAmount.toFixed(2)}
                     </div>
-                    <div className="text-xs text-gray-500">per month</div>
-                    {option.processingFee > 0 && (
+                    <div className="text-xs text-gray-500">
+                      {isVariable ? "starting" : "per month"}
+                    </div>
+                    {(option.processingFee || 0) > 0 && (
                       <div className="text-xs text-orange-500">
                         First: ₹{firstPayment.toFixed(2)}
                       </div>
@@ -247,7 +285,11 @@ const EMIModal: React.FC<EMIModalProps> = ({
                     <div>
                       <span className="text-gray-500">Remaining:</span>
                       <div className="font-semibold">
-                        {option.months - 1} × ₹{option.monthlyAmount.toFixed(2)}
+                        {isVariable ? (
+                          `${option.months - 1} payments`
+                        ) : (
+                          `${option.months - 1} × ₹${monthlyAmount.toFixed(2)}`
+                        )}
                       </div>
                     </div>
                     <div>

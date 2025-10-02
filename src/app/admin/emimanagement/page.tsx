@@ -129,41 +129,112 @@ export default function EMIManagementPage() {
     }
   };
 
-  const handleUpdateCourse = async (updatedCourse: Course | null) => {
-    if (!updatedCourse) return;
-    setSaving(updatedCourse._id);
-    try {
-      // send emiOptions as-is (including monthlyAmounts). Backend should accept monthlyAmounts.
-      const response = await fetch(`/api/admin/courses/${updatedCourse._id}/emi`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          emiPrice: updatedCourse.emiPrice,
-          emiOptions: updatedCourse.emiOptions,
-          emiProcessingFeePercentage: updatedCourse.emiProcessingFeePercentage,
-          emiMinimumAmount: updatedCourse.emiMinimumAmount,
-        }),
-      });
+  // const handleUpdateCourse = async (updatedCourse: Course | null) => {
+  //   if (!updatedCourse) return;
+  //   setSaving(updatedCourse._id);
+  //   try {
+  //     // send emiOptions as-is (including monthlyAmounts). Backend should accept monthlyAmounts.
+  //     const response = await fetch(`/api/admin/courses/${updatedCourse._id}/emi`, {
+  //       method: "PUT",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //       },
+  //       body: JSON.stringify({
+  //         emiPrice: updatedCourse.emiPrice,
+  //         emiOptions: updatedCourse.emiOptions,
+  //         emiProcessingFeePercentage: updatedCourse.emiProcessingFeePercentage,
+  //         emiMinimumAmount: updatedCourse.emiMinimumAmount,
+  //       }),
+  //     });
 
-      const result = await response.json();
+  //     const result = await response.json();
 
-      if (result.success) {
-        setCourses((prev) => prev.map((course) => (course._id === updatedCourse._id ? updatedCourse : course)));
-        setShowEditModal(false);
-        setSelectedCourse(null);
-        alert("Course EMI settings updated successfully!");
-      } else {
-        alert("Failed to update course EMI settings");
-      }
-    } catch (error) {
-      console.error("Error updating course:", error);
-      alert("Error updating course EMI settings");
-    } finally {
-      setSaving(null);
+  //     if (result.success) {
+  //       setCourses((prev) => prev.map((course) => (course._id === updatedCourse._id ? updatedCourse : course)));
+  //       setShowEditModal(false);
+  //       setSelectedCourse(null);
+  //       alert("Course EMI settings updated successfully!");
+  //     } else {
+  //       alert("Failed to update course EMI settings");
+  //     }
+  //   } catch (error) {
+  //     console.error("Error updating course:", error);
+  //     alert("Error updating course EMI settings");
+  //   } finally {
+  //     setSaving(null);
+  //   }
+  // };
+
+  // Add this function to clean and validate data before sending to API
+const cleanEMIOptionsForAPI = (emiOptions: EMIOption[], course: Course): EMIOption[] => {
+  return emiOptions.map(option => {
+    const cleanedOption: EMIOption = {
+      months: Math.max(1, Math.min(24, Number(option.months) || 1)),
+      processingFee: Math.max(0, Number(option.processingFee) || 0),
+    };
+
+    // Ensure monthlyAmounts is properly formatted
+    if (Array.isArray(option.monthlyAmounts) && option.monthlyAmounts.length === option.months) {
+      cleanedOption.monthlyAmounts = option.monthlyAmounts.map(amount => 
+        Math.max(0, Number(amount) || 0)
+      );
+    } else if (option.monthlyAmount !== undefined) {
+      // Fallback to old format
+      cleanedOption.monthlyAmount = Math.max(0, Number(option.monthlyAmount) || 0);
+    } else {
+      // Create default amounts if nothing is available
+      const defaultAmount = Math.ceil((course.emiPrice || course.discountedPrice || 1000) / cleanedOption.months);
+      cleanedOption.monthlyAmounts = Array.from({ length: cleanedOption.months }, () => defaultAmount);
     }
-  };
+
+    return cleanedOption;
+  });
+};
+
+// Update your handleUpdateCourse function
+const handleUpdateCourse = async (updatedCourse: Course | null) => {
+  if (!updatedCourse) return;
+  setSaving(updatedCourse._id);
+  
+  try {
+    // Clean and validate the EMI options before sending
+    const cleanedOptions = cleanEMIOptionsForAPI(updatedCourse.emiOptions || [], updatedCourse);
+    
+    const payload = {
+      emiPrice: Number(updatedCourse.emiPrice) || 0,
+      emiOptions: cleanedOptions,
+      emiProcessingFeePercentage: Number(updatedCourse.emiProcessingFeePercentage) || 0,
+      emiMinimumAmount: Number(updatedCourse.emiMinimumAmount) || 1000,
+    };
+
+    console.log('Sending payload:', JSON.stringify(payload, null, 2)); // Debug log
+
+    const response = await fetch(`/api/admin/courses/${updatedCourse._id}/emi`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const result = await response.json();
+
+    if (result.success) {
+      setCourses((prev) => prev.map((course) => (course._id === updatedCourse._id ? updatedCourse : course)));
+      setShowEditModal(false);
+      setSelectedCourse(null);
+      alert("Course EMI settings updated successfully!");
+    } else {
+      console.error('API Error:', result);
+      alert(`Failed to update course EMI settings: ${result.error || 'Unknown error'}`);
+    }
+  } catch (error) {
+    console.error("Error updating course:", error);
+    alert("Error updating course EMI settings");
+  } finally {
+    setSaving(null);
+  }
+};
 
   const openEditModal = (course: Course) => {
     // Normalize each emiOption so monthlyAmounts exists (backwards compatible)
@@ -251,31 +322,67 @@ export default function EMIManagementPage() {
   };
 
   // Set same monthly amount for all months of an option
-  const setSameMonthlyAmount = (course: Course | null, optionIndex: number, amount: number) => {
-    if (!course) return;
-    const opts = (course.emiOptions || []).map((o) => ({ ...o }));
-    const opt = opts[optionIndex];
-    if (!opt) return;
-    const newAmounts = Array.from({ length: opt.months }, () => Math.max(0, Math.floor(amount || 0)));
-    opt.monthlyAmounts = newAmounts;
-    // Also keep monthlyAmount for backward-compat if desired
-    opt.monthlyAmount = Math.max(0, Math.floor(amount || 0));
-    opts[optionIndex] = opt;
-    setSelectedCourse({ ...course, emiOptions: opts });
-  };
+  // const setSameMonthlyAmount = (course: Course | null, optionIndex: number, amount: number) => {
+  //   if (!course) return;
+  //   const opts = (course.emiOptions || []).map((o) => ({ ...o }));
+  //   const opt = opts[optionIndex];
+  //   if (!opt) return;
+  //   const newAmounts = Array.from({ length: opt.months }, () => Math.max(0, Math.floor(amount || 0)));
+  //   opt.monthlyAmounts = newAmounts;
+  //   // Also keep monthlyAmount for backward-compat if desired
+  //   opt.monthlyAmount = Math.max(0, Math.floor(amount || 0));
+  //   opts[optionIndex] = opt;
+  //   setSelectedCourse({ ...course, emiOptions: opts });
+  // };
 
-  // Edit a single month's price
-  const updateMonthlyAmount = (course: Course | null, optionIndex: number, monthIndex: number, value: number) => {
-    if (!course) return;
-    const opts = (course.emiOptions || []).map((o) => ({ ...o }));
-    const opt = opts[optionIndex];
-    if (!opt) return;
-    const arr = Array.isArray(opt.monthlyAmounts) ? [...opt.monthlyAmounts] : Array.from({ length: opt.months }, () => opt.monthlyAmount || 0);
-    arr[monthIndex] = Math.max(0, Math.floor(value || 0));
-    opt.monthlyAmounts = arr;
-    opts[optionIndex] = opt;
-    setSelectedCourse({ ...course, emiOptions: opts });
-  };
+  // // Edit a single month's price
+  // const updateMonthlyAmount = (course: Course | null, optionIndex: number, monthIndex: number, value: number) => {
+  //   if (!course) return;
+  //   const opts = (course.emiOptions || []).map((o) => ({ ...o }));
+  //   const opt = opts[optionIndex];
+  //   if (!opt) return;
+  //   const arr = Array.isArray(opt.monthlyAmounts) ? [...opt.monthlyAmounts] : Array.from({ length: opt.months }, () => opt.monthlyAmount || 0);
+  //   arr[monthIndex] = Math.max(0, Math.floor(value || 0));
+  //   opt.monthlyAmounts = arr;
+  //   opts[optionIndex] = opt;
+  //   setSelectedCourse({ ...course, emiOptions: opts });
+  // };
+
+// Update the setSameMonthlyAmount function to handle empty values better
+const setSameMonthlyAmount = (course: Course | null, optionIndex: number, amount: number | string) => {
+  if (!course) return;
+  const opts = (course.emiOptions || []).map((o) => ({ ...o }));
+  const opt = opts[optionIndex];
+  if (!opt) return;
+  
+  // Handle empty string or invalid input
+  const cleanAmount = amount === "" ? 0 : Math.max(0, Math.floor(Number(amount) || 0));
+  const newAmounts = Array.from({ length: opt.months }, () => cleanAmount);
+  
+  opt.monthlyAmounts = newAmounts;
+  // Also keep monthlyAmount for backward-compat if desired
+  opt.monthlyAmount = cleanAmount;
+  opts[optionIndex] = opt;
+  setSelectedCourse({ ...course, emiOptions: opts });
+};
+
+// Update the updateMonthlyAmount function similarly
+const updateMonthlyAmount = (course: Course | null, optionIndex: number, monthIndex: number, value: number | string) => {
+  if (!course) return;
+  const opts = (course.emiOptions || []).map((o) => ({ ...o }));
+  const opt = opts[optionIndex];
+  if (!opt) return;
+  
+  const arr = Array.isArray(opt.monthlyAmounts) ? [...opt.monthlyAmounts] : Array.from({ length: opt.months }, () => opt.monthlyAmount || 0);
+  
+  // Handle empty string or invalid input
+  const cleanValue = value === "" ? 0 : Math.max(0, Math.floor(Number(value) || 0));
+  arr[monthIndex] = cleanValue;
+  
+  opt.monthlyAmounts = arr;
+  opts[optionIndex] = opt;
+  setSelectedCourse({ ...course, emiOptions: opts });
+};
 
   const computeOptionTotal = (opt: EMIOption | undefined) => {
     if (!opt) return 0;
@@ -492,7 +599,7 @@ export default function EMIManagementPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">EMI Processing Fee (%)</label>
+                  {/* <label className="block text-sm font-medium text-gray-700 mb-2">EMI Processing Fee (%)</label>
                   <div className="relative">
                     <Percent className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                     <input
@@ -513,20 +620,20 @@ export default function EMIManagementPage() {
                         });
                       }}
                     />
-                  </div>
+                  </div> */}
                 </div>
 
-                <div>
+                {/* <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Total EMI Price</label>
                   <div className="flex items-center space-x-2">
                     <IndianRupee className="w-4 h-4 text-gray-500" />
                     <span className="text-lg font-semibold text-green-600">{selectedCourse.emiPrice.toFixed(2)}</span>
                     <div className="text-xs text-gray-500">(+₹{(selectedCourse.emiPrice - selectedCourse.discountedPrice).toFixed(2)} extra)</div>
                   </div>
-                </div>
+                </div> */}
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Minimum Amount for EMI</label>
+                  {/* <label className="block text-sm font-medium text-gray-700 mb-2">Minimum Amount for EMI</label>
                   <div className="relative">
                     <IndianRupee className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                     <input
@@ -538,7 +645,7 @@ export default function EMIManagementPage() {
                       value={selectedCourse.emiMinimumAmount}
                       onChange={(e) => setSelectedCourse({ ...selectedCourse, emiMinimumAmount: parseInt(e.target.value) || 1000 })}
                     />
-                  </div>
+                  </div> */}
                 </div>
               </div>
 

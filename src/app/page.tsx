@@ -207,15 +207,24 @@ export default function Home() {
     course: Course | null;
     buttonLabel: string;
     buttonLink: string;
+    emiStatus?: "active" | "overdue" | "completed";
   }
 
   const CourseCard = ({
     course,
     buttonLabel,
     buttonLink,
+    emiStatus,
   }: CourseCardProps) => {
     const isFree = !!course?.isFree;
-
+    const handleButtonClick = () => {
+      if (emiStatus === "overdue") {
+        // Redirect to PhonePe EMI payment
+        window.location.href = `/profile`;
+      } else {
+        window.location.href = buttonLink;
+      }
+    };
     return (
       <div
         className="
@@ -280,7 +289,7 @@ export default function Home() {
                   text-blue-600 hover:text-blue-800
                   transition
                 ">
-                  {buttonLabel} →
+                   {emiStatus === "overdue" ? "EMI Overdue" : buttonLabel} →
                 </span>
               </Link>
             ) : (

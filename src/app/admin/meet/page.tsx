@@ -11,6 +11,7 @@ interface Course {
 interface MeetLink {
   _id: string;
   title: string;
+  thumbnail?: string;
   link: string;
   courseIds: string[];
   createdAt: string;
@@ -20,6 +21,7 @@ export default function AdminMeetLinkPage() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [meetLinks, setMeetLinks] = useState<MeetLink[]>([]);
   const [selectedCourses, setSelectedCourses] = useState<string[]>([]);
+  const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [title, setTitle] = useState('');
   const [link, setLink] = useState('');
 
@@ -49,19 +51,25 @@ export default function AdminMeetLinkPage() {
       alert("All fields required.");
       return;
     }
-
-    await axios.post('/api/meetlinks/create', {
-      title,
-      link,
-      courseIds: selectedCourses
+  
+    const formData = new FormData();
+    formData.append("title", title);
+    formData.append("link", link);
+    selectedCourses.forEach(cid => formData.append("courseIds", cid));
+    if (thumbnailFile) formData.append("thumbnail", thumbnailFile);
+  
+    await axios.post('/api/meetlinks/create', formData, {
+      headers: { "Content-Type": "multipart/form-data" },
     });
-
+  
     alert("Meet link added!");
     setTitle('');
     setLink('');
     setSelectedCourses([]);
-    fetchMeetLinks(); // refresh list
+    setThumbnailFile(null);
+    fetchMeetLinks();
   };
+  
 
   const handleDelete = async (id: string) => {
     if (confirm("Delete this meet link?")) {
@@ -84,6 +92,14 @@ export default function AdminMeetLinkPage() {
         value={title}
         onChange={e => setTitle(e.target.value)}
       />
+    
+<input
+title='thumbnail'
+  type="file"
+  accept="image/*"
+  className="border p-2 mb-2 w-full"
+  onChange={e => setThumbnailFile(e.target.files?.[0] || null)}
+/>
       <input
         type="text"
         placeholder="https://meet.google.com/xxx-xxxx-xxx"
@@ -125,6 +141,10 @@ export default function AdminMeetLinkPage() {
                 <div>
                   <h3 className="font-bold text-lg">{link.title}</h3>
                   <p className="text-sm text-blue-600 underline break-all">{link.link}</p>
+                  {link.thumbnail && (
+  <img src={link.thumbnail} alt="Thumbnail" className="mt-2 w-full h-40 object-cover rounded" />
+)}
+
                   <p className="text-sm text-gray-600 mt-1">
                     Courses: {getCourseTitles(link.courseIds)}
                   </p>
